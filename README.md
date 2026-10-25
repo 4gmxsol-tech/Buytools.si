@@ -1,27 +1,37 @@
 # BuyTools.si
 
-Free, browser-based utilities for everyday PDF, image, text, developer and productivity tasks.
+BuyTools.si is a responsive collection of free browser-based utilities for image conversion and compression, PDF creation, text cleanup, developer workflows and everyday conversions.
 
-## Current prototype
-- Responsive landing page with searchable tool directory and category filters
-- Image conversion (PNG/JPEG/WebP), resizing and JPEG compression
-- Images-to-PDF and text-to-PDF prototypes
+## Current site features
+- Searchable tool directory with category filters and persistent dark/light theme preference
+- Image conversion, compression and resizing
+- Images-to-PDF and text-to-PDF tools
+- Browser-based background-removal prototype (loads a third-party AI model)
 - Word counter, case converter, whitespace cleaner
-- JSON formatter/minifier, Base64 encoder/decoder
-- QR code generation
-- SEO basics: page title, description, canonical URL, Open Graph metadata, and structured data
+- JSON formatter/minifier, Base64 encoder/decoder, URL encoder/decoder
+- QR code generator, password generator, unit converter and color converter
+- Five focused tool landing pages and three practical SEO guides
+- About, privacy and terms pages
+- XML sitemap, robots.txt, custom 404 page, favicon, and GitHub Pages deployment workflow
+- Automated static checks for page metadata, canonical URLs and sitemap targets
 
 ## Run locally
-Open `index.html` in a modern browser, or serve the repository with any static web server.
+Open `index.html` in a modern browser, or serve the repository with any static web server. Some features dynamically load third-party libraries or services and therefore require an internet connection.
 
-## Roadmap
-1. Integrate and test real AI background removal.
-2. Add reliable PDF merge, split, compress and image export workflows.
-3. Add automated tests, accessibility checks, sitemap and Search Console verification.
-4. Review privacy, third-party dependencies, and deployment settings before production promotion.
+## SEO and quality
+The sitemap is at `/sitemap.xml`. Run the dependency-free static checks with:
+
+```bash
+python scripts/check_site.py
+```
+
+The check validates sitemap XML, URL-to-file mapping, unique sitemap entries, titles, descriptions, language attributes, viewport metadata and canonical URL uniqueness. It does not replace browser testing, Search Console review, accessibility audits or Core Web Vitals measurement.
+
+## Monetization
+Read [MONETIZATION.md](MONETIZATION.md) before enabling ads or affiliate links. No advertising publisher script or ads.txt entry is configured by default. Use only the exact code and seller record supplied by an approved provider.
 
 ## Privacy
-Image conversion and text utilities are designed to process files locally in the browser. The QR generator currently uses a third-party QR image endpoint, so its input is sent to that provider. Do not submit sensitive information to the QR tool.
+Many image and text tools are designed to process data in the browser. The QR generator sends its input to a third-party QR service, and the background-removal feature loads a third-party library/model. See the [Privacy Policy](https://buytools.si/privacy/) for more detail.
 
 ## Deployment
-This is a static site and can be deployed using GitHub Pages or another static hosting provider. Configure the custom domain and HTTPS in the repository's Pages settings.
+The site is static and deploys through GitHub Pages. Configure the custom domain and HTTPS in repository Pages settings. Do not report a deployment as successful until the relevant GitHub Actions run and live site are verified.
