@@ -4,7 +4,7 @@ BuyTools.si is a responsive collection of free browser-based utilities for image
 
 ## Current site features
 - Searchable tool directory with category filters and persistent dark/light theme preference
-- Image conversion, compression and resizing
+- Image conversion, single-image compression and resizing, plus batch image compression and batch resizing with ZIP downloads
 - Images-to-PDF and text-to-PDF tools
 - Browser-based background-removal prototype (loads a third-party AI model)
 - Word counter, case converter, whitespace cleaner
