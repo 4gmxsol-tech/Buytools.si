@@ -17,4 +17,10 @@
   <url><loc>https://buytools.si/tools/csv-json-converter/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://buytools.si/tools/regex-tester/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://buytools.si/tools/markdown-preview/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://buytools.si/tools/color-contrast-checker/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://buytools.si/tools/uuid-generator/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://buytools.si/tools/json-to-typescript/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://buytools.si/tools/percentage-calculator/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://buytools.si/tools/unix-timestamp-converter/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://buytools.si/tools/date-difference-calculator/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 </urlset>
