@@ -27,7 +27,7 @@ jobs:
           test -s index.html
           test -s robots.txt
           test -s sitemap.xml
-          grep -q '<title>.*BuyTools\\.si' index.html
+          grep -q '<title>.*BuyTools.si' index.html
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
