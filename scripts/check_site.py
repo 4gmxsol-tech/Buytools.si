@@ -69,6 +69,8 @@ for url in urls:
 html_files = sorted(ROOT.rglob("*.html"))
 canonical_map = {}
 for file in html_files:
+    if file.name == "404.html":
+        continue  # Error pages intentionally use noindex and have no canonical.
     if any(part.startswith(".") for part in file.relative_to(ROOT).parts):
         continue
     parser = MetadataParser()
