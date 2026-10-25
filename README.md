@@ -9,7 +9,10 @@ BuyTools.si is a responsive collection of free browser-based utilities for image
 - Browser-based background-removal prototype (loads a third-party AI model)
 - Word counter, case converter, whitespace cleaner
 - JSON formatter/minifier, Base64 encoder/decoder, URL encoder/decoder
-- QR code generator, password generator, unit converter and color converter
+- QR code generator, password generator, unit converter, color converter, percentage calculator, Unix timestamp converter, UUID generator and text hash generator
+- PDF merge and page extraction, CSV ↔ JSON conversion, regex tester, Markdown preview, text comparison and URL slug generator
+- Color contrast checker, HTML entity encoder, JSON-to-TypeScript starter generator, lorem ipsum generator, random number generator, and date difference calculator
+- Dedicated SEO landing pages for PDF merge/split, CSV/JSON, regex testing, Markdown preview, color contrast, UUIDs, JSON-to-TypeScript, percentage, timestamps and date differences
 - Five focused tool landing pages and three practical SEO guides
 - About, privacy and terms pages
 - XML sitemap, robots.txt, custom 404 page, favicon, and GitHub Pages deployment workflow
