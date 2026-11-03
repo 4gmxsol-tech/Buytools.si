@@ -74,6 +74,61 @@ try {
   assert.match(csvOutput, /USB cable/);
   assert.doesNotMatch(csvOutput, /Desk lamp/);
 
+  // Browser-native image compression and resizing.
+  const pngDataUrl = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 16;
+    canvas.height = 8;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#336699";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/png");
+  });
+  const pngBuffer = Buffer.from(pngDataUrl.split(",")[1], "base64");
+
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="image-compress"]').click();
+  await page.locator("#fileInput").setInputFiles({ name: "sample.png", mimeType: "image/png", buffer: pngBuffer });
+  await page.locator("#run").click();
+  await page.locator("#result a").waitFor();
+  const [compressedDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#result a").click()
+  ]);
+  assert.match(compressedDownload.suggestedFilename(), /\.jpg$/i);
+  const compressedStream = await compressedDownload.createReadStream();
+  let compressedBytes = 0;
+  for await (const chunk of compressedStream) compressedBytes += chunk.length;
+  assert.ok(compressedBytes > 0, "Image compressor produced an empty file");
+
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="image-resize"]').click();
+  await page.locator("#fileInput").setInputFiles({ name: "sample.png", mimeType: "image/png", buffer: pngBuffer });
+  await page.locator("#width").fill("32");
+  await page.locator("#height").fill("32");
+  await page.locator("#run").click();
+  await page.locator("#result a").waitFor();
+  const [resizedDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#result a").click()
+  ]);
+  assert.match(resizedDownload.suggestedFilename(), /resized\.png$/i);
+
+  // Text-to-PDF: validate the generated PDF signature and trailer.
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="text-pdf"]').click();
+  await page.locator("#text").fill("BuyTools browser smoke test\nPDF generation works.");
+  const [pdfDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#run").click()
+  ]);
+  assert.match(pdfDownload.suggestedFilename(), /\.pdf$/i);
+  const pdfStream = await pdfDownload.createReadStream();
+  let pdfBytes = Buffer.alloc(0);
+  for await (const chunk of pdfStream) pdfBytes = Buffer.concat([pdfBytes, chunk]);
+  assert.ok(pdfBytes.toString("utf8").startsWith("%PDF-1.4"), "Text-to-PDF output has no PDF header");
+  assert.ok(pdfBytes.toString("utf8").includes("%%EOF"), "Text-to-PDF output has no EOF marker");
+
   // Theme toggle and narrow-screen layout.
   await page.locator("#closeWork").click();
   await page.locator("#themeToggle").click();
@@ -82,7 +137,7 @@ try {
   assert.ok(dimensions.scrollWidth <= dimensions.width + 2, `Unexpected horizontal page overflow: ${JSON.stringify(dimensions)}`);
 
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");
-  console.log(`Browser smoke tests passed: ${toolCount} tool cards; JSON, CSV, TypeScript, CSV viewer, download, theme and mobile layout.`);
+  console.log(`Browser smoke tests passed: ${toolCount} tool cards; JSON, CSV, TypeScript, CSV viewer, image compression/resizing, text-to-PDF, downloads, theme and mobile layout.`);
 } finally {
   await browser.close();
 }
