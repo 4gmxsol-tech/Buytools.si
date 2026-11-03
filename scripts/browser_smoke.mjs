@@ -146,12 +146,11 @@ try {
     mimeType: "application/pdf",
     buffer
   })));
-  await page.locator("#run").click();
-  await page.getByText(/Merged 3 PDF files/).waitFor();
   const [mergedDownload] = await Promise.all([
     page.waitForEvent("download"),
-    page.locator("#result").getByRole("link").click()
+    page.locator("#run").click()
   ]);
+  await page.getByText(/Merged 3 PDF files/).waitFor();
   assert.match(mergedDownload.suggestedFilename(), /merged\.pdf$/i);
   const mergedStream = await mergedDownload.createReadStream();
   let mergedBytes = Buffer.alloc(0);
@@ -206,7 +205,7 @@ try {
   assert.ok(dimensions.scrollWidth <= dimensions.width + 2, `Unexpected horizontal page overflow: ${JSON.stringify(dimensions)}`);
 
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");
-  console.log(`Browser smoke tests passed: ${toolCount} tool cards; JSON, CSV, TypeScript, CSV viewer, image compression/resizing, text-to-PDF, downloads, theme and mobile layout.`);
+  console.log(`Browser smoke tests passed: ${toolCount} tool cards; JSON, CSV, TypeScript, CSV viewer, image compression/resizing, text-to-PDF, PDF merge/split, downloads, theme and mobile layout.`);
 } finally {
   await browser.close();
 }
