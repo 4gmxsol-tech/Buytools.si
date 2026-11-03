@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
+import { PDFDocument } from "pdf-lib";
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
@@ -129,6 +130,72 @@ try {
   assert.ok(pdfBytes.toString("utf8").startsWith("%PDF-1.4"), "Text-to-PDF output has no PDF header");
   assert.ok(pdfBytes.toString("utf8").includes("%%EOF"), "Text-to-PDF output has no EOF marker");
 
+  // Generate valid PDF fixtures with distinct page dimensions.
+  const pdfFixtures = [];
+  for (const [width, height] of [[120, 180], [220, 280], [320, 380]]) {
+    const doc = await PDFDocument.create();
+    doc.addPage([width, height]);
+    pdfFixtures.push(Buffer.from(await doc.save()));
+  }
+
+  // Merge three PDFs and verify the downloaded document structurally.
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="pdf-merge"]').click();
+  await page.locator("#fileInput").setInputFiles(pdfFixtures.map((buffer, index) => ({
+    name: `fixture-${index + 1}.pdf`,
+    mimeType: "application/pdf",
+    buffer
+  })));
+  const [mergedDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#run").click()
+  ]);
+  await page.getByText(/Merged 3 PDF files/).waitFor();
+  assert.match(mergedDownload.suggestedFilename(), /merged\.pdf$/i);
+  const mergedStream = await mergedDownload.createReadStream();
+  let mergedBytes = Buffer.alloc(0);
+  for await (const chunk of mergedStream) mergedBytes = Buffer.concat([mergedBytes, chunk]);
+  const mergedDoc = await PDFDocument.load(mergedBytes);
+  assert.equal(mergedDoc.getPageCount(), 3, "PDF merger should preserve all three input pages");
+  assert.deepEqual(mergedDoc.getPages().map(p => p.getSize()), [
+    { width: 120, height: 180 },
+    { width: 220, height: 280 },
+    { width: 320, height: 380 }
+  ], "PDF merger should preserve input order and page dimensions");
+
+  // Split selected ranges and verify output page count and order.
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="pdf-split"]').click();
+  await page.locator("#fileInput").setInputFiles({
+    name: "three-pages.pdf",
+    mimeType: "application/pdf",
+    buffer: mergedBytes
+  });
+  await page.locator("#pages").fill("1, 3");
+  const [splitDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#run").click()
+  ]);
+  await page.locator("#result").getByText("Extracted 2 page(s)").waitFor();
+  assert.match(splitDownload.suggestedFilename(), /pages\.pdf$/i);
+  const splitStream = await splitDownload.createReadStream();
+  let splitBytes = Buffer.alloc(0);
+  for await (const chunk of splitStream) splitBytes = Buffer.concat([splitBytes, chunk]);
+  const splitDoc = await PDFDocument.load(splitBytes);
+  assert.equal(splitDoc.getPageCount(), 2);
+  assert.deepEqual(splitDoc.getPages().map(p => p.getSize()), [
+    { width: 120, height: 180 },
+    { width: 320, height: 380 }
+  ], "PDF splitter should return the requested pages in ascending order");
+
+  // Reject out-of-range and malformed page selectors.
+  await page.locator("#pages").fill("1, 4");
+  await page.locator("#run").click();
+  await page.getByText(/outside this PDF/i).waitFor();
+  await page.locator("#pages").fill("1, nope");
+  await page.locator("#run").click();
+  await page.getByText(/Invalid page range/i).waitFor();
+
   // Theme toggle and narrow-screen layout.
   await page.locator("#closeWork").click();
   await page.locator("#themeToggle").click();
@@ -137,7 +204,7 @@ try {
   assert.ok(dimensions.scrollWidth <= dimensions.width + 2, `Unexpected horizontal page overflow: ${JSON.stringify(dimensions)}`);
 
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");
-  console.log(`Browser smoke tests passed: ${toolCount} tool cards; JSON, CSV, TypeScript, CSV viewer, image compression/resizing, text-to-PDF, downloads, theme and mobile layout.`);
+  console.log(`Browser smoke tests passed: ${toolCount} tool cards; JSON, CSV, TypeScript, CSV viewer, image compression/resizing, text-to-PDF, PDF merge/split, downloads, theme and mobile layout.`);
 } finally {
   await browser.close();
 }
