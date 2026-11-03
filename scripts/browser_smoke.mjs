@@ -39,7 +39,7 @@ try {
   assert.equal(converted[0].age, "36");
   await page.locator("#text").fill('name,name\nAda,Grace');
   await page.locator('[data-csv="tojson"]').click();
-  assert.match(await page.locator("#result").innerText(), /headers must be unique/i);
+  assert.match(await page.locator("#result").innerText(), /header names must be unique/i);
   await page.locator("#text").fill(JSON.stringify([{ name: "Ada, Lovelace", note: 'said "hello"' }]));
   await page.locator('[data-csv="tocsv"]').click();
   assert.match(await page.locator("#text").inputValue(), /"Ada, Lovelace"/);
