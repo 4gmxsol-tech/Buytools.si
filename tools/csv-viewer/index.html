@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Free CSV Viewer & Sorter Online | BuyTools.si</title>
-<meta name="description" content="View CSV data as a table, search across rows, sort columns and export filtered results. Free online CSV viewer with browser-based processing.">
+<title>CSV Viewer Online — View, Search &amp; Sort CSV | BuyTools.si</title>
+<meta name="description" content="View CSV text online without Excel. Paste comma-separated data, search rows, sort columns and export filtered CSV results in your browser for free.">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <link rel="canonical" href="https://buytools.si/tools/csv-viewer/">
 <meta name="theme-color" content="#10121b">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BuyTools.si">
-<meta property="og:title" content="Free CSV Viewer & Sorter Online | BuyTools.si">
-<meta property="og:description" content="View CSV data as a table, search rows, sort columns and export filtered results in your browser.">
+<meta property="og:title" content="CSV Viewer Online — View, Search &amp; Sort CSV | BuyTools.si">
+<meta property="og:description" content="View CSV text without Excel: paste data, search rows, sort columns and export filtered results in your browser.">
 <meta property="og:url" content="https://buytools.si/tools/csv-viewer/">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
@@ -41,6 +41,18 @@ C-311,Notebook,Stationery,42</pre><p>After selecting <strong>Preview table</stro
 <section class="panel"><h2>CSV format supported by this viewer</h2><p>The current parser expects comma-separated values and uses the first row as column headers. It supports quoted fields, commas inside quoted fields, doubled quotation marks and line breaks inside quoted fields. Each record must have the same number of fields as the header row.</p><ul><li><strong>Supported:</strong> standard comma-separated text with a header row and consistent columns.</li><li><strong>Not auto-detected:</strong> semicolon-separated and tab-separated files. Convert them to comma-separated CSV before pasting.</li><li><strong>Values:</strong> cells remain text; the viewer does not convert date strings, currency or Boolean text into typed values.</li><li><strong>Sorting:</strong> numeric-looking values are compared numerically when possible; other values use locale-aware text sorting.</li></ul></section>
 <section class="panel"><h2>When is a CSV viewer useful?</h2><p>CSV files are often used to exchange contact lists, product catalogs, exported analytics, survey responses, inventory, and application logs. A lightweight viewer helps you inspect a file quickly before importing it into a database or spreadsheet. Sorting and filtering can also make it easier to find a few records in a larger export without changing the original source file.</p><p>For larger or sensitive datasets, use a tool and device appropriate for the data classification. This page is designed for pasted text that fits comfortably in browser memory; it is not a database or a replacement for spreadsheet formulas.</p></section>
 <section class="panel"><h2>CSV formatting tips</h2><ul><li>Include a header row so each column has a meaningful name.</li><li>Quote a field if it contains a comma, a line break or a double quote. Inside a quoted field, represent a literal double quote as two double quotes.</li><li>Keep each record's number of fields consistent.</li><li>Check date, decimal and identifier formats before importing data into another system. Different spreadsheet locales may interpret them differently.</li><li>Keep an untouched copy of the original file before cleaning or re-exporting data.</li></ul></section>
+<section class="panel">
+<h2>View a CSV file online without Excel</h2>
+<p>You do not need Microsoft Excel or a spreadsheet subscription to inspect a small CSV export. Open the CSV file in a text editor, copy its contents, and paste the comma-separated text into the viewer. Select <strong>Preview table</strong> to inspect the header row and records, search for a value, or sort a column.</p>
+<h3>Example CSV data</h3>
+<pre style="overflow:auto;padding:14px;border:1px solid var(--line);border-radius:10px;background:#0b0e16;color:#edf2ff;font:13px/1.6 ui-monospace,monospace">name,department,note
+Ada,Research,"Works with data, models and reports"
+Linus,Engineering,"Uses ""quoted"" text safely"</pre>
+<p>Quoted fields keep commas and quotation marks inside a cell instead of treating them as column separators. The viewer supports this standard CSV quoting pattern. It currently works with pasted CSV text; it does not directly upload or open a local file picker.</p>
+<h3>When this lightweight CSV reader is enough</h3>
+<ul><li>Quickly inspect a small CSV export before importing it elsewhere.</li><li>Find rows containing a name, product, category or status.</li><li>Sort one column to scan values in ascending or descending order.</li><li>Export the currently filtered rows as a separate CSV file.</li></ul>
+<p>For large datasets, formulas, pivot tables or complex transformations, use a dedicated spreadsheet or database application.</p>
+</section>
 <section class="panel"><h2>Frequently asked questions</h2>
 <div class="faq"><h3>Is this CSV viewer free?</h3><p>Yes. The viewer is free to use and does not require an account.</p></div>
 <div class="faq"><h3>Does it upload my CSV?</h3><p>No upload is performed by the CSV viewer itself. Parsing, filtering, sorting and export run in the browser. Avoid pasting sensitive data into any website unless your organization permits it.</p></div>
