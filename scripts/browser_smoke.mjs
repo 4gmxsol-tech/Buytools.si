@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
 const browser = await chromium.launch({ headless: true });
-const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+const context = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
+const page = await context.newPage();
 const pageErrors = [];
 page.on("pageerror", error => pageErrors.push(error.message));
 
