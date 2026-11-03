@@ -95,7 +95,7 @@ try {
     page.waitForEvent("download"),
     page.locator("#result a").click()
   ]);
-  assert.match(compressedDownload.suggestedFilename(), /\\.jpg$/i);
+  assert.match(compressedDownload.suggestedFilename(), /\.jpg$/i);
   const compressedStream = await compressedDownload.createReadStream();
   let compressedBytes = 0;
   for await (const chunk of compressedStream) compressedBytes += chunk.length;
@@ -112,17 +112,17 @@ try {
     page.waitForEvent("download"),
     page.locator("#result a").click()
   ]);
-  assert.match(resizedDownload.suggestedFilename(), /resized\\.png$/i);
+  assert.match(resizedDownload.suggestedFilename(), /resized\.png$/i);
 
   // Text-to-PDF: validate the generated PDF signature and trailer.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="text-pdf"]').click();
-  await page.locator("#text").fill("BuyTools browser smoke test\\nPDF generation works.");
+  await page.locator("#text").fill("BuyTools browser smoke test\nPDF generation works.");
   const [pdfDownload] = await Promise.all([
     page.waitForEvent("download"),
     page.locator("#run").click()
   ]);
-  assert.match(pdfDownload.suggestedFilename(), /\\.pdf$/i);
+  assert.match(pdfDownload.suggestedFilename(), /\.pdf$/i);
   const pdfStream = await pdfDownload.createReadStream();
   let pdfBytes = Buffer.alloc(0);
   for await (const chunk of pdfStream) pdfBytes = Buffer.concat([pdfBytes, chunk]);
