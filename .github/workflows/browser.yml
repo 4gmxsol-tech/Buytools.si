@@ -1,0 +1,36 @@
+name: Browser tool smoke tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Playwright
+        run: npm install --no-save --no-package-lock playwright@1.56.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start local static server
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 >/tmp/buytools-http.log 2>&1 &
+          for attempt in $(seq 1 20); do
+            if curl --silent --fail http://127.0.0.1:8000/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/buytools-http.log
+          exit 1
+      - name: Exercise critical browser workflows
+        run: node scripts/browser_smoke.mjs
