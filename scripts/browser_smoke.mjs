@@ -172,12 +172,11 @@ try {
     buffer: mergedBytes
   });
   await page.locator("#pages").fill("1, 3");
-  await page.locator("#run").click();
-  await page.getByText(/Extracted 2 page\(s\)/).waitFor();
   const [splitDownload] = await Promise.all([
     page.waitForEvent("download"),
-    page.locator("#result").getByRole("link").click()
+    page.locator("#run").click()
   ]);
+  await page.getByText(/Extracted 2 page\\(s\\)/).waitFor();
   assert.match(splitDownload.suggestedFilename(), /pages\.pdf$/i);
   const splitStream = await splitDownload.createReadStream();
   let splitBytes = Buffer.alloc(0);
