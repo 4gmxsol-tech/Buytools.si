@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const axe = require("axe-core");
 import { PDFDocument } from "pdf-lib";
 
 const browser = await chromium.launch({ headless: true });
@@ -10,7 +13,18 @@ page.on("pageerror", error => pageErrors.push(error.message));
 
 try {
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+  await page.addScriptTag({ content: axe.source });
+  async function auditAccessibility(label) {
+    const result = await page.evaluate(async () => axe.run(document, {
+      runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] }
+    }));
+    const serious = result.violations.filter(v => ["serious", "critical"].includes(v.impact));
+    console.log("Accessibility " + label + ": " + result.passes.length + " rules passed, " + result.violations.length + " violation types; " + serious.length + " serious/critical.");
+    if (serious.length) console.error(JSON.stringify(serious.map(v => ({ id: v.id, impact: v.impact, description: v.description, nodes: v.nodes.map(n => ({ target: n.target, summary: n.failureSummary })) })), null, 2));
+    assert.equal(serious.length, 0, "Serious/critical accessibility violations on " + label);
+  }
   await page.locator('[data-tool]').first().waitFor();
+  await auditAccessibility("homepage");
   const toolCount = await page.locator('[data-tool]').count();
   assert.ok(toolCount >= 38, `Expected at least 38 tools, found ${toolCount}`);
 
@@ -22,6 +36,7 @@ try {
 
   // JSON formatter: valid and invalid input.
   await page.locator('[data-tool="json"]').click();
+  await auditAccessibility("JSON formatter tool");
   await page.locator("#text").fill('{"hello":"world","count":2}');
   await page.locator('[data-json="pretty"]').click();
   assert.match(await page.locator("#text").inputValue(), /\n  "hello": "world"/);
@@ -166,6 +181,7 @@ try {
   // Split selected ranges and verify output page count and order.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="pdf-split"]').click();
+  await auditAccessibility("PDF splitter tool");
   await page.locator("#fileInput").setInputFiles({
     name: "three-pages.pdf",
     mimeType: "application/pdf",
