@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0d0f17">
-<title>JSON Formatter &amp; Validator Online – Free | BuyTools.si</title>
-<meta name="description" content="Format, validate and minify JSON online for free. Check JSON syntax, find errors and beautify nested data directly in your browser. No sign-up required.">
+<title>Free JSON Formatter &amp; Syntax Checker Online | BuyTools.si</title>
+<meta name="description" content="Format, validate and minify JSON online. Check if JSON is valid, diagnose syntax errors with line and column details, and copy clean output for free.">
 <link rel="canonical" href="https://buytools.si/tools/json-formatter/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BuyTools.si">
-<meta property="og:title" content="JSON Formatter &amp; Validator Online – Free">
-<meta property="og:description" content="Format, validate and minify JSON online. Diagnose syntax errors with line and column details.">
+<meta property="og:title" content="Free JSON Formatter &amp; Syntax Checker Online">
+<meta property="og:description" content="Format JSON, check whether it is valid, and find syntax errors with line and column details.">
 <meta property="og:url" content="https://buytools.si/tools/json-formatter/">
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">
@@ -72,8 +72,8 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 <header class="wrap site-nav"><a class="brand" href="/">buytools<span>.</span>si</a><a class="nav-link" href="/#tools">Explore all free tools ↗</a></header>
 <main class="wrap">
 <span class="eyebrow">Free browser-based developer tool</span>
-<h1>JSON Formatter &amp; Validator</h1>
-<p class="intro">Format, validate and minify JSON in seconds. Find syntax problems with line and column diagnostics. Your JSON stays in your browser.</p>
+<h1>JSON Formatter &amp; Syntax Checker</h1>
+<p class="intro">Format JSON online, check whether a JSON string is valid, and diagnose syntax errors with line and column details. Minify clean JSON in your browser without uploading your text.</p>
 <section class="tool-panel" aria-label="JSON formatter tool">
 <div class="toolbar" role="group" aria-label="JSON actions">
 <button class="btn btn-primary" id="formatBtn" type="button">Format</button>
@@ -102,6 +102,25 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 <ol><li>Paste or type your JSON into the input editor.</li><li>Select <strong>Format</strong> to add readable indentation.</li><li>Select <strong>Validate</strong> to check whether the JSON syntax is valid.</li><li>Select <strong>Minify</strong> to remove unnecessary whitespace from valid JSON.</li><li>Use <strong>Copy output</strong> to copy the result.</li></ol>
 <h3>Common JSON syntax errors</h3>
 <ul><li>Using single quotes instead of double quotes around strings and property names.</li><li>Leaving a trailing comma after the final property or array item.</li><li>Forgetting a comma between properties or array values.</li><li>Using comments, <code>undefined</code> or other JavaScript syntax that JSON does not support.</li><li>Leaving a closing brace or bracket out of place.</li></ul>
+</section>
+<section class="content-card">
+<h2>How to check if JSON is valid</h2>
+<p>A JSON syntax checker verifies that text follows the JSON data format. Paste the complete object or array above and select <strong>Validate</strong>. If the syntax is valid, the checker confirms it. If parsing fails, it reports the detected error category and the nearest useful line and column position available from your browser.</p>
+<h3>Valid JSON example</h3>
+<pre style="overflow:auto;padding:14px;border:1px solid var(--line);border-radius:10px;background:#0b0e16;color:#edf2ff;font:13px/1.6 ui-monospace,monospace">{
+  "name": "Ada",
+  "active": true,
+  "roles": ["admin", "editor"]
+}</pre>
+<h3>Invalid JSON example: missing comma</h3>
+<pre style="overflow:auto;padding:14px;border:1px solid var(--line);border-radius:10px;background:#0b0e16;color:#edf2ff;font:13px/1.6 ui-monospace,monospace">{
+  "name": "Ada"
+  "active": true
+}</pre>
+<p>The second example is invalid because JSON object properties must be separated by commas. Other common validation failures include single-quoted strings, unquoted property names, trailing commas, comments, missing closing brackets and invalid escape sequences.</p>
+<h3>Quick JSON validation checklist</h3>
+<ul><li>Use double quotes around every property name and string value.</li><li>Separate object properties and array items with commas.</li><li>Do not add a comma after the final property or item.</li><li>Match every opening brace and bracket with a closing one.</li><li>Remove JavaScript-only values such as <code>undefined</code>, functions and comments.</li></ul>
+<p>For a longer explanation with additional examples, read the <a href="/guides/format-json-online/">JSON formatting and validation guide</a>.</p>
 </section>
 <section class="content-card" id="faq"><h2>Frequently asked questions</h2>
 <details><summary>Does formatting change my JSON data?</summary><p>Formatting changes whitespace and indentation only. It does not change the JSON data structure.</p></details>
