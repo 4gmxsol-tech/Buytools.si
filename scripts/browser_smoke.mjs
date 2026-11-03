@@ -176,7 +176,7 @@ try {
     page.waitForEvent("download"),
     page.locator("#run").click()
   ]);
-  await page.getByText(/Extracted 2 page\\(s\\)/).waitFor();
+  await page.locator("#result").getByText("Extracted 2 page(s)").waitFor();
   assert.match(splitDownload.suggestedFilename(), /pages\.pdf$/i);
   const splitStream = await splitDownload.createReadStream();
   let splitBytes = Buffer.alloc(0);
