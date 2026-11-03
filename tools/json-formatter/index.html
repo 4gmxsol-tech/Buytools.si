@@ -80,6 +80,7 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 <button class="btn" id="validateBtn" type="button">Validate</button>
 <button class="btn" id="minifyBtn" type="button">Minify</button>
 <button class="btn" id="copyBtn" type="button">Copy output</button>
+<button class="btn" id="sampleBtn" type="button">Load example</button>
 <button class="btn" id="clearBtn" type="button">Clear</button>
 </div>
 <div class="editor-grid">
@@ -149,6 +150,7 @@ document.getElementById("formatBtn").addEventListener("click",()=>{const p=parse
 document.getElementById("validateBtn").addEventListener("click",()=>{if(!parseInput())return;setStatus("Valid JSON. No syntax errors were found.","success");updateCounts()});
 document.getElementById("minifyBtn").addEventListener("click",()=>{const p=parseInput();if(!p)return;output.value=JSON.stringify(p.value);setStatus("Valid JSON. Minification completed successfully.","success");updateCounts()});
 document.getElementById("copyBtn").addEventListener("click",async()=>{if(!output.value){setStatus("There is no output to copy. Format or minify valid JSON first.","error");return}try{await navigator.clipboard.writeText(output.value);setStatus("Output copied to clipboard.","success")}catch(_){output.focus();output.select();const ok=document.execCommand("copy");setStatus(ok?"Output copied to clipboard.":"Clipboard access was blocked. Select and copy manually.",ok?"success":"error")}});
+document.getElementById("sampleBtn").addEventListener("click",()=>{input.value=JSON.stringify({project:"BuyTools",active:true,version:2,features:["format","validate","minify"],owner:{team:"engineering",contact:null}},null,2);output.value="";setStatus("Example loaded. Select Format, Validate or Minify.");updateCounts();input.focus()});
 document.getElementById("clearBtn").addEventListener("click",()=>{input.value="";output.value="";setStatus("Editors cleared. Paste JSON to begin.");updateCounts();input.focus()});
 input.addEventListener("input",updateCounts);updateCounts();
 })();
