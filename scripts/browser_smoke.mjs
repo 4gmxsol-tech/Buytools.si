@@ -187,8 +187,8 @@ try {
     page.waitForEvent("download"),
     page.locator("#run").click()
   ]);
-  await page.getByText(/Finished 2 image\\(s\\)/).waitFor();
-  assert.match(batchCompressDownload.suggestedFilename(), /compressed-images\\.zip$/i);
+  await page.getByText(/Finished 2 image\(s\)/).waitFor();
+  assert.match(batchCompressDownload.suggestedFilename(), /compressed-images\.zip$/i);
   const compressedZip = await JSZip.loadAsync(await readDownloadBuffer(batchCompressDownload));
   const compressedNames = Object.keys(compressedZip.files).filter(name => !compressedZip.files[name].dir).sort();
   assert.deepEqual(compressedNames, ["001-transparent-source.jpg", "002-portrait-source.jpg"]);
@@ -216,8 +216,8 @@ try {
     page.waitForEvent("download"),
     page.locator("#run").click()
   ]);
-  await page.getByText(/Finished 2 image\\(s\\)/).waitFor();
-  assert.match(batchResizeDownload.suggestedFilename(), /resized-images\\.zip$/i);
+  await page.getByText(/Finished 2 image\(s\)/).waitFor();
+  assert.match(batchResizeDownload.suggestedFilename(), /resized-images\.zip$/i);
   const resizedZip = await JSZip.loadAsync(await readDownloadBuffer(batchResizeDownload));
   const resizedNames = Object.keys(resizedZip.files).filter(name => !resizedZip.files[name].dir).sort();
   assert.deepEqual(resizedNames, ["001-transparent-source.png", "002-portrait-source.png"]);
@@ -250,7 +250,7 @@ try {
     page.waitForEvent("download"),
     page.locator("#run").click()
   ]);
-  await page.getByText(/Created a PDF with 2 image\\(s\\)\\./).waitFor();
+  await page.getByText(/Created a PDF with 2 image\(s\)\./).waitFor();
   assert.equal(imagesPdfDownload.suggestedFilename(), "buytools-images.pdf");
   const imagesPdfBytes = await readDownloadBuffer(imagesPdfDownload);
   assert.ok(imagesPdfBytes.length > 500, "Images-to-PDF output should not be empty");
