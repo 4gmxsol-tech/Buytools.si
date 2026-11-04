@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const axe = require("axe-core");
 import { PDFDocument } from "pdf-lib";
+import JSZip from "jszip";
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
@@ -130,6 +131,137 @@ try {
   ]);
   assert.match(resizedDownload.suggestedFilename(), /resized\.png$/i);
 
+  // Batch image fixtures: transparent PNG + portrait JPEG with distinct dimensions.
+  const batchFixtureData = await page.evaluate(() => {
+    const png = document.createElement("canvas");
+    png.width = 16;
+    png.height = 8;
+    const pngContext = png.getContext("2d");
+    pngContext.fillStyle = "#ff0000";
+    pngContext.fillRect(0, 0, 8, 8);
+    const jpeg = document.createElement("canvas");
+    jpeg.width = 8;
+    jpeg.height = 16;
+    const jpegContext = jpeg.getContext("2d");
+    jpegContext.fillStyle = "#2563eb";
+    jpegContext.fillRect(0, 0, 8, 16);
+    return {
+      png: png.toDataURL("image/png"),
+      jpeg: jpeg.toDataURL("image/jpeg", 0.9)
+    };
+  });
+  const batchPngBuffer = Buffer.from(batchFixtureData.png.split(",")[1], "base64");
+  const batchJpegBuffer = Buffer.from(batchFixtureData.jpeg.split(",")[1], "base64");
+  const batchFiles = [
+    { name: "transparent-source.png", mimeType: "image/png", buffer: batchPngBuffer },
+    { name: "portrait-source.jpg", mimeType: "image/jpeg", buffer: batchJpegBuffer }
+  ];
+  async function readDownloadBuffer(download) {
+    const stream = await download.createReadStream();
+    let bytes = Buffer.alloc(0);
+    for await (const chunk of stream) bytes = Buffer.concat([bytes, chunk]);
+    return bytes;
+  }
+  async function inspectImageBuffer(buffer, mimeType) {
+    return page.evaluate(async ({ base64, type }) => {
+      const blob = await fetch("data:" + type + ";base64," + base64).then(response => response.blob());
+      const bitmap = await createImageBitmap(blob);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(bitmap, 0, 0);
+      const pixel = Array.from(context.getImageData(bitmap.width - 1, bitmap.height - 1, 1, 1).data);
+      const dimensions = { width: bitmap.width, height: bitmap.height, pixel };
+      bitmap.close();
+      return dimensions;
+    }, { base64: buffer.toString("base64"), type: mimeType });
+  }
+
+  // Batch image compressor: validate ZIP contents, JPEG output and transparent-pixel fill.
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="batch-compress"]').click();
+  await auditAccessibility("batch image compressor");
+  await page.locator("#fileInput").setInputFiles(batchFiles);
+  const [batchCompressDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#run").click()
+  ]);
+  await page.getByText(/Finished 2 image\(s\)/).waitFor();
+  assert.match(batchCompressDownload.suggestedFilename(), /compressed-images\.zip$/i);
+  const compressedZip = await JSZip.loadAsync(await readDownloadBuffer(batchCompressDownload));
+  const compressedNames = Object.keys(compressedZip.files).filter(name => !compressedZip.files[name].dir).sort();
+  assert.deepEqual(compressedNames, ["001-transparent-source.jpg", "002-portrait-source.jpg"]);
+  const compressedJpeg = await compressedZip.file("001-transparent-source.jpg").async("nodebuffer");
+  assert.equal(compressedJpeg.readUInt16BE(0), 0xffd8, "Batch compressor should emit valid JPEG files");
+  const compressedImageInfo = await inspectImageBuffer(compressedJpeg, "image/jpeg");
+  assert.deepEqual([compressedImageInfo.width, compressedImageInfo.height], [16, 8]);
+  assert.ok(
+    compressedImageInfo.pixel[0] > 235 && compressedImageInfo.pixel[1] > 235 && compressedImageInfo.pixel[2] > 235,
+    "Transparent PNG pixels should be filled with white in JPEG output"
+  );
+  const secondCompressed = await compressedZip.file("002-portrait-source.jpg").async("nodebuffer");
+  const secondCompressedInfo = await inspectImageBuffer(secondCompressed, "image/jpeg");
+  assert.deepEqual([secondCompressedInfo.width, secondCompressedInfo.height], [8, 16]);
+
+  // Batch image resizer: inspect both ZIP entries and preserve aspect ratios.
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="batch-resize"]').click();
+  await auditAccessibility("batch image resizer");
+  await page.locator("#fileInput").setInputFiles(batchFiles);
+  await page.locator("#width").fill("32");
+  await page.locator("#height").fill("32");
+  await page.locator("#keep").check();
+  const [batchResizeDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#run").click()
+  ]);
+  await page.getByText(/Finished 2 image\(s\)/).waitFor();
+  assert.match(batchResizeDownload.suggestedFilename(), /resized-images\.zip$/i);
+  const resizedZip = await JSZip.loadAsync(await readDownloadBuffer(batchResizeDownload));
+  const resizedNames = Object.keys(resizedZip.files).filter(name => !resizedZip.files[name].dir).sort();
+  assert.deepEqual(resizedNames, ["001-transparent-source.png", "002-portrait-source.png"]);
+  const resizedFirst = await resizedZip.file("001-transparent-source.png").async("nodebuffer");
+  const resizedFirstInfo = await inspectImageBuffer(resizedFirst, "image/png");
+  assert.deepEqual([resizedFirstInfo.width, resizedFirstInfo.height], [32, 16]);
+  const resizedSecond = await resizedZip.file("002-portrait-source.png").async("nodebuffer");
+  const resizedSecondInfo = await inspectImageBuffer(resizedSecond, "image/png");
+  assert.deepEqual([resizedSecondInfo.width, resizedSecondInfo.height], [16, 32]);
+
+  // Reject batches above the documented 100-file safety limit before loading ZIP code.
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="batch-compress"]').click();
+  await page.locator("#fileInput").setInputFiles(Array.from({ length: 101 }, (_, index) => ({
+    name: `limit-fixture-${index + 1}.png`,
+    mimeType: "image/png",
+    buffer: batchPngBuffer
+  })));
+  await page.locator("#run").click();
+  await page.getByText(/100 images or fewer/i).waitFor();
+
+  // Images to PDF: generate two pages from PNG/JPEG and verify page order/orientation.
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="pdf-images"]').click();
+  await auditAccessibility("images to PDF tool");
+  await page.locator("#run").click();
+  await page.getByText("Choose a file first.").waitFor();
+  await page.locator("#fileInput").setInputFiles(batchFiles);
+  const [imagesPdfDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#run").click()
+  ]);
+  await page.getByText(/Created a PDF with 2 image\(s\)\./).waitFor();
+  assert.equal(imagesPdfDownload.suggestedFilename(), "buytools-images.pdf");
+  const imagesPdfBytes = await readDownloadBuffer(imagesPdfDownload);
+  assert.ok(imagesPdfBytes.length > 500, "Images-to-PDF output should not be empty");
+  const imagesPdf = await PDFDocument.load(imagesPdfBytes);
+  assert.equal(imagesPdf.getPageCount(), 2, "Images-to-PDF should create one page per selected image");
+  const imagePdfSizes = imagesPdf.getPages().map(pdfPage => pdfPage.getSize());
+  assert.ok(imagePdfSizes[0].width > imagePdfSizes[0].height, "First PDF page should preserve the landscape image orientation");
+  assert.ok(imagePdfSizes[1].height > imagePdfSizes[1].width, "Second PDF page should preserve the portrait image orientation");
+  assert.ok(Math.abs(imagePdfSizes[0].width / imagePdfSizes[0].height - 2) < 0.03, "First PDF page should preserve the first image aspect ratio");
+  assert.ok(Math.abs(imagePdfSizes[1].width / imagePdfSizes[1].height - 0.5) < 0.03, "Second PDF page should preserve the second image aspect ratio");
+
   // Text-to-PDF: validate the generated PDF signature and trailer.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="text-pdf"]').click();
@@ -220,7 +352,7 @@ try {
   assert.ok(dimensions.scrollWidth <= dimensions.width + 2, `Unexpected horizontal page overflow: ${JSON.stringify(dimensions)}`);
 
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");
-  console.log(`Browser smoke tests passed: ${toolCount} tool cards; JSON, CSV, TypeScript, CSV viewer, image compression/resizing, text-to-PDF, PDF merge/split, downloads, theme and mobile layout.`);
+  console.log(`Browser smoke tests passed: ${toolCount} tool cards; JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, downloads, theme, 390px mobile layout and axe audits.`);
 } finally {
   await browser.close();
 }
