@@ -249,6 +249,11 @@ if (
     or "spreadsheetSafeCsvCell(str)" not in home
 ):
     fail("Both CSV export paths must use the shared spreadsheet formula-injection safeguard.")
+if 'id="csvFile"' not in home or "maxCsvFileBytes=5*1024*1024" not in home or "file.text()" not in home:
+    fail("CSV Viewer must read selected local CSV files in-browser with a 5 MiB size guard.")
+if "Choose a .csv file up to 5 MiB" not in csv_viewer_page or "not uploaded to a processing server" not in csv_viewer_page:
+    fail("CSV Viewer landing page must accurately disclose local file selection and its size limit.")
+
 privacy_text = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
 
 # Keep privacy disclosures synchronized with third-party requests in the homepage tool code.
