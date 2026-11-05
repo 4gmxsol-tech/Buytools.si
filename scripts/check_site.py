@@ -191,7 +191,7 @@ home = (ROOT / "index.html").read_text(encoding="utf-8")
 privacy_text = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
 
 # Keep privacy disclosures synchronized with third-party requests in the homepage tool code.
-dynamic_import_urls = re.findall(r"""import\\(['"](https?://[^'"]+)['"]\\)""", home)
+dynamic_import_urls = re.findall(r"""import\(['"](https?://[^'"]+)['"]\)""", home)
 for dependency_url in dynamic_import_urls:
     if dependency_url not in privacy_text:
         fail(f"Third-party library import missing from privacy policy: {dependency_url}")
