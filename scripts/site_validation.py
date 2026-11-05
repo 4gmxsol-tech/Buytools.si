@@ -12,3 +12,14 @@ def fragment_target_exists(fragment, target_ids):
 def has_shared_favicon(icon_hrefs, expected="/assets/favicon.svg"):
     """Return whether a page declares the site's shared SVG favicon."""
     return expected in set(icon_hrefs)
+
+
+def missing_image_compressor_disclosures(html):
+    """Return required, user-facing output limitations missing from the image guide."""
+    normalized = " ".join(html.lower().split())
+    required = (
+        "currently exports jpeg files",
+        "does not preserve transparency",
+        "not a lossless png optimizer",
+    )
+    return [phrase for phrase in required if phrase not in normalized]
