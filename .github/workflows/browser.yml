@@ -70,7 +70,7 @@ jobs:
           node scripts/lighthouse_summary.mjs lighthouse-reports/*.json
       - name: Upload Lighthouse JSON reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: lighthouse-baseline-${{ github.run_id }}
           path: lighthouse-reports/*.json
