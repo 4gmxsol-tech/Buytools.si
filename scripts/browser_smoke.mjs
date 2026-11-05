@@ -190,6 +190,23 @@ try {
   assert.ok(csvOutput.includes("'\n=3+3"), "CSV Viewer must neutralize formula values after a leading line feed");
   assert.ok(!csvOutput.includes(",=1+1,"), "Unescaped formula-leading values must not remain in exported CSV");
 
+  // CSV Viewer: support common semicolon and tab delimiters without splitting quoted values.
+  assert.equal(await page.locator("#csvDelimiter").inputValue(), ",", "Comma should remain the default field separator");
+  const semicolonFixture = 'name;note;city\nAda;"Works; with data";London\nLinus;Engineering;Helsinki';
+  await page.locator("#text").fill(semicolonFixture);
+  await page.locator("#csvDelimiter").selectOption(";");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#csvTable tbody tr").count(), 2, "Semicolon-delimited rows should parse");
+  assert.equal(await page.locator("#csvTable tbody tr").first().locator("td").nth(1).innerText(), "Works; with data", "A semicolon inside a quoted field must remain cell content");
+
+  const tabFixture = 'name\tnote\tcity\nAda\t"Works\twith data"\tLondon\nLinus\tEngineering\tHelsinki';
+  await page.locator("#text").fill(tabFixture);
+  await page.locator("#csvDelimiter").selectOption("\t");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#csvTable tbody tr").count(), 2, "Tab-delimited rows should parse");
+  assert.equal(await page.locator("#csvTable tbody tr").first().locator("td").nth(1).textContent(), "Works\twith data", "A tab inside a quoted field must remain cell content");
+  await page.locator("#csvDelimiter").selectOption(",");
+
   // CSV Viewer: load a local file in-browser, then enforce the documented size limit.
   const csvFileText = "sku,product\nA-104,Desk lamp\nB-208,USB cable";
   const externalRequestsBeforeCsvFile = thirdPartyRequests.length;

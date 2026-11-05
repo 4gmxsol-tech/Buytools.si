@@ -259,10 +259,19 @@ if (
     fail("CSV Viewer must decode UTF-16LE and UTF-16BE files when a byte-order mark is present.")
 if "UTF-16LE BOM" not in csv_viewer_page or "UTF-16BE BOM" not in csv_viewer_page:
     fail("CSV Viewer landing page must disclose its supported UTF-16 BOM encodings.")
+if (
+    'id="csvDelimiter"' not in home
+    or "function parseCSV(input,delimiter=',')" not in home
+    or "parseCSV(text.value,$('#csvDelimiter').value)" not in home
+    or "Choose comma, semicolon or tab" not in home
+):
+    fail("CSV Viewer must expose and use an explicit comma, semicolon or tab field-separator control.")
+if "comma-, semicolon- and tab-separated values" not in csv_viewer_page or "normalized to comma-separated CSV" not in csv_viewer_page:
+    fail("CSV Viewer landing page must disclose supported import separators and comma-normalized exports.")
 if "Choose a .csv file up to 5 MiB" not in csv_viewer_page or "not uploaded to a processing server" not in csv_viewer_page:
     fail("CSV Viewer landing page must accurately disclose local file selection and its size limit.")
-if "Open a CSV file or paste data without Excel" not in csv_viewer_page or "Open local CSV files up to 5 MiB with the browser File API" not in csv_viewer_page:
-    fail("CSV Viewer metadata must describe local file selection accurately.")
+if "Open comma-, semicolon- or tab-delimited CSV files" not in csv_viewer_page or "Open local CSV files up to 5 MiB with the browser File API" not in csv_viewer_page:
+    fail("CSV Viewer metadata must describe supported field separators and local file selection accurately.")
 
 privacy_text = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
 if "CSV Viewer" not in privacy_text or "5 MiB" not in privacy_text or "browser File API" not in privacy_text or "not uploaded to a BuyTools.si processing endpoint" not in privacy_text:
