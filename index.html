@@ -250,10 +250,11 @@ function spreadsheetSafeCsvCell(value){
  const raw=String(value??'');
  const leadingPrefix=raw.match(/^[\s\u0000-\u001f]*/u)?.[0]||'';
  const leading=raw.slice(leadingPrefix.length);
- const numericLiteral=/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(leading);
+ const negativeNumericLiteral=/^-(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(leading);
  const controlPrefix=/[\t\r\n]/u.test(leadingPrefix);
  const formulaLike=/^[=+\-@＝＋－＠]/u.test(leading);
- return controlPrefix||(formulaLike&&!numericLiteral)?"'"+raw:raw;
+ const safeNegativeNumber=leading.startsWith('-')&&negativeNumericLiteral;
+ return controlPrefix||(formulaLike&&!safeNegativeNumber)?"'"+raw:raw;
 }
 function parseCSV(input){input=String(input).replace(/^\uFEFF/,'');const rows=[];let row=[],field='',quoted=false;for(let i=0;i<input.length;i++){const ch=input[i];if(quoted){if(ch==='"'&&input[i+1]==='"'){field+='"';i++}else if(ch==='"')quoted=false;else field+=ch}else if(ch==='"'&&field==='')quoted=true;else if(ch===','){row.push(field);field=''}else if(ch==='\n'){row.push(field);rows.push(row);row=[];field=''}else if(ch!=='\r')field+=ch}if(quoted)throw Error('Unclosed quoted CSV field.');if(field!==''||row.length){row.push(field);rows.push(row)}if(!rows.length)return [];const width=rows[0].length;if(rows.some(r=>r.length!==width))throw Error('CSV rows have different numbers of columns.');return rows}
 function loadFiles(files,id){chosenFiles=Array.from(files);if(!chosenFiles.length)return;$('#fileInfo').textContent=chosenFiles.map(f=>f.name+' ('+formatBytes(f.size)+')').join(' · ');const f=chosenFiles[0];if(f.type.startsWith('image/')){const im=$('#preview');im.src=URL.createObjectURL(f);im.classList.remove('hidden')}else if(!['pdf-images','pdf-merge','pdf-split'].includes(id))$('#result').textContent='Please choose a valid image file.'}
