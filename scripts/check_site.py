@@ -249,8 +249,16 @@ if (
     or "spreadsheetSafeCsvCell(str)" not in home
 ):
     fail("Both CSV export paths must use the shared spreadsheet formula-injection safeguard.")
-if 'id="csvFile"' not in home or "maxCsvFileBytes=5*1024*1024" not in home or "file.text()" not in home:
+if 'id="csvFile"' not in home or "maxCsvFileBytes=5*1024*1024" not in home or "readCsvFileText(file)" not in home:
     fail("CSV Viewer must read selected local CSV files in-browser with a 5 MiB size guard.")
+if (
+    "async function readCsvFileText(file)" not in home
+    or "new TextDecoder('utf-16le')" not in home
+    or "new TextDecoder('utf-16be')" not in home
+):
+    fail("CSV Viewer must decode UTF-16LE and UTF-16BE files when a byte-order mark is present.")
+if "UTF-16LE BOM" not in csv_viewer_page or "UTF-16BE BOM" not in csv_viewer_page:
+    fail("CSV Viewer landing page must disclose its supported UTF-16 BOM encodings.")
 if "Choose a .csv file up to 5 MiB" not in csv_viewer_page or "not uploaded to a processing server" not in csv_viewer_page:
     fail("CSV Viewer landing page must accurately disclose local file selection and its size limit.")
 if "Open a CSV file or paste data without Excel" not in csv_viewer_page or "Open local CSV files up to 5 MiB with the browser File API" not in csv_viewer_page:

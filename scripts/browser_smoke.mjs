@@ -202,6 +202,29 @@ try {
   assert.equal(thirdPartyRequests.length, externalRequestsBeforeCsvFile, "Reading a local CSV file must not create third-party requests");
   await page.locator("#run").click();
   assert.equal(await page.locator("#csvTable tbody tr").count(), 2, "A selected local CSV should preview its data rows");
+
+  // Excel and other exporters commonly produce UTF-16 CSV files with a byte-order mark.
+  const utf16leFile = Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(csvFileText, "utf16le")]);
+  await csvFileInput.setInputFiles({ name: "inventory-utf16le.csv", mimeType: "text/csv", buffer: utf16leFile });
+  await page.waitForFunction(() => document.querySelector("#csvFileStatus")?.textContent?.includes("Loaded inventory-utf16le.csv"));
+  assert.equal(await page.locator("#text").inputValue(), csvFileText, "UTF-16LE BOM CSV files should decode without null characters");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#csvTable tbody tr").count(), 2, "UTF-16LE CSV rows should parse correctly");
+
+  const utf16beBody = Buffer.from(csvFileText, "utf16le");
+  for (let i = 0; i < utf16beBody.length; i += 2) {
+    const firstByte = utf16beBody[i];
+    utf16beBody[i] = utf16beBody[i + 1];
+    utf16beBody[i + 1] = firstByte;
+  }
+  const utf16beFile = Buffer.concat([Buffer.from([0xfe, 0xff]), utf16beBody]);
+  await csvFileInput.setInputFiles({ name: "inventory-utf16be.csv", mimeType: "text/csv", buffer: utf16beFile });
+  await page.waitForFunction(() => document.querySelector("#csvFileStatus")?.textContent?.includes("Loaded inventory-utf16be.csv"));
+  assert.equal(await page.locator("#text").inputValue(), csvFileText, "UTF-16BE BOM CSV files should decode without null characters");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#csvTable tbody tr").count(), 2, "UTF-16BE CSV rows should parse correctly");
+  assert.equal(thirdPartyRequests.length, externalRequestsBeforeCsvFile, "UTF-16 CSV decoding must remain local");
+
   const previousCsvText = await page.locator("#text").inputValue();
   await csvFileInput.setInputFiles({ name: "too-large.csv", mimeType: "text/csv", buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 0x61) });
   assert.match(await page.locator("#csvFileStatus").innerText(), /exceeds the 5 MiB limit/i);
