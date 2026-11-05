@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://buytools.si/</loc><lastmod>2026-11-05</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
   <url><loc>https://buytools.si/tools/image-compressor/</loc><lastmod>2026-11-05</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://buytools.si/tools/remove-background/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://buytools.si/tools/remove-background/</loc><lastmod>2026-11-05</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://buytools.si/tools/images-to-pdf/</loc><lastmod>2026-11-05</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://buytools.si/tools/json-formatter/</loc><lastmod>2026-11-03</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://buytools.si/tools/word-counter/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
