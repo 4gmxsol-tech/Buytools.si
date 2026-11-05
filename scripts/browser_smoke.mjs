@@ -424,6 +424,7 @@ try {
   await page.locator("#closeWork").click();
   await page.locator("#themeToggle").click();
   assert.equal(await page.locator("body").evaluate(el => el.classList.contains("light-theme")), true);
+  await page.waitForFunction(() => getComputedStyle(document.body).color === "rgb(23, 32, 51)", null, { timeout: 3000 });
   const dimensions = await page.evaluate(() => ({ width: window.innerWidth, scrollWidth: document.documentElement.scrollWidth }));
   assert.ok(dimensions.scrollWidth <= dimensions.width + 2, `Unexpected horizontal page overflow: ${JSON.stringify(dimensions)}`);
 
