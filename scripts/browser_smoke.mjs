@@ -465,11 +465,20 @@ try {
     buffer: backgroundFixture
   });
   const backgroundAuditStart = thirdPartyRequestDetails.length;
+  await page.evaluate(() => {
+    const status = document.querySelector("#result");
+    window.__backgroundProgressMessages = [];
+    const observer = new MutationObserver(() => window.__backgroundProgressMessages.push(status.textContent || ""));
+    observer.observe(status, { childList: true, subtree: true, characterData: true });
+    window.__backgroundProgressObserver = observer;
+  });
+  const backgroundStartedAt = Date.now();
   const [backgroundDownload] = await Promise.all([
     page.waitForEvent("download", { timeout: 240000 }),
     page.locator("#run").click()
   ]);
   await page.getByText(/Background removal complete/i).waitFor({ timeout: 240000 });
+  const backgroundDurationMs = Date.now() - backgroundStartedAt;
   const backgroundOutput = await readDownloadBuffer(backgroundDownload);
   assert.ok(backgroundOutput.length > 8, "Background removal returned an empty file");
   assert.equal(
@@ -477,6 +486,60 @@ try {
     "89504e470d0a1a0a",
     "Background removal should produce a valid PNG"
   );
+
+  const progressEvidence = await page.evaluate(() => {
+    window.__backgroundProgressObserver?.disconnect();
+    const status = document.querySelector("#result");
+    return {
+      role: status?.getAttribute("role"),
+      ariaLive: status?.getAttribute("aria-live"),
+      messages: window.__backgroundProgressMessages || []
+    };
+  });
+  assert.equal(progressEvidence.role, "status", "Background-removal progress should be exposed as a status message");
+  assert.equal(progressEvidence.ariaLive, "polite", "Progress updates should be announced politely to assistive technology");
+  assert.ok(
+    progressEvidence.messages.some(message => /Downloading AI asset/i.test(message)),
+    "The progress UI should distinguish model-asset downloads from image inference"
+  );
+  assert.ok(
+    progressEvidence.messages.some(message => /Preparing the transparent PNG/i.test(message)),
+    "The progress UI should identify the post-inference output-preparation stage"
+  );
+  assert.equal(
+    progressEvidence.messages.some(message => /^Processing image:/i.test(message)),
+    false,
+    "Download progress must not be mislabeled as image inference"
+  );
+
+  const defaultCircleMetrics = await page.evaluate(async () => {
+    const image = document.querySelector("#preview");
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const alpha = [];
+    let alphaTotal = 0;
+    let nonTransparent = 0;
+    for (let i = 3; i < pixels.length; i += 4) {
+      const value = pixels[i];
+      alpha.push(value);
+      alphaTotal += value;
+      if (value > 0) nonTransparent++;
+    }
+    window.__buytoolsDefaultMasks = { circle: alpha };
+    return {
+      width: canvas.width,
+      height: canvas.height,
+      sizeBytes: null,
+      nonTransparentRatio: Number((nonTransparent / alpha.length).toFixed(4)),
+      meanAlpha: Number((alphaTotal / (alpha.length * 255)).toFixed(4))
+    };
+  });
+  defaultCircleMetrics.sizeBytes = backgroundOutput.length;
 
   const backgroundRequests = thirdPartyRequestDetails.slice(backgroundAuditStart);
   const backgroundRelevantRequests = backgroundRequests.filter(detail => {
@@ -520,14 +583,188 @@ try {
       encodedBodyBytes: entry.encodedBodySize || null,
       decodedBodyBytes: entry.decodedBodySize || null
     })));
-  const knownResponseBytes = backgroundRelevantRequests
+  const defaultModelRequests = backgroundRelevantRequests.filter(detail => new URL(detail.url).hostname === "staticimgly.com");
+  const defaultKnownBytes = defaultModelRequests
     .filter(detail => detail.contentLengthBytes !== null)
     .reduce((sum, detail) => sum + detail.contentLengthBytes, 0);
-  console.log("Background-removal network audit: " + JSON.stringify({
+
+  // A second synthetic fixture exercises a person-like silhouette. Both model variants
+  // are compared on the same inputs; alpha-mask agreement is diagnostic, not a real-photo
+  // quality score or grounds for changing the production default.
+  const silhouetteFixtureData = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 128;
+    canvas.height = 128;
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#dbeafe";
+    context.fillRect(0, 0, 128, 128);
+    context.fillStyle = "#172554";
+    context.beginPath();
+    context.arc(64, 25, 14, 0, Math.PI * 2);
+    context.fill();
+    context.fillRect(48, 42, 32, 43);
+    context.lineCap = "round";
+    context.lineWidth = 13;
+    context.beginPath();
+    context.moveTo(50, 51);
+    context.lineTo(31, 77);
+    context.moveTo(78, 51);
+    context.lineTo(97, 77);
+    context.stroke();
+    context.lineWidth = 16;
+    context.beginPath();
+    context.moveTo(56, 82);
+    context.lineTo(48, 115);
+    context.moveTo(72, 82);
+    context.lineTo(80, 115);
+    context.stroke();
+    return canvas.toDataURL("image/png");
+  });
+
+  const defaultSilhouetteMetrics = await page.evaluate(async dataUrl => {
+    const mod = await import("https://esm.sh/@imgly/background-removal@1.5.5");
+    const blob = await (await fetch(dataUrl)).blob();
+    const started = performance.now();
+    const result = await mod.removeBackground(blob, { model: "isnet_fp16" });
+    const durationMs = Math.round(performance.now() - started);
+    const signature = Array.from(new Uint8Array(await result.slice(0, 8).arrayBuffer()))
+      .map(value => value.toString(16).padStart(2, "0")).join("");
+    const bitmap = await createImageBitmap(result);
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(bitmap, 0, 0);
+    bitmap.close?.();
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const alpha = [];
+    let alphaTotal = 0;
+    let nonTransparent = 0;
+    for (let i = 3; i < pixels.length; i += 4) {
+      const value = pixels[i];
+      alpha.push(value);
+      alphaTotal += value;
+      if (value > 0) nonTransparent++;
+    }
+    window.__buytoolsDefaultMasks.silhouette = alpha;
+    return {
+      width: canvas.width,
+      height: canvas.height,
+      sizeBytes: result.size,
+      durationMs,
+      pngSignatureValid: signature === "89504e470d0a1a0a",
+      nonTransparentRatio: Number((nonTransparent / alpha.length).toFixed(4)),
+      meanAlpha: Number((alphaTotal / (alpha.length * 255)).toFixed(4))
+    };
+  }, silhouetteFixtureData);
+
+  const quantizedAuditStart = thirdPartyRequestDetails.length;
+  const quantizedResults = await page.evaluate(async ({ circleDataUrl, silhouetteDataUrl }) => {
+    const mod = await import("https://esm.sh/@imgly/background-removal@1.5.5");
+    const fixtures = { circle: circleDataUrl, silhouette: silhouetteDataUrl };
+    const results = {};
+    for (const [name, dataUrl] of Object.entries(fixtures)) {
+      const blob = await (await fetch(dataUrl)).blob();
+      const started = performance.now();
+      const result = await mod.removeBackground(blob, { model: "isnet_quint8" });
+      const durationMs = Math.round(performance.now() - started);
+      const signature = Array.from(new Uint8Array(await result.slice(0, 8).arrayBuffer()))
+        .map(value => value.toString(16).padStart(2, "0")).join("");
+      const bitmap = await createImageBitmap(result);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(bitmap, 0, 0);
+      bitmap.close?.();
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      const alpha = [];
+      let alphaTotal = 0;
+      let nonTransparent = 0;
+      for (let i = 3; i < pixels.length; i += 4) {
+        const value = pixels[i];
+        alpha.push(value);
+        alphaTotal += value;
+        if (value > 0) nonTransparent++;
+      }
+      const reference = window.__buytoolsDefaultMasks[name] || [];
+      let absoluteDifference = 0;
+      let intersection = 0;
+      let union = 0;
+      for (let i = 0; i < Math.min(alpha.length, reference.length); i++) {
+        absoluteDifference += Math.abs(alpha[i] - reference[i]);
+        const candidateForeground = alpha[i] >= 128;
+        const referenceForeground = reference[i] >= 128;
+        if (candidateForeground && referenceForeground) intersection++;
+        if (candidateForeground || referenceForeground) union++;
+      }
+      results[name] = {
+        width: canvas.width,
+        height: canvas.height,
+        sizeBytes: result.size,
+        durationMs,
+        pngSignatureValid: signature === "89504e470d0a1a0a",
+        nonTransparentRatio: Number((nonTransparent / alpha.length).toFixed(4)),
+        meanAlpha: Number((alphaTotal / (alpha.length * 255)).toFixed(4)),
+        meanAbsoluteAlphaDifference: reference.length === alpha.length
+          ? Number((absoluteDifference / (alpha.length * 255)).toFixed(4))
+          : null,
+        binaryMaskIoU: reference.length === alpha.length && union > 0
+          ? Number((intersection / union).toFixed(4))
+          : null
+      };
+    }
+    return results;
+  }, { circleDataUrl: backgroundFixtureData, silhouetteDataUrl: silhouetteFixtureData });
+
+  for (const [fixtureName, metrics] of Object.entries(quantizedResults)) {
+    assert.equal(metrics.pngSignatureValid, true, "Quantized model should produce a valid PNG for " + fixtureName);
+    assert.equal(metrics.width, 128, "Quantized output width should match the fixture for " + fixtureName);
+    assert.equal(metrics.height, 128, "Quantized output height should match the fixture for " + fixtureName);
+    assert.ok(metrics.sizeBytes > 8, "Quantized output should not be empty for " + fixtureName);
+    assert.notEqual(metrics.meanAbsoluteAlphaDifference, null, "Model comparison should include alpha-mask differences for " + fixtureName);
+  }
+  assert.equal(defaultSilhouetteMetrics.pngSignatureValid, true, "Default model should produce a valid PNG for the silhouette fixture");
+  assert.equal(defaultSilhouetteMetrics.width, 128);
+  assert.equal(defaultSilhouetteMetrics.height, 128);
+
+  const quantizedRequests = thirdPartyRequestDetails.slice(quantizedAuditStart);
+  const quantizedModelRequests = quantizedRequests.filter(detail => new URL(detail.url).hostname === "staticimgly.com");
+  assert.ok(quantizedModelRequests.length > 0, "Quantized model should load its model assets on demand");
+  assert.deepEqual(
+    quantizedRequests.filter(detail => detail.method !== "GET" || detail.requestBodyBytes > 0).map(detail => ({
+      host: new URL(detail.url).hostname,
+      method: detail.method,
+      requestBodyBytes: detail.requestBodyBytes
+    })),
+    [],
+    "Quantized model benchmark must not upload either synthetic input"
+  );
+  const failedQuantizedResponses = quantizedModelRequests.filter(detail => ![200, 206, 304].includes(detail.status));
+  assert.deepEqual(
+    failedQuantizedResponses.map(detail => ({ url: detail.url, status: detail.status })),
+    [],
+    "All quantized model asset requests should complete successfully"
+  );
+  const quantizedKnownBytes = quantizedModelRequests
+    .filter(detail => detail.contentLengthBytes !== null)
+    .reduce((sum, detail) => sum + detail.contentLengthBytes, 0);
+  assert.ok(quantizedKnownBytes > 0, "Quantized model benchmark should capture at least one Content-Length value");
+  assert.ok(
+    defaultKnownBytes > quantizedKnownBytes,
+    `Expected the quantized model's known transfer lower bound (${quantizedKnownBytes}) to be below the default model's (${defaultKnownBytes})`
+  );
+
+  console.log("Background-removal default-model audit: " + JSON.stringify({
     outputBytes: backgroundOutput.length,
+    durationMs: backgroundDurationMs,
+    progressMessages: progressEvidence.messages.filter(message => /Downloading AI asset|Preparing the transparent PNG/i.test(message)),
+    lightThemeStatusRole: progressEvidence.role,
     externalRequestCount: backgroundRelevantRequests.length,
-    contentLengthKnownResponses: backgroundRelevantRequests.filter(detail => detail.contentLengthBytes !== null).length,
-    summedContentLengthBytes: backgroundRelevantRequests.some(detail => detail.contentLengthBytes !== null) ? knownResponseBytes : null,
+    modelAssetRequests: defaultModelRequests.length,
+    contentLengthKnownResponses: defaultModelRequests.filter(detail => detail.contentLengthBytes !== null).length,
+    summedContentLengthBytes: defaultKnownBytes,
+    outputMetrics: { circle: defaultCircleMetrics, silhouette: defaultSilhouetteMetrics },
     requests: backgroundRelevantRequests.map(detail => ({
       host: new URL(detail.url).hostname,
       path: new URL(detail.url).pathname,
@@ -538,6 +775,17 @@ try {
       requestBodyBytes: detail.requestBodyBytes
     })),
     resourceTiming: backgroundResourceTiming
+  }, null, 2));
+  console.log("Background-removal model comparison (synthetic fixtures; alpha-mask agreement is diagnostic, not a real-photo quality score): " + JSON.stringify({
+    defaultModel: { name: "isnet_fp16", knownTransferLowerBoundBytes: defaultKnownBytes },
+    quantizedModel: {
+      name: "isnet_quint8",
+      assetRequests: quantizedModelRequests.length,
+      contentLengthKnownResponses: quantizedModelRequests.filter(detail => detail.contentLengthBytes !== null).length,
+      knownTransferLowerBoundBytes: quantizedKnownBytes,
+      outputMetrics: quantizedResults
+    },
+    knownTransferReductionPercent: Number(((1 - quantizedKnownBytes / defaultKnownBytes) * 100).toFixed(1))
   }, null, 2));
 
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");

@@ -275,7 +275,33 @@ async function processBatchImages(id){
  }catch(e){out.textContent='Could not process the image batch: '+e.message}
 }
 
-async function processImages(id){const out=$('#result');out.textContent='Processing…';if(!chosenFiles.length){out.textContent='Choose a file first.';return}try{if(id==='pdf-images'){const files=chosenFiles.filter(f=>f.type.startsWith('image/'));if(!files.length)throw Error('Choose one or more image files.');out.textContent='Loading PDF tools…';const mod=await import('https://esm.sh/jspdf@2.5.2');const PDF=mod.jsPDF;let doc=null;for(let k=0;k<files.length;k++){const f=files[k];const data=await new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=reject;fr.readAsDataURL(f)});const im=await createImageBitmap(f);const orientation=im.width>im.height?'landscape':'portrait';if(!doc)doc=new PDF({orientation,unit:'px',format:[im.width,im.height]});else doc.addPage([im.width,im.height],orientation);doc.addImage(data,f.type==='image/png'?'PNG':'JPEG',0,0,im.width,im.height);out.textContent='Adding image '+(k+1)+' of '+files.length+'…'}doc.save('buytools-images.pdf');out.textContent='Created a PDF with '+files.length+' image(s).';return}if(id==='background'){const f=chosenFiles[0];if(!f.type.startsWith('image/'))throw Error('Choose an image file.');out.textContent='Loading the AI background-removal model. The first run may take a while…';const mod=await import('https://esm.sh/@imgly/background-removal@1.5.5');const result=await mod.removeBackground(f,{progress:(key,current,total)=>{if(total)out.textContent='Processing image: '+Math.round(current/total*100)+'%';}});download(result,'buytools-background-removed.png');const u=URL.createObjectURL(result);const p=$('#preview');p.src=u;p.classList.remove('hidden');out.textContent='Background removal complete. Your transparent PNG download should be ready.';return}
+async function processImages(id){const out=$('#result');out.textContent='Processing…';if(!chosenFiles.length){out.textContent='Choose a file first.';return}try{if(id==='pdf-images'){const files=chosenFiles.filter(f=>f.type.startsWith('image/'));if(!files.length)throw Error('Choose one or more image files.');out.textContent='Loading PDF tools…';const mod=await import('https://esm.sh/jspdf@2.5.2');const PDF=mod.jsPDF;let doc=null;for(let k=0;k<files.length;k++){const f=files[k];const data=await new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=reject;fr.readAsDataURL(f)});const im=await createImageBitmap(f);const orientation=im.width>im.height?'landscape':'portrait';if(!doc)doc=new PDF({orientation,unit:'px',format:[im.width,im.height]});else doc.addPage([im.width,im.height],orientation);doc.addImage(data,f.type==='image/png'?'PNG':'JPEG',0,0,im.width,im.height);out.textContent='Adding image '+(k+1)+' of '+files.length+'…'}doc.save('buytools-images.pdf');out.textContent='Created a PDF with '+files.length+' image(s).';return}if(id==='background'){
+ const f=chosenFiles[0];
+ if(!f.type.startsWith('image/'))throw Error('Choose an image file.');
+ out.setAttribute('role','status');
+ out.setAttribute('aria-live','polite');
+ out.setAttribute('aria-atomic','true');
+ out.textContent='Loading the AI background-removal engine…';
+ const mod=await import('https://esm.sh/@imgly/background-removal@1.5.5');
+ let lastAsset='',lastProgressBucket=-1;
+ const result=await mod.removeBackground(f,{model:'isnet_fp16',progress:(key,current,total)=>{
+  if(!Number.isFinite(current)||!Number.isFinite(total)||total<=0)return;
+  const assetName=String(key||'model asset').split(/[?#]/,1)[0].split('/').filter(Boolean).pop()||'model asset';
+  const percent=Math.max(0,Math.min(100,Math.round(current/total*100)));
+  const progressBucket=Math.floor(percent/10)*10;
+  if(assetName!==lastAsset||progressBucket!==lastProgressBucket){
+   out.textContent='Downloading AI asset '+assetName+': '+percent+'% ('+current.toLocaleString()+' of '+total.toLocaleString()+'). The first run can take longer.';
+   lastAsset=assetName;lastProgressBucket=progressBucket;
+  }
+ }});
+ out.textContent='Preparing the transparent PNG…';
+ await new Promise(resolve=>requestAnimationFrame(resolve));
+ download(result,'buytools-background-removed.png');
+ const u=URL.createObjectURL(result);
+ const p=$('#preview');p.src=u;p.classList.remove('hidden');
+ out.textContent='Background removal complete. Your transparent PNG download should be ready.';
+ return
+}
 const f=chosenFiles[0];if(!f.type.startsWith('image/'))throw Error('Choose a valid image file.');const im=await createImageBitmap(f);const c=document.createElement('canvas');let w=im.width,h=im.height;if(id==='image-resize'){w=Math.max(1,Math.min(12000,Number($('#width').value)||800));h=Math.max(1,Math.min(12000,Number($('#height').value)||600));if($('#keep').checked)h=Math.round(im.height*w/im.width)}c.width=w;c.height=h;const ctx=c.getContext('2d');if($('#format')?.value==='image/jpeg'||id==='image-compress'){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h)}ctx.drawImage(im,0,0,w,h);const type=id==='image-convert'?$('#format').value:id==='image-compress'?'image/jpeg':'image/png';const quality=id==='image-compress'?Number($('#quality').value):.9;c.toBlob(blob=>{if(!blob){out.textContent='Could not process this image.';return}const ext=type==='image/jpeg'?'jpg':type==='image/webp'?'webp':'png';const before=f.size;const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='buytools-'+(id==='image-resize'?'resized':id==='image-compress'?'compressed':'converted')+'.'+ext;a.textContent='Download result ('+formatBytes(blob.size)+')';out.replaceChildren(document.createTextNode('Original: '+formatBytes(before)+' · Result: '+formatBytes(blob.size)+' · '),a)},type,quality)}catch(e){out.textContent='Could not process file: '+e.message}}
 const params=new URLSearchParams(location.search);const initialTool=params.get('tool');const initialQuery=params.get('q');if(initialQuery)$('#search').value=initialQuery;render();if(initialTool&&tools.some(t=>t.id===initialTool))openTool(initialTool);
 </script></body></html>
