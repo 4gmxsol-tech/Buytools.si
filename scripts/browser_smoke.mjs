@@ -431,7 +431,19 @@ try {
   // record third-party response sizes where exposed, and verify no image payload is uploaded.
   assert.equal(thirdPartyRequests.some(url => url.hostname === "staticimgly.com"), false, "Background-removal model assets must not load until that feature is explicitly run");
   await page.locator('[data-tool="background"]').click();
-  await auditAccessibility("background removal tool");
+  const lightThemeColors = await page.evaluate(() => ({
+    body: getComputedStyle(document.body).color,
+    dropHeading: getComputedStyle(document.querySelector("#drop > strong")).color,
+    filePicker: getComputedStyle(document.querySelector("#drop .filepick")).color,
+    directoryHeading: getComputedStyle(document.querySelector(".tool-directory .feature b")).color
+  }));
+  assert.deepEqual(lightThemeColors, {
+    body: "rgb(23, 32, 51)",
+    dropHeading: "rgb(23, 32, 51)",
+    filePicker: "rgb(23, 32, 51)",
+    directoryHeading: "rgb(23, 32, 51)"
+  }, "Light-theme foregrounds should use readable dark text on pale surfaces");
+  await auditAccessibility("background removal tool in light theme");
   const backgroundFixtureData = await page.evaluate(() => {
     const canvas = document.createElement("canvas");
     canvas.width = 128;
