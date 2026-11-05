@@ -65,6 +65,10 @@ class CsvExportSafetyDisclosureTests(unittest.TestCase):
         html = "Formula-like values get a leading apostrophe."
         self.assertEqual(missing_csv_export_safety_disclosures(html), ["compatibility safeguard"])
 
+    def test_missing_leading_tab_disclosure_is_reported(self):
+        html = "Formula-like values get a leading apostrophe as a compatibility safeguard."
+        self.assertEqual(missing_csv_export_safety_disclosures(html), ["leading tab"])
+
 
 if __name__ == "__main__":
     unittest.main()
