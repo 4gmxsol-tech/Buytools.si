@@ -204,7 +204,7 @@ try {
   await page.locator("#csvDelimiter").selectOption("\t");
   await page.locator("#run").click();
   assert.equal(await page.locator("#csvTable tbody tr").count(), 2, "Tab-delimited rows should parse");
-  assert.equal(await page.locator("#csvTable tbody tr").first().locator("td").nth(1).innerText(), "Works\twith data", "A tab inside a quoted field must remain cell content");
+  assert.equal(await page.locator("#csvTable tbody tr").first().locator("td").nth(1).textContent(), "Works\twith data", "A tab inside a quoted field must remain cell content");
   await page.locator("#csvDelimiter").selectOption(",");
 
   // CSV Viewer: load a local file in-browser, then enforce the documented size limit.
