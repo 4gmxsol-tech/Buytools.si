@@ -292,7 +292,6 @@ try {
     "Replacing a selected image and closing the workspace must revoke both preview object URLs"
   );
 
-  await page.locator("#closeWork").click();
   await page.locator('[data-tool="image-compress"]').click();
   await page.locator("#fileInput").setInputFiles({ name: "sample.png", mimeType: "image/png", buffer: pngBuffer });
   await page.locator("#run").click();
