@@ -236,6 +236,15 @@ if "at least 90.2 MiB" not in home or "at least 90.2 MiB" not in (ROOT / "tools/
     fail("Background-removal first-run model-size warning is missing from the workspace or landing page.")
 if "94,553,445 bytes" not in privacy_text or "90.2 MiB" not in privacy_text:
     fail("Measured background-removal model download size is missing from the privacy policy.")
+consent_key = "buytools-background-removal-consent-v1"
+consent_gate = home.find("const consentKey='" + consent_key + "'")
+model_import = home.find("const mod=await import('https://esm.sh/@imgly/background-removal@1.5.5')")
+if consent_gate < 0 or model_import < 0 or consent_gate > model_import or "window.confirm(" not in home:
+    fail("Background-removal model assets must be gated by explicit first-use consent before the third-party import.")
+if consent_key not in privacy_text:
+    fail("Temporary background-removal consent storage must be disclosed in the privacy policy.")
+if "confirmation is shown before the first model download" not in (ROOT / "tools/remove-background/index.html").read_text(encoding="utf-8").lower():
+    fail("Background-removal landing page must explain the first-use download confirmation.")
 catalogue_start = home.find("const tools=[")
 catalogue_end = home.find("\n];", catalogue_start)
 renderer_start = home.find("function toolMarkup(id)")

@@ -464,6 +464,20 @@ try {
     mimeType: "image/png",
     buffer: backgroundFixture
   });
+  const requestsBeforeDecline = thirdPartyRequestDetails.length;
+  const declineDialogPromise = page.waitForEvent("dialog");
+  const declineClickPromise = page.locator("#run").click();
+  const declineDialog = await declineDialogPromise;
+  assert.match(declineDialog.message(), /at least 90\.2 MiB/i, "Consent dialog should disclose the measured cold-cache transfer lower bound");
+  await declineDialog.dismiss();
+  await declineClickPromise;
+  await page.getByText(/Background removal cancelled\. No AI model assets were requested\./i).waitFor();
+  assert.equal(
+    thirdPartyRequestDetails.length,
+    requestsBeforeDecline,
+    "Declining background-removal consent must not request the IMG.LY library or model assets"
+  );
+
   const backgroundAuditStart = thirdPartyRequestDetails.length;
   await page.evaluate(() => {
     const status = document.querySelector("#result");
@@ -472,11 +486,16 @@ try {
     observer.observe(status, { childList: true, subtree: true, characterData: true });
     window.__backgroundProgressObserver = observer;
   });
+  const backgroundDownloadPromise = page.waitForEvent("download", { timeout: 240000 });
+  const acceptDialogPromise = page.waitForEvent("dialog");
+  const backgroundClickPromise = page.locator("#run").click();
+  const acceptDialog = await acceptDialogPromise;
+  assert.match(acceptDialog.message(), /IMG\.LY/i, "Consent dialog should identify the third-party model provider");
+  assert.match(acceptDialog.message(), /processed in this browser/i, "Consent dialog should clarify the local image-processing workflow");
+  await acceptDialog.accept();
   const backgroundStartedAt = Date.now();
-  const [backgroundDownload] = await Promise.all([
-    page.waitForEvent("download", { timeout: 240000 }),
-    page.locator("#run").click()
-  ]);
+  await backgroundClickPromise;
+  const backgroundDownload = await backgroundDownloadPromise;
   await page.getByText(/Background removal complete/i).waitFor({ timeout: 240000 });
   const backgroundDurationMs = Date.now() - backgroundStartedAt;
   const backgroundOutput = await readDownloadBuffer(backgroundDownload);

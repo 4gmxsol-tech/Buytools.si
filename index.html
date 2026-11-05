@@ -281,6 +281,17 @@ async function processImages(id){const out=$('#result');out.textContent='Process
  out.setAttribute('role','status');
  out.setAttribute('aria-live','polite');
  out.setAttribute('aria-atomic','true');
+ const consentKey='buytools-background-removal-consent-v1';
+ let consentGranted=false;
+ try{consentGranted=sessionStorage.getItem(consentKey)==='accepted'}catch(e){}
+ if(!consentGranted){
+  const accepted=window.confirm('On a cold cache, the first run can download at least 90.2 MiB of AI model assets from IMG.LY. Your selected image is processed in this browser. Continue?');
+  if(!accepted){
+   out.textContent='Background removal cancelled. No AI model assets were requested.';
+   return;
+  }
+  try{sessionStorage.setItem(consentKey,'accepted')}catch(e){}
+ }
  out.textContent='Loading the AI background-removal engine…';
  const mod=await import('https://esm.sh/@imgly/background-removal@1.5.5');
  let lastAsset='',lastProgressBucket=-1,lastProgressMessage='';
