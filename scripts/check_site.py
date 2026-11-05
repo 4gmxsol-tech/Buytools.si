@@ -194,6 +194,19 @@ for file, parser in all_parsers.items():
                     f"(target {target.relative_to(ROOT)})"
                 )
 
+# Every indexable tool and guide landing page must be reachable from a crawlable homepage link.
+homepage_parser = all_parsers.get(ROOT / "index.html")
+homepage_discovery_links = set()
+if homepage_parser:
+    for href in homepage_parser.hrefs:
+        resolved = urljoin(DOMAIN + "/", href)
+        parsed = urlparse(resolved)
+        if parsed.scheme == "https" and parsed.netloc == "buytools.si" and not parsed.query and not parsed.fragment:
+            homepage_discovery_links.add(resolved)
+for url in sitemap_urls:
+    if urlparse(url).path.startswith(("/tools/", "/guides/")) and url not in homepage_discovery_links:
+        fail(f"Public tool/guide page is not linked from homepage: {url}")
+
 # Check that each homepage catalogue ID has a corresponding tool renderer branch.
 home = (ROOT / "index.html").read_text(encoding="utf-8")
 privacy_text = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
@@ -259,6 +272,7 @@ if ERRORS:
 print(
     f"Site checks passed: {len(html_files)} public HTML pages, "
     f"{len(sitemap_urls)} sitemap URLs, exact canonicals, internal links, "
+    f"{len(homepage_discovery_links)} homepage tool/guide discovery links, "
     f"{fragment_links_checked} internal fragment links, "
     "tool renderer mappings and inline JavaScript syntax."
 )
