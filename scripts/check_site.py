@@ -10,7 +10,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists
+from site_validation import fragment_target_exists, has_shared_favicon
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -31,6 +31,7 @@ class PageParser(HTMLParser):
         self.description = None
         self.viewport = False
         self.canonicals = []
+        self.icons = []
         self.og_urls = []
         self.hrefs = []
         self.ids = []
@@ -52,8 +53,12 @@ class PageParser(HTMLParser):
                 self.viewport = True
             if attrs.get("property", "").lower() == "og:url":
                 self.og_urls.append(attrs.get("content", "").strip())
-        elif tag == "link" and attrs.get("rel", "").lower() == "canonical":
-            self.canonicals.append(attrs.get("href", "").strip())
+        elif tag == "link":
+            rel_tokens = attrs.get("rel", "").lower().split()
+            if "canonical" in rel_tokens:
+                self.canonicals.append(attrs.get("href", "").strip())
+            if "icon" in rel_tokens:
+                self.icons.append(attrs.get("href", "").strip())
         elif tag == "a" and attrs.get("href") is not None:
             self.hrefs.append(attrs["href"].strip())
         if attrs.get("id"):
@@ -102,6 +107,10 @@ def local_file_for_url(url):
             candidate = ROOT / path.lstrip("/") / "index.html"
     return candidate
 
+
+# Require the shared favicon asset used by every public page.
+if not (ROOT / "assets" / "favicon.svg").is_file():
+    fail("Shared SVG favicon asset is missing: assets/favicon.svg")
 
 # Parse sitemap and require exact coverage of all indexable HTML pages.
 sitemap_path = ROOT / "sitemap.xml"
@@ -163,6 +172,8 @@ for file in html_files:
     canonical = expected_url(file)
     if parser.canonicals != [canonical]:
         fail(f"Canonical must exactly match {canonical}; found {parser.canonicals}: {rel}")
+    if not has_shared_favicon(parser.icons):
+        fail(f"Missing shared SVG favicon /assets/favicon.svg: {rel}")
     if parser.og_urls and parser.og_urls != [canonical]:
         fail(f"og:url must match canonical {canonical}; found {parser.og_urls}: {rel}")
 
