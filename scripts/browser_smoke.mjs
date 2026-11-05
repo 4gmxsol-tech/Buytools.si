@@ -14,7 +14,11 @@ const thirdPartyRequests = [];
 page.on("pageerror", error => pageErrors.push(error.message));
 page.on("request", request => {
   const requestUrl = new URL(request.url());
-  if (requestUrl.hostname !== "127.0.0.1" && requestUrl.hostname !== "localhost") {
+  if (
+    ["http:", "https:"].includes(requestUrl.protocol) &&
+    requestUrl.hostname !== "127.0.0.1" &&
+    requestUrl.hostname !== "localhost"
+  ) {
     thirdPartyRequests.push(requestUrl);
   }
 });
