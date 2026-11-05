@@ -1,7 +1,18 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import fragment_target_exists
+from site_validation import fragment_target_exists, has_shared_favicon
+
+
+class SharedFaviconTests(unittest.TestCase):
+    def test_shared_svg_favicon_is_accepted(self):
+        self.assertTrue(has_shared_favicon(["/assets/favicon.svg"]))
+
+    def test_missing_favicon_is_rejected(self):
+        self.assertFalse(has_shared_favicon([]))
+
+    def test_unrelated_icon_path_is_rejected(self):
+        self.assertFalse(has_shared_favicon(["/favicon.ico"]))
 
 
 class FragmentTargetExistsTests(unittest.TestCase):
