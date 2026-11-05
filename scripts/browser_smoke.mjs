@@ -109,6 +109,13 @@ try {
   await page.locator('[data-csv="tocsv"]').click();
   assert.match(await page.locator("#text").inputValue(), /"Ada, Lovelace"/);
   assert.match(await page.locator("#text").inputValue(), /"said ""hello"""/);
+  await page.locator("#text").fill(JSON.stringify([{ formula: "=1+1", expression: "-1+1", negative: -5, total: "@SUM(A1:A2)" }]));
+  await page.locator('[data-csv="tocsv"]').click();
+  const safeConvertedCsv = await page.locator("#text").inputValue();
+  assert.ok(safeConvertedCsv.includes("'=1+1"), "JSON-to-CSV must neutralize equals-prefixed formulas");
+  assert.ok(safeConvertedCsv.includes("'-1+1"), "JSON-to-CSV must neutralize expression-like negative values");
+  assert.ok(safeConvertedCsv.includes("'@SUM(A1:A2)"), "JSON-to-CSV must neutralize at-sign formulas");
+  assert.ok(safeConvertedCsv.includes(",-5,"), "Plain negative numeric values should remain numeric");
 
 
   // QR generator: verify the disclosed third-party request occurs only after an explicit action and encodes the input safely.
@@ -140,14 +147,24 @@ try {
   assert.match(ts, /field1: \(string \| number\)\[\]/);
   assert.doesNotMatch(ts, /"field1"/);
 
-  // CSV viewer: parse, filter and download the filtered result.
+  // CSV viewer: parse, filter and export with spreadsheet formula-injection safeguards.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="csv-viewer"]').click();
-  await page.locator("#text").fill("sku,product,category,stock\nA-104,Desk lamp,Home,18\nB-208,USB cable,Electronics,0\nC-311,Notebook,Stationery,42");
+  assert.match(await page.locator("#csvSafetyNote").innerText(), /leading apostrophe/i);
+  const csvFixture = [
+    "sku,product,category,stock,formula,spacedFormula",
+    "A-104,Desk lamp,Home,-5,-5,plain",
+    "B-208,USB cable,Electronics,0,=1+1,  =2+2",
+    "C-311,Notebook,Stationery,42,@SUM(A1:A2),safe",
+    "D-412,Marker,Electronics,12,-1+1,safe",
+    "E-513,Folder,Office,4,+SUM(A1:A2),safe"
+  ].join("\n");
+  await page.locator("#text").fill(csvFixture);
   await page.locator("#run").click();
-  assert.equal(await page.locator("#csvTable tbody tr").count(), 3);
+  assert.equal(await page.locator("#csvTable tbody tr").count(), 5);
   await page.locator("#csvFilter").fill("Electronics");
-  assert.equal(await page.locator("#csvTable tbody tr").count(), 1);
+  assert.equal(await page.locator("#csvTable tbody tr").count(), 2);
+  await page.locator("#csvFilter").fill("");
   const [download] = await Promise.all([
     page.waitForEvent("download"),
     page.locator("#csvExport").click()
@@ -156,7 +173,14 @@ try {
   let csvOutput = "";
   for await (const chunk of stream) csvOutput += chunk.toString("utf8");
   assert.match(csvOutput, /USB cable/);
-  assert.doesNotMatch(csvOutput, /Desk lamp/);
+  assert.match(csvOutput, /Desk lamp/);
+  assert.ok(csvOutput.includes("'=1+1"), "CSV Viewer must neutralize equals-prefixed formulas");
+  assert.ok(csvOutput.includes("'  =2+2"), "CSV Viewer must neutralize formulas after leading whitespace");
+  assert.ok(csvOutput.includes("'@SUM(A1:A2)"), "CSV Viewer must neutralize at-sign formulas");
+  assert.ok(csvOutput.includes("'-1+1"), "CSV Viewer must neutralize expression-like negative values");
+  assert.ok(csvOutput.includes("'+SUM(A1:A2)"), "CSV Viewer must neutralize plus-prefixed formulas");
+  assert.ok(csvOutput.includes("Home,-5,-5,plain"), "Plain negative numeric values should remain unchanged");
+  assert.ok(!csvOutput.includes(",=1+1,"), "Unescaped formula-leading values must not remain in exported CSV");
 
   // Browser-native image compression and resizing.
   const pngDataUrl = await page.evaluate(() => {
