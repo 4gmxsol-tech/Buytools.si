@@ -10,7 +10,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures
+from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -226,6 +226,21 @@ if missing_image_disclosures:
 
 # Check that each homepage catalogue ID has a corresponding tool renderer branch.
 home = (ROOT / "index.html").read_text(encoding="utf-8")
+csv_viewer_page = (ROOT / "tools/csv-viewer/index.html").read_text(encoding="utf-8")
+csv_converter_page = (ROOT / "tools/csv-json-converter/index.html").read_text(encoding="utf-8")
+for page_path, page_html in (
+    ("tools/csv-viewer/index.html", csv_viewer_page),
+    ("tools/csv-json-converter/index.html", csv_converter_page),
+):
+    missing_csv_disclosures = missing_csv_export_safety_disclosures(page_html)
+    if missing_csv_disclosures:
+        fail(f"CSV export safety disclosure missing from {page_path}: " + ", ".join(missing_csv_disclosures))
+if (
+    "function spreadsheetSafeCsvCell(value)" not in home
+    or "spreadsheetSafeCsvCell(v)" not in home
+    or "spreadsheetSafeCsvCell(str)" not in home
+):
+    fail("Both CSV export paths must use the shared spreadsheet formula-injection safeguard.")
 privacy_text = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
 
 # Keep privacy disclosures synchronized with third-party requests in the homepage tool code.
