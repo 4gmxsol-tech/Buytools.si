@@ -1,4 +1,5 @@
 """Small, independently tested helpers for static site validation."""
+import re
 from urllib.parse import unquote
 
 
@@ -39,7 +40,7 @@ def missing_csv_export_safety_disclosures(html):
 
 def missing_json_file_workflow_disclosures(html):
     """Return practical local-file workflow details missing from the JSON guide."""
-    normalized = " ".join(html.lower().split())
+    normalized = " ".join(re.sub(r"<[^>]+>", " ", html).lower().split())
     required = (
         "open the .json file in a text editor",
         "copy the complete contents",
