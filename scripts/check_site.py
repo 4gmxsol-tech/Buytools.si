@@ -2,7 +2,7 @@
 """Dependency-light structural, SEO, internal-link and inline-JavaScript checks."""
 from html.parser import HTMLParser
 from pathlib import Path
-from urllib.parse import unquote, urljoin, urlparse
+from urllib.parse import urljoin, urlparse
 import re
 import shutil
 import subprocess
