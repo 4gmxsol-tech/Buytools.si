@@ -178,6 +178,9 @@ try {
     }, { base64: buffer.toString("base64"), type: mimeType });
   }
 
+  const sourcePortraitInfo = await inspectImageBuffer(batchJpegBuffer, "image/jpeg");
+  assert.deepEqual([sourcePortraitInfo.width, sourcePortraitInfo.height], [8, 16], "Portrait fixture must start at 8×16 pixels");
+
   // Batch image compressor: validate ZIP contents, JPEG output and transparent-pixel fill.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="batch-compress"]').click();
@@ -212,6 +215,9 @@ try {
   await page.locator("#width").fill("32");
   await page.locator("#height").fill("32");
   await page.locator("#keep").check();
+  assert.equal(await page.locator("#width").inputValue(), "32", "Batch resize width control should retain the requested bound");
+  assert.equal(await page.locator("#height").inputValue(), "32", "Batch resize height control should retain the requested bound");
+  assert.equal(await page.locator("#keep").isChecked(), true, "Batch resize should preserve aspect ratio");
   const [batchResizeDownload] = await Promise.all([
     page.waitForEvent("download"),
     page.locator("#run").click()

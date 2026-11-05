@@ -10,6 +10,8 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
+from site_validation import fragment_target_exists
+
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
 ERRORS = []
@@ -169,9 +171,9 @@ for file in html_files:
         fail(f"Duplicate HTML id(s) {duplicates}: {rel}")
 
 # Validate static internal links and fragment targets.
+fragment_links_checked = 0
 for file, parser in all_parsers.items():
     page_url = expected_url(file)
-    ids = set(parser.ids)
     for href in parser.hrefs:
         if not href or href.startswith(("mailto:", "tel:", "javascript:", "data:")):
             continue
@@ -183,8 +185,14 @@ for file, parser in all_parsers.items():
         if not target.is_file():
             fail(f"Broken internal link in {file.relative_to(ROOT)}: {href}")
             continue
-        if parsed.fragment and target == file and parsed.fragment not in ids:
-            fail(f"Broken in-page anchor in {file.relative_to(ROOT)}: {href}")
+        target_parser = all_parsers.get(target)
+        if parsed.fragment and target_parser:
+            fragment_links_checked += 1
+            if not fragment_target_exists(parsed.fragment, target_parser.ids):
+                fail(
+                    f"Broken internal anchor in {file.relative_to(ROOT)}: {href} "
+                    f"(target {target.relative_to(ROOT)})"
+                )
 
 # Check that each homepage catalogue ID has a corresponding tool renderer branch.
 home = (ROOT / "index.html").read_text(encoding="utf-8")
@@ -251,6 +259,7 @@ if ERRORS:
 print(
     f"Site checks passed: {len(html_files)} public HTML pages, "
     f"{len(sitemap_urls)} sitemap URLs, exact canonicals, internal links, "
+    f"{fragment_links_checked} internal fragment links, "
     "tool renderer mappings and inline JavaScript syntax."
 )
 if WARNINGS:
