@@ -195,6 +195,7 @@ try {
   const csvFileInput = page.locator("#csvFile");
   assert.equal(await csvFileInput.count(), 1, "CSV Viewer should expose a labeled local file picker");
   await csvFileInput.setInputFiles({ name: "inventory.csv", mimeType: "text/csv", buffer: Buffer.from(csvFileText) });
+  await page.waitForFunction(() => document.querySelector("#csvFileStatus")?.textContent?.includes("Loaded inventory.csv"));
   assert.match(await page.locator("#csvFileStatus").innerText(), /Loaded inventory\.csv.*locally/i);
   assert.equal(await page.locator("#text").inputValue(), csvFileText);
   assert.equal(thirdPartyRequests.length, externalRequestsBeforeCsvFile, "Reading a local CSV file must not create third-party requests");
