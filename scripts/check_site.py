@@ -3,6 +3,7 @@
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
+import re
 import shutil
 import subprocess
 import sys
@@ -187,6 +188,18 @@ for file, parser in all_parsers.items():
 
 # Check that each homepage catalogue ID has a corresponding tool renderer branch.
 home = (ROOT / "index.html").read_text(encoding="utf-8")
+privacy_text = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
+
+# Keep privacy disclosures synchronized with third-party requests in the homepage tool code.
+dynamic_import_urls = re.findall(r"""import\(['"](https?://[^'"]+)['"]\)""", home)
+for dependency_url in dynamic_import_urls:
+    if dependency_url not in privacy_text:
+        fail(f"Third-party library import missing from privacy policy: {dependency_url}")
+for host in ("api.qrserver.com", "staticimgly.com"):
+    if host not in privacy_text:
+        fail(f"Third-party processing or asset host missing from privacy policy: {host}")
+if "buytools-theme" not in privacy_text:
+    fail("Browser theme storage key is not disclosed in the privacy policy.")
 catalogue_start = home.find("const tools=[")
 catalogue_end = home.find("\n];", catalogue_start)
 renderer_start = home.find("function toolMarkup(id)")
@@ -196,7 +209,6 @@ if min(catalogue_start, catalogue_end, renderer_start, renderer_end) < 0:
 else:
     catalogue = home[catalogue_start:catalogue_end]
     renderer = home[renderer_start:renderer_end]
-    import re
     tool_ids = re.findall(r"\{id:'([^']+)'", catalogue)
     for tool_id in tool_ids:
         if tool_id not in renderer:
