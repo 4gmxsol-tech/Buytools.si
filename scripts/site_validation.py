@@ -23,3 +23,14 @@ def missing_image_compressor_disclosures(html):
         "not a lossless png optimizer",
     )
     return [phrase for phrase in required if phrase not in normalized]
+
+ 
+def missing_csv_export_safety_disclosures(html):
+    """Return required user-facing CSV formula-safety disclosures missing from a page."""
+    normalized = " ".join(html.lower().split())
+    required = (
+        "formula-like values",
+        "leading apostrophe",
+        "compatibility safeguard",
+    )
+    return [phrase for phrase in required if phrase not in normalized]
