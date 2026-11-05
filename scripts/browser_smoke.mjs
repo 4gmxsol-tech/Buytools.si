@@ -109,7 +109,7 @@ try {
   await page.locator('[data-csv="tocsv"]').click();
   assert.match(await page.locator("#text").inputValue(), /"Ada, Lovelace"/);
   assert.match(await page.locator("#text").inputValue(), /"said ""hello"""/);
-  await page.locator("#text").fill(JSON.stringify([{ formula: "=1+1", expression: "-1+1", negative: -5, total: "@SUM(A1:A2)", tabbed: "\tplain" }]));
+  await page.locator("#text").fill(JSON.stringify([{ formula: "=1+1", expression: "-1+1", negative: -5, plusNumeric: "+5", fullWidth: "＝1+1", total: "@SUM(A1:A2)", tabbed: "\tplain" }]));
   await page.locator('[data-csv="tocsv"]').click();
   const safeConvertedCsv = await page.locator("#text").inputValue();
   assert.ok(safeConvertedCsv.includes("'=1+1"), "JSON-to-CSV must neutralize equals-prefixed formulas");
@@ -117,6 +117,8 @@ try {
   assert.ok(safeConvertedCsv.includes("'@SUM(A1:A2)"), "JSON-to-CSV must neutralize at-sign formulas");
   assert.ok(safeConvertedCsv.includes(",-5,"), "Plain negative numeric values should remain numeric");
   assert.ok(safeConvertedCsv.includes("'\tplain"), "JSON-to-CSV must neutralize cells beginning with a tab");
+  assert.ok(safeConvertedCsv.includes("'+5"), "JSON-to-CSV must neutralize plus-prefixed numeric-looking text");
+  assert.ok(safeConvertedCsv.includes("'＝1+1"), "JSON-to-CSV must neutralize full-width formula markers");
 
 
   // QR generator: verify the disclosed third-party request occurs only after an explicit action and encodes the input safely.
@@ -153,12 +155,12 @@ try {
   await page.locator('[data-tool="csv-viewer"]').click();
   assert.match(await page.locator("#csvSafetyNote").innerText(), /leading apostrophe/i);
   const csvFixture = [
-    "sku,product,category,stock,formula,spacedFormula,tabbed",
-    "A-104,Desk lamp,Home,-5,-5,plain,plain",
-    "B-208,USB cable,Electronics,0,=1+1,  =2+2,\tplain",
-    "C-311,Notebook,Stationery,42,@SUM(A1:A2),safe,safe",
-    "D-412,Marker,Electronics,12,-1+1,safe,safe",
-    "E-513,Folder,Office,4,+SUM(A1:A2),safe,safe"
+    "sku,product,category,stock,formula,spacedFormula,tabbed,plusNumeric,fullWidth,lineBreak",
+    "A-104,Desk lamp,Home,-5,-5,plain,plain,-5,plain,plain",
+    "B-208,USB cable,Electronics,0,=1+1,  =2+2,\tplain,+5,＝1+1,\"\n=3+3\"",
+    "C-311,Notebook,Stationery,42,@SUM(A1:A2),safe,safe,3,safe,safe",
+    "D-412,Marker,Electronics,12,-1+1,safe,safe,4,safe,safe",
+    "E-513,Folder,Office,4,+SUM(A1:A2),safe,safe,5,safe,safe"
   ].join("\n");
   await page.locator("#text").fill(csvFixture);
   await page.locator("#run").click();
@@ -182,6 +184,9 @@ try {
   assert.ok(csvOutput.includes("'+SUM(A1:A2)"), "CSV Viewer must neutralize plus-prefixed formulas");
   assert.ok(csvOutput.includes("Home,-5,-5,plain"), "Plain negative numeric values should remain unchanged");
   assert.ok(csvOutput.includes("'\tplain"), "CSV Viewer must neutralize cells beginning with a tab");
+  assert.ok(csvOutput.includes("'+5"), "CSV Viewer must neutralize plus-prefixed numeric-looking text");
+  assert.ok(csvOutput.includes("'＝1+1"), "CSV Viewer must neutralize full-width formula markers");
+  assert.ok(csvOutput.includes("'\n=3+3"), "CSV Viewer must neutralize formula values after a leading line feed");
   assert.ok(!csvOutput.includes(",=1+1,"), "Unescaped formula-leading values must not remain in exported CSV");
 
   // Browser-native image compression and resizing.
