@@ -218,6 +218,14 @@ for url in sitemap_urls:
     if urlparse(url).path.startswith(("/tools/", "/guides/")) and url not in homepage_discovery_links:
         fail(f"Public tool/guide page is not linked from homepage: {url}")
 
+# Keep the JSON formatter and its practical guide mutually discoverable.
+json_tool_parser = all_parsers.get(ROOT / "tools/json-formatter/index.html")
+json_guide_parser = all_parsers.get(ROOT / "guides/format-json-online/index.html")
+if json_tool_parser and "/guides/format-json-online/" not in json_tool_parser.hrefs:
+    fail("JSON Formatter landing page must link to the practical JSON formatting guide.")
+if json_guide_parser and "/tools/json-formatter/" not in json_guide_parser.hrefs:
+    fail("JSON formatting guide must link to the JSON Formatter landing page.")
+
 # Keep the image guide aligned with the actual compressor output contract.
 image_guide = (ROOT / "guides/reduce-image-size/index.html").read_text(encoding="utf-8")
 missing_image_disclosures = missing_image_compressor_disclosures(image_guide)
