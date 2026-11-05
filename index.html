@@ -295,6 +295,7 @@ async function processImages(id){const out=$('#result');out.textContent='Process
   }
  }});
  out.textContent='Preparing the transparent PNG…';
+ await new Promise(resolve=>requestAnimationFrame(resolve));
  download(result,'buytools-background-removed.png');
  const u=URL.createObjectURL(result);
  const p=$('#preview');p.src=u;p.classList.remove('hidden');
