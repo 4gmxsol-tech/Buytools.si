@@ -50,20 +50,20 @@ class ImageCompressorDisclosureTests(unittest.TestCase):
 
 class CsvExportSafetyDisclosureTests(unittest.TestCase):
     def test_complete_disclosure_is_accepted(self):
-        html = "Formula-like values get a leading apostrophe as a compatibility safeguard."
+        html = "Formula-like values get a leading apostrophe as a compatibility safeguard; leading tabs are also handled."
         self.assertEqual(missing_csv_export_safety_disclosures(html), [])
 
     def test_missing_formula_description_is_reported(self):
         html = "A leading apostrophe is added as a compatibility safeguard."
-        self.assertEqual(missing_csv_export_safety_disclosures(html), ["formula-like values"])
+        self.assertEqual(missing_csv_export_safety_disclosures(html), ["formula-like values", "leading tab"])
 
     def test_missing_apostrophe_disclosure_is_reported(self):
         html = "Formula-like values are changed as a compatibility safeguard."
-        self.assertEqual(missing_csv_export_safety_disclosures(html), ["leading apostrophe"])
+        self.assertEqual(missing_csv_export_safety_disclosures(html), ["leading apostrophe", "leading tab"])
 
     def test_missing_compatibility_caveat_is_reported(self):
         html = "Formula-like values get a leading apostrophe."
-        self.assertEqual(missing_csv_export_safety_disclosures(html), ["compatibility safeguard"])
+        self.assertEqual(missing_csv_export_safety_disclosures(html), ["compatibility safeguard", "leading tab"])
 
     def test_missing_leading_tab_disclosure_is_reported(self):
         html = "Formula-like values get a leading apostrophe as a compatibility safeguard."
