@@ -261,6 +261,37 @@ try {
   });
   const pngBuffer = Buffer.from(pngDataUrl.split(",")[1], "base64");
 
+  // Track preview object URLs to ensure replacing files and closing a tool releases them.
+  await page.evaluate(() => {
+    const createObjectURL = URL.createObjectURL.bind(URL);
+    const revokeObjectURL = URL.revokeObjectURL.bind(URL);
+    window.__buytoolsObjectUrlAudit = { created: [], revoked: [] };
+    URL.createObjectURL = blob => {
+      const url = createObjectURL(blob);
+      window.__buytoolsObjectUrlAudit.created.push(url);
+      return url;
+    };
+    URL.revokeObjectURL = url => {
+      window.__buytoolsObjectUrlAudit.revoked.push(url);
+      return revokeObjectURL(url);
+    };
+  });
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="image-compress"]').click();
+  await page.locator("#fileInput").setInputFiles({ name: "preview-first.png", mimeType: "image/png", buffer: pngBuffer });
+  await page.waitForFunction(() => document.querySelector("#preview")?.naturalWidth === 16);
+  const firstPreviewUrl = await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.at(-1));
+  await page.locator("#fileInput").setInputFiles({ name: "preview-second.png", mimeType: "image/png", buffer: pngBuffer });
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), firstPreviewUrl);
+  const secondPreviewUrl = await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.at(-1));
+  await page.locator("#closeWork").click();
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), secondPreviewUrl);
+  assert.deepEqual(
+    await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.slice(0, 2).every(url => window.__buytoolsObjectUrlAudit.revoked.includes(url))),
+    true,
+    "Replacing a selected image and closing the workspace must revoke both preview object URLs"
+  );
+
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="image-compress"]').click();
   await page.locator("#fileInput").setInputFiles({ name: "sample.png", mimeType: "image/png", buffer: pngBuffer });
@@ -279,6 +310,16 @@ try {
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="image-resize"]').click();
   await page.locator("#fileInput").setInputFiles({ name: "sample.png", mimeType: "image/png", buffer: pngBuffer });
+  await page.waitForFunction(() => document.querySelector("#preview")?.naturalWidth === 16);
+  const resizePreviewUrl = await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.at(-1));
+  const urlsBeforeDimensionLookup = await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.length);
+  await page.locator("#width").fill("40");
+  await page.waitForFunction(() => document.querySelector("#height")?.value === "20");
+  assert.equal(
+    await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.length),
+    urlsBeforeDimensionLookup,
+    "Aspect-ratio dimension lookup must not allocate another object URL"
+  );
   await page.locator("#width").fill("32");
   await page.locator("#height").fill("32");
   await page.locator("#run").click();
@@ -341,6 +382,7 @@ try {
 
   // Batch image compressor: validate ZIP contents, JPEG output and transparent-pixel fill.
   await page.locator("#closeWork").click();
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), resizePreviewUrl);
   await page.locator('[data-tool="batch-compress"]').click();
   await auditAccessibility("batch image compressor");
   await page.locator("#fileInput").setInputFiles(batchFiles);
