@@ -2,15 +2,15 @@
 """Dependency-light structural, SEO, internal-link and inline-JavaScript checks."""
 from html.parser import HTMLParser
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
-
-from site_validation import fragment_target_exists
+from urllib.parse import unquote, urljoin, urlparse
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
+
+from site_validation import fragment_target_exists
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
