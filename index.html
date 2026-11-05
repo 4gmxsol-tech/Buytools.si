@@ -283,16 +283,26 @@ async function processImages(id){const out=$('#result');out.textContent='Process
  out.setAttribute('aria-atomic','true');
  out.textContent='Loading the AI background-removal engine…';
  const mod=await import('https://esm.sh/@imgly/background-removal@1.5.5');
- let lastAsset='',lastProgressBucket=-1;
+ let lastAsset='',lastProgressBucket=-1,lastProgressMessage='';
  const result=await mod.removeBackground(f,{model:'isnet_fp16',progress:(key,current,total)=>{
   if(!Number.isFinite(current)||!Number.isFinite(total)||total<=0)return;
-  const assetName=String(key||'model asset').split(/[?#]/,1)[0].split('/').filter(Boolean).pop()||'model asset';
-  const percent=Math.max(0,Math.min(100,Math.round(current/total*100)));
-  const progressBucket=Math.floor(percent/10)*10;
-  if(assetName!==lastAsset||progressBucket!==lastProgressBucket){
-   out.textContent='Downloading AI asset '+assetName+': '+percent+'% ('+current.toLocaleString()+' of '+total.toLocaleString()+'). The first run can take longer.';
-   lastAsset=assetName;lastProgressBucket=progressBucket;
+  const progressKey=String(key||'model asset');
+  let message='';
+  if(progressKey.startsWith('compute:')){
+   const stage=progressKey.slice('compute:'.length);
+   const stageLabels={decode:'Decoding image',inference:'Running local AI inference',encode:'Encoding transparent PNG'};
+   const label=stageLabels[stage]||'Processing image';
+   message=label+': '+current.toLocaleString()+' of '+total.toLocaleString()+' steps.';
+  }else{
+   const assetName=progressKey.split(/[?#]/,1)[0].split('/').filter(Boolean).pop()||'model asset';
+   const percent=Math.max(0,Math.min(100,Math.round(current/total*100)));
+   const progressBucket=Math.floor(percent/10)*10;
+   if(assetName!==lastAsset||progressBucket!==lastProgressBucket){
+    message='Downloading AI asset '+assetName+': '+percent+'% ('+formatBytes(current)+' of '+formatBytes(total)+'). The first run can take longer.';
+    lastAsset=assetName;lastProgressBucket=progressBucket;
+   }
   }
+  if(message&&message!==lastProgressMessage){out.textContent=message;lastProgressMessage=message;}
  }});
  out.textContent='Preparing the transparent PNG…';
  await new Promise(resolve=>requestAnimationFrame(resolve));

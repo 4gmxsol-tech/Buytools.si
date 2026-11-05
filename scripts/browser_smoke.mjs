@@ -499,12 +499,29 @@ try {
   assert.equal(progressEvidence.role, "status", "Background-removal progress should be exposed as a status message");
   assert.equal(progressEvidence.ariaLive, "polite", "Progress updates should be announced politely to assistive technology");
   assert.ok(
-    progressEvidence.messages.some(message => /Downloading AI asset/i.test(message)),
-    "The progress UI should distinguish model-asset downloads from image inference"
+    progressEvidence.messages.some(message => /Downloading AI asset isnet_fp16:.*MB.*MB/i.test(message)),
+    "Model-asset progress should display human-readable transferred-byte totals"
+  );
+  assert.ok(
+    progressEvidence.messages.some(message => /Decoding image:/i.test(message)),
+    "The progress UI should identify local image decoding"
+  );
+  assert.ok(
+    progressEvidence.messages.some(message => /Running local AI inference:/i.test(message)),
+    "The progress UI should distinguish local inference from network downloads"
+  );
+  assert.ok(
+    progressEvidence.messages.some(message => /Encoding transparent PNG:/i.test(message)),
+    "The progress UI should identify local output encoding"
   );
   assert.ok(
     progressEvidence.messages.some(message => /Preparing the transparent PNG/i.test(message)),
     "The progress UI should identify the post-inference output-preparation stage"
+  );
+  assert.equal(
+    progressEvidence.messages.some(message => /Downloading AI asset compute:/i.test(message)),
+    false,
+    "Local compute stages must not be mislabeled as asset downloads"
   );
   assert.equal(
     progressEvidence.messages.some(message => /^Processing image:/i.test(message)),
@@ -758,7 +775,7 @@ try {
   console.log("Background-removal default-model audit: " + JSON.stringify({
     outputBytes: backgroundOutput.length,
     durationMs: backgroundDurationMs,
-    progressMessages: progressEvidence.messages.filter(message => /Downloading AI asset|Preparing the transparent PNG/i.test(message)),
+    progressMessages: progressEvidence.messages.filter(message => /Downloading AI asset|Decoding image|Running local AI inference|Encoding transparent PNG|Preparing the transparent PNG/i.test(message)),
     lightThemeStatusRole: progressEvidence.role,
     externalRequestCount: backgroundRelevantRequests.length,
     modelAssetRequests: defaultModelRequests.length,
@@ -791,7 +808,7 @@ try {
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");
   const externalHosts = [...new Set(thirdPartyRequests.map(url => url.hostname))].sort();
   console.log("On-demand third-party request hosts observed: " + externalHosts.join(", "));
-  console.log(`Browser smoke tests passed: ${toolCount} tool cards; initial first-party-only page load; on-demand QR, PDF, ZIP and image-to-PDF requests; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, downloads, theme, 390px mobile layout and axe audits.`);
+  console.log(`Browser smoke tests passed: ${toolCount} tool cards; initial first-party-only page load; on-demand QR, PDF, ZIP and image-to-PDF requests; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, stage-aware background-removal download/decode/inference/encode progress, quantized-model benchmark, downloads, theme, 390px mobile layout and axe audits.`);
 } finally {
   await browser.close();
 }
