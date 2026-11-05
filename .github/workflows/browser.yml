@@ -38,7 +38,7 @@ jobs:
           exit 1
       - name: Exercise critical browser workflows
         run: node scripts/browser_smoke.mjs
-      - name: Run Lighthouse mobile and desktop baselines
+      - name: Run Lighthouse branch and production baselines
         run: |
           set -euo pipefail
           mkdir -p lighthouse-reports
@@ -59,6 +59,14 @@ jobs:
           run_audit csv-viewer-mobile "http://127.0.0.1:8000/tools/csv-viewer/" mobile
           run_audit json-guide-mobile "http://127.0.0.1:8000/guides/format-json-online/" mobile
           run_audit image-guide-mobile "http://127.0.0.1:8000/guides/reduce-image-size/" mobile
+          # Local reports measure the pull-request branch without production cache/CDN effects.
+          # Live reports measure the currently deployed production site and its real delivery path.
+          run_audit live-home-mobile "https://buytools.si/" mobile
+          run_audit live-home-desktop "https://buytools.si/" desktop
+          run_audit live-json-workspace-mobile "https://buytools.si/?tool=json" mobile
+          run_audit live-csv-viewer-mobile "https://buytools.si/tools/csv-viewer/" mobile
+          run_audit live-json-guide-mobile "https://buytools.si/guides/format-json-online/" mobile
+          run_audit live-image-guide-mobile "https://buytools.si/guides/reduce-image-size/" mobile
           node scripts/lighthouse_summary.mjs lighthouse-reports/*.json
       - name: Upload Lighthouse JSON reports
         if: always()
