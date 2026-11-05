@@ -12,6 +12,7 @@ permissions:
 jobs:
   browser-smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -20,10 +21,12 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
-      - name: Install Playwright
-        run: npm install --no-save --no-package-lock playwright@1.56.1 pdf-lib@1.17.1 axe-core@4.10.3 jszip@3.10.1
+      - name: Install browser test and Lighthouse dependencies
+        run: npm install --no-save --no-package-lock playwright@1.56.1 pdf-lib@1.17.1 axe-core@4.10.3 jszip@3.10.1 lighthouse@13.4.1
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+      - name: Test Lighthouse report summarizer
+        run: node --test scripts/test_lighthouse_summary.mjs
       - name: Start local static server
         run: |
           python3 -m http.server 8000 --bind 127.0.0.1 >/tmp/buytools-http.log 2>&1 &
@@ -35,3 +38,32 @@ jobs:
           exit 1
       - name: Exercise critical browser workflows
         run: node scripts/browser_smoke.mjs
+      - name: Run Lighthouse mobile and desktop baselines
+        run: |
+          set -euo pipefail
+          mkdir -p lighthouse-reports
+          export CHROME_PATH="$(node --input-type=module -e 'import { chromium } from "playwright"; process.stdout.write(chromium.executablePath());')"
+          run_audit() {
+            local name="$1"
+            local url="$2"
+            local device="$3"
+            if [ "$device" = "desktop" ]; then
+              npx lighthouse "$url" --quiet --preset=desktop --chrome-flags="--headless --no-sandbox" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path="lighthouse-reports/${name}.json"
+            else
+              npx lighthouse "$url" --quiet --form-factor=mobile --chrome-flags="--headless --no-sandbox" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path="lighthouse-reports/${name}.json"
+            fi
+          }
+          run_audit home-mobile "http://127.0.0.1:8000/" mobile
+          run_audit home-desktop "http://127.0.0.1:8000/" desktop
+          run_audit json-workspace-mobile "http://127.0.0.1:8000/?tool=json" mobile
+          run_audit csv-viewer-mobile "http://127.0.0.1:8000/tools/csv-viewer/" mobile
+          run_audit json-guide-mobile "http://127.0.0.1:8000/guides/format-json-online/" mobile
+          run_audit image-guide-mobile "http://127.0.0.1:8000/guides/reduce-image-size/" mobile
+          node scripts/lighthouse_summary.mjs lighthouse-reports/*.json
+      - name: Upload Lighthouse JSON reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-baseline-${{ github.run_id }}
+          path: lighthouse-reports/*.json
+          if-no-files-found: warn
