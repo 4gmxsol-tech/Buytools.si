@@ -10,7 +10,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon
+from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -217,6 +217,12 @@ if homepage_parser:
 for url in sitemap_urls:
     if urlparse(url).path.startswith(("/tools/", "/guides/")) and url not in homepage_discovery_links:
         fail(f"Public tool/guide page is not linked from homepage: {url}")
+
+# Keep the image guide aligned with the actual compressor output contract.
+image_guide = (ROOT / "guides/reduce-image-size/index.html").read_text(encoding="utf-8")
+missing_image_disclosures = missing_image_compressor_disclosures(image_guide)
+if missing_image_disclosures:
+    fail("Image guide is missing accurate compressor disclosures: " + ", ".join(missing_image_disclosures))
 
 # Check that each homepage catalogue ID has a corresponding tool renderer branch.
 home = (ROOT / "index.html").read_text(encoding="utf-8")
