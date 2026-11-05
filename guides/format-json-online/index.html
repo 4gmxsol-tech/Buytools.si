@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="index,follow,max-image-preview:large">
-<title>JSON Formatter &amp; Validator: Check JSON Syntax Online | BuyTools.si</title>
-<meta name="description" content="Learn how to format JSON, validate JSON syntax, fix common parsing errors and minify data. Includes practical examples and a free browser-based JSON formatter.">
+<title>How to Format JSON Online: Formatter, Validation &amp; Syntax Guide | BuyTools.si</title>
+<meta name="description" content="Learn how to format a JSON string online, validate JSON syntax, check common errors and minify data with clear examples and a free browser-based formatter.">
 <link rel="canonical" href="https://buytools.si/guides/format-json-online/"><link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <meta name="theme-color" content="#0d0f17"><meta property="og:type" content="article"><meta property="og:site_name" content="BuyTools.si">
 <meta property="og:title" content="JSON Formatter &amp; Validator: Check JSON Syntax Online"><meta property="og:description" content="A practical guide to formatting, validating and debugging JSON, with examples of valid syntax and common errors."><meta property="og:url" content="https://buytools.si/guides/format-json-online/"><meta name="twitter:card" content="summary">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
-{"@type":"Article","headline":"JSON Formatter and Validator: How to Check and Fix JSON Syntax","description":"A practical guide to formatting, validating and debugging JSON, with examples of valid syntax and common errors.","mainEntityOfPage":"https://buytools.si/guides/format-json-online/","dateModified":"2026-11-03","author":{"@type":"Organization","name":"BuyTools.si"},"publisher":{"@type":"Organization","name":"BuyTools.si","url":"https://buytools.si/"}},
+{"@type":"Article","headline":"How to Format JSON Online: Validation, Syntax Checks and Examples","description":"Learn to format a JSON string, validate JSON syntax and troubleshoot common errors with practical examples.","dateModified":"2026-11-05","mainEntityOfPage":"https://buytools.si/guides/format-json-online/","dateModified":"2026-11-03","author":{"@type":"Organization","name":"BuyTools.si"},"publisher":{"@type":"Organization","name":"BuyTools.si","url":"https://buytools.si/"}},
 {"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://buytools.si/"},{"@type":"ListItem","position":2,"name":"Guides","item":"https://buytools.si/guides/"},{"@type":"ListItem","position":3,"name":"Format and Validate JSON","item":"https://buytools.si/guides/format-json-online/"}]}
 ]}
 </script>
@@ -18,7 +18,7 @@
 <body>
 <header class="wrap nav"><a class="brand" href="/">buytools<span>.</span>si</a><a href="/#tools">Explore free tools ↗</a></header>
 <main class="wrap">
-<section class="hero"><div class="eyebrow">BuyTools.si · Developer guide</div><h1>How to Format, Validate and Fix JSON</h1><p>Make nested data easier to read, check whether a JSON document is valid, and troubleshoot common syntax errors with practical examples.</p><a class="cta" href="/tools/json-formatter/">Open the free JSON formatter ↗</a></section>
+<section class="hero"><div class="eyebrow">BuyTools.si · Developer guide</div><h1>How to Format JSON Online, Validate Syntax and Fix Errors</h1><p>Format a JSON string into readable, indented data, check whether a JSON document is valid, and troubleshoot syntax errors before using it in an API, configuration file or application.</p><a class="cta" href="/tools/json-formatter/">Open the free JSON formatter ↗</a></section>
 <section class="content">
 <h2>What is JSON formatting?</h2>
 <p>JSON (JavaScript Object Notation) is a text-based data format used to exchange structured information between applications, web services and APIs. A JSON formatter adds indentation and line breaks so objects and arrays are easier to inspect. Formatting improves readability; it does not repair invalid syntax or change the underlying values.</p>
@@ -26,6 +26,15 @@
 <h2>How to format JSON online</h2>
 <ol><li>Open the <a href="/tools/json-formatter/">free JSON Formatter and Validator</a>.</li><li>Paste the complete JSON document into the input editor.</li><li>Select <strong>Format</strong> to add consistent two-space indentation.</li><li>Review the output, then use <strong>Copy output</strong> to copy it.</li></ol>
 <p>The formatter runs in your browser. It does not require an account or send the JSON text to a formatting API.</p>
+<h2>How to format a JSON string</h2>
+<p>A JSON string is text that represents a JSON value, such as an object or array. To format it, the text must first contain valid JSON syntax. Paste the complete string into the <a href="/tools/json-formatter/">online JSON formatter</a>, choose <strong>Format</strong>, and copy the indented result. If validation fails, correct the reported syntax issue before formatting.</p>
+<p>For JavaScript developers, the equivalent operation is to parse the string and serialize the value with indentation:</p>
+<pre class="code-sample">const jsonText = '{"name":"Ada","active":true,"roles":["admin","editor"]}';
+const formatted = JSON.stringify(JSON.parse(jsonText), null, 2);
+console.log(formatted);</pre>
+<p><code>JSON.parse()</code> rejects invalid JSON. The third argument to <code>JSON.stringify()</code> sets the indentation width; <code>2</code> produces two-space indentation. This changes whitespace, not the represented data.</p>
+<h2>How to check JSON syntax online</h2>
+<p>Use a JSON syntax checker when an API response, configuration file or pasted JSON string will not parse. Paste the entire document into the validator and select <strong>Validate</strong>. A valid result confirms that the text follows JSON syntax; an error result gives you a starting location to inspect. Check the surrounding line as well, because a missing comma or quote can cause the parser to report a later character.</p>
 <h2>Valid JSON example</h2>
 <p>This is a valid JSON object containing strings, a number, a Boolean, an array and a nested object:</p>
 <pre class="code-sample">{
@@ -72,6 +81,8 @@
 <p>Continue working with structured data using the <a href="/tools/csv-json-converter/">CSV to JSON converter</a> and <a href="/tools/json-to-typescript/">JSON to TypeScript converter</a>. You can also test patterns with the <a href="/tools/regex-tester/">Regex tester</a> or preview documentation with the <a href="/tools/markdown-preview/">Markdown preview</a>.</p>
 </section>
 <section class="content" id="faq"><h2>JSON formatting FAQs</h2>
+<details><summary>How do I format a JSON string?</summary><p>Paste the complete JSON string into a formatter and select Format. The string must be valid JSON first; if it is not, use validation diagnostics to fix the syntax before formatting.</p></details>
+<details><summary>How can I check JSON syntax online?</summary><p>Paste the complete object or array into a JSON validator and select Validate. Check any reported line and column, then inspect nearby quotes, commas, colons and brackets.</p></details>
 <details><summary>How do I check if JSON is valid?</summary><p>Paste the complete document into a JSON validator and run Validate. A valid document follows JSON syntax rules, including double-quoted strings and property names, correct separators and matching braces and brackets.</p></details>
 <details><summary>Does a JSON formatter fix invalid JSON?</summary><p>No. A formatter can make valid JSON easier to read, but invalid syntax must be corrected first. Use the validation error and its line context to locate the problem.</p></details>
 <details><summary>Does formatting change the JSON data?</summary><p>Formatting changes whitespace and indentation only. It preserves the represented values and structure when the input is valid JSON.</p></details>
