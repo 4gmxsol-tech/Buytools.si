@@ -154,6 +154,7 @@ try {
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="csv-viewer"]').click();
   assert.match(await page.locator("#csvSafetyNote").innerText(), /leading apostrophe/i);
+  await auditAccessibility("CSV Viewer tool");
   const csvFixture = [
     "sku,product,category,stock,formula,spacedFormula,tabbed,plusNumeric,fullWidth,lineBreak",
     "A-104,Desk lamp,Home,-5,-5,plain,plain,-5,plain,plain",
