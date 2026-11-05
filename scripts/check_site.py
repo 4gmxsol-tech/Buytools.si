@@ -255,6 +255,8 @@ if "Choose a .csv file up to 5 MiB" not in csv_viewer_page or "not uploaded to a
     fail("CSV Viewer landing page must accurately disclose local file selection and its size limit.")
 
 privacy_text = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
+if "CSV Viewer" not in privacy_text or "5 MiB" not in privacy_text or "browser File API" not in privacy_text or "not uploaded to a BuyTools.si processing endpoint" not in privacy_text:
+    fail("Privacy policy must describe local CSV file reading and the 5 MiB limit.")
 
 # Keep privacy disclosures synchronized with third-party requests in the homepage tool code.
 dynamic_import_urls = re.findall(r"""import\(['"](https?://[^'"]+)['"]\)""", home)
