@@ -58,6 +58,7 @@ Linus,Developer,true</pre>
 <p>Notice that <code>"true"</code> is a string, not the JSON Boolean <code>true</code>. Convert value types in your application if your destination expects numbers, Booleans or dates.</p>
 <h2>Convert JSON arrays into CSV</h2>
 <p>For JSON to CSV conversion, provide an array of objects at the top level. The converter collects the property names used across the objects to form the CSV header. If an object is missing a property, that cell is left empty. Nested objects and arrays are serialized as compact JSON text inside the corresponding CSV cell.</p>
+<p>When converting JSON to CSV, formula-like values are prefixed with a leading apostrophe as a compatibility safeguard for spreadsheet applications. Plain numeric values, including negative numbers such as <code>-5</code>, remain unchanged. Spreadsheet import behavior varies, so review the output in your target app before sharing it.</p>
 <h3>Example JSON input</h3>
 <pre class="sample">[
   { "name": "Ada", "team": "Research" },
