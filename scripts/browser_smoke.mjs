@@ -296,6 +296,7 @@ try {
   await page.locator("#fileInput").setInputFiles({ name: "sample.png", mimeType: "image/png", buffer: pngBuffer });
   await page.locator("#run").click();
   await page.locator("#result a").waitFor();
+  const compressedResultUrl = await page.locator("#result a").evaluate(anchor => anchor.href);
   const [compressedDownload] = await Promise.all([
     page.waitForEvent("download"),
     page.locator("#result a").click()
@@ -307,6 +308,7 @@ try {
   assert.ok(compressedBytes > 0, "Image compressor produced an empty file");
 
   await page.locator("#closeWork").click();
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), compressedResultUrl);
   await page.locator('[data-tool="image-resize"]').click();
   await page.locator("#fileInput").setInputFiles({ name: "sample.png", mimeType: "image/png", buffer: pngBuffer });
   await page.waitForFunction(() => document.querySelector("#preview")?.naturalWidth === 16);
@@ -629,6 +631,7 @@ try {
   await backgroundClickPromise;
   const backgroundDownload = await backgroundDownloadPromise;
   await page.getByText(/Background removal complete/i).waitFor({ timeout: 240000 });
+  const backgroundPreviewUrl = await page.locator("#preview").evaluate(image => image.src);
   const backgroundDurationMs = Date.now() - backgroundStartedAt;
   const backgroundOutput = await readDownloadBuffer(backgroundDownload);
   assert.ok(backgroundOutput.length > 8, "Background removal returned an empty file");
@@ -955,6 +958,9 @@ try {
     },
     knownTransferReductionPercent: Number(((1 - quantizedKnownBytes / defaultKnownBytes) * 100).toFixed(1))
   }, null, 2));
+
+  await page.locator("#closeWork").click();
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), backgroundPreviewUrl);
 
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");
   const externalHosts = [...new Set(thirdPartyRequests.map(url => url.hostname))].sort();
