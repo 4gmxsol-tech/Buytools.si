@@ -261,11 +261,42 @@ try {
   });
   const pngBuffer = Buffer.from(pngDataUrl.split(",")[1], "base64");
 
+  // Track preview object URLs to ensure replacing files and closing a tool releases them.
+  await page.evaluate(() => {
+    const createObjectURL = URL.createObjectURL.bind(URL);
+    const revokeObjectURL = URL.revokeObjectURL.bind(URL);
+    window.__buytoolsObjectUrlAudit = { created: [], revoked: [] };
+    URL.createObjectURL = blob => {
+      const url = createObjectURL(blob);
+      window.__buytoolsObjectUrlAudit.created.push(url);
+      return url;
+    };
+    URL.revokeObjectURL = url => {
+      window.__buytoolsObjectUrlAudit.revoked.push(url);
+      return revokeObjectURL(url);
+    };
+  });
   await page.locator("#closeWork").click();
+  await page.locator('[data-tool="image-compress"]').click();
+  await page.locator("#fileInput").setInputFiles({ name: "preview-first.png", mimeType: "image/png", buffer: pngBuffer });
+  await page.waitForFunction(() => document.querySelector("#preview")?.naturalWidth === 16);
+  const firstPreviewUrl = await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.at(-1));
+  await page.locator("#fileInput").setInputFiles({ name: "preview-second.png", mimeType: "image/png", buffer: pngBuffer });
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), firstPreviewUrl);
+  const secondPreviewUrl = await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.at(-1));
+  await page.locator("#closeWork").click();
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), secondPreviewUrl);
+  assert.deepEqual(
+    await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.slice(0, 2).every(url => window.__buytoolsObjectUrlAudit.revoked.includes(url))),
+    true,
+    "Replacing a selected image and closing the workspace must revoke both preview object URLs"
+  );
+
   await page.locator('[data-tool="image-compress"]').click();
   await page.locator("#fileInput").setInputFiles({ name: "sample.png", mimeType: "image/png", buffer: pngBuffer });
   await page.locator("#run").click();
   await page.locator("#result a").waitFor();
+  const compressedResultUrl = await page.locator("#result a").evaluate(anchor => anchor.href);
   const [compressedDownload] = await Promise.all([
     page.waitForEvent("download"),
     page.locator("#result a").click()
@@ -277,12 +308,24 @@ try {
   assert.ok(compressedBytes > 0, "Image compressor produced an empty file");
 
   await page.locator("#closeWork").click();
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), compressedResultUrl);
   await page.locator('[data-tool="image-resize"]').click();
   await page.locator("#fileInput").setInputFiles({ name: "sample.png", mimeType: "image/png", buffer: pngBuffer });
+  await page.waitForFunction(() => document.querySelector("#preview")?.naturalWidth === 16);
+  const resizePreviewUrl = await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.at(-1));
+  const urlsBeforeDimensionLookup = await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.length);
+  await page.locator("#width").fill("40");
+  await page.waitForFunction(() => document.querySelector("#height")?.value === "20");
+  assert.equal(
+    await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.length),
+    urlsBeforeDimensionLookup,
+    "Aspect-ratio dimension lookup must not allocate another object URL"
+  );
   await page.locator("#width").fill("32");
   await page.locator("#height").fill("32");
   await page.locator("#run").click();
   await page.locator("#result a").waitFor();
+  const resizedResultUrl = await page.locator("#result a").evaluate(anchor => anchor.href);
   const [resizedDownload] = await Promise.all([
     page.waitForEvent("download"),
     page.locator("#result a").click()
@@ -341,6 +384,8 @@ try {
 
   // Batch image compressor: validate ZIP contents, JPEG output and transparent-pixel fill.
   await page.locator("#closeWork").click();
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), resizePreviewUrl);
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), resizedResultUrl);
   await page.locator('[data-tool="batch-compress"]').click();
   await auditAccessibility("batch image compressor");
   await page.locator("#fileInput").setInputFiles(batchFiles);
@@ -555,6 +600,7 @@ try {
     mimeType: "image/png",
     buffer: backgroundFixture
   });
+  const backgroundInputPreviewUrl = await page.locator("#preview").evaluate(image => image.src);
   const requestsBeforeDecline = thirdPartyRequestDetails.length;
   const declineDialogPromise = page.waitForEvent("dialog");
   const declineClickPromise = page.locator("#run").click();
@@ -588,6 +634,8 @@ try {
   await backgroundClickPromise;
   const backgroundDownload = await backgroundDownloadPromise;
   await page.getByText(/Background removal complete/i).waitFor({ timeout: 240000 });
+  const backgroundPreviewUrl = await page.locator("#preview").evaluate(image => image.src);
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), backgroundInputPreviewUrl);
   const backgroundDurationMs = Date.now() - backgroundStartedAt;
   const backgroundOutput = await readDownloadBuffer(backgroundDownload);
   assert.ok(backgroundOutput.length > 8, "Background removal returned an empty file");
@@ -914,6 +962,9 @@ try {
     },
     knownTransferReductionPercent: Number(((1 - quantizedKnownBytes / defaultKnownBytes) * 100).toFixed(1))
   }, null, 2));
+
+  await page.locator("#closeWork").click();
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), backgroundPreviewUrl);
 
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");
   const externalHosts = [...new Set(thirdPartyRequests.map(url => url.hostname))].sort();
