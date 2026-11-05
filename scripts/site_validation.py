@@ -32,5 +32,6 @@ def missing_csv_export_safety_disclosures(html):
         "formula-like values",
         "leading apostrophe",
         "compatibility safeguard",
+        "leading tab",
     )
     return [phrase for phrase in required if phrase not in normalized]
