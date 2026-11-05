@@ -10,7 +10,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures
+from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -225,6 +225,11 @@ if json_tool_parser and "/guides/format-json-online/" not in json_tool_parser.hr
     fail("JSON Formatter landing page must link to the practical JSON formatting guide.")
 if json_guide_parser and "/tools/json-formatter/" not in json_guide_parser.hrefs:
     fail("JSON formatting guide must link to the JSON Formatter landing page.")
+
+json_guide_html = (ROOT / "guides/format-json-online/index.html").read_text(encoding="utf-8")
+missing_json_workflow = missing_json_file_workflow_disclosures(json_guide_html)
+if missing_json_workflow:
+    fail("JSON guide is missing practical local-file workflow details: " + ", ".join(missing_json_workflow))
 
 # Keep the image guide aligned with the actual compressor output contract.
 image_guide = (ROOT / "guides/reduce-image-size/index.html").read_text(encoding="utf-8")

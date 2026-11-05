@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures)
+from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -68,6 +68,37 @@ class CsvExportSafetyDisclosureTests(unittest.TestCase):
     def test_missing_leading_tab_disclosure_is_reported(self):
         html = "Formula-like values get a leading apostrophe as a compatibility safeguard."
         self.assertEqual(missing_csv_export_safety_disclosures(html), ["leading tab"])
+
+
+class JsonFileWorkflowDisclosureTests(unittest.TestCase):
+    def test_complete_local_file_workflow_is_accepted(self):
+        html = (
+            "Open the .json file in a text editor, copy the complete contents, "
+            "paste the text into the JSON Formatter, and save it as a new .json file. "
+            "The tool accepts pasted text rather than a direct file upload."
+        )
+        self.assertEqual(missing_json_file_workflow_disclosures(html), [])
+
+    def test_missing_direct_upload_limitation_is_reported(self):
+        html = (
+            "Open the .json file in a text editor, copy the complete contents, "
+            "paste the text into the JSON Formatter, and save it as a new .json file."
+        )
+        self.assertEqual(
+            missing_json_file_workflow_disclosures(html),
+            ["rather than a direct file upload"],
+        )
+
+    def test_missing_save_as_new_file_step_is_reported(self):
+        html = (
+            "Open the .json file in a text editor, copy the complete contents, "
+            "paste the text into the JSON Formatter. It accepts pasted text "
+            "rather than a direct file upload."
+        )
+        self.assertEqual(
+            missing_json_file_workflow_disclosures(html),
+            ["save it as a new .json file"],
+        )
 
 
 if __name__ == "__main__":
