@@ -10,10 +10,18 @@ const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
 const page = await context.newPage();
 const pageErrors = [];
+const thirdPartyRequests = [];
 page.on("pageerror", error => pageErrors.push(error.message));
+page.on("request", request => {
+  const requestUrl = new URL(request.url());
+  if (requestUrl.hostname !== "127.0.0.1" && requestUrl.hostname !== "localhost") {
+    thirdPartyRequests.push(requestUrl);
+  }
+});
 
 try {
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+  assert.equal(thirdPartyRequests.length, 0, "Initial page load must not contact third-party hosts before a tool is used");
 
   // Crawlable homepage directory and reciprocal CSV tool-page navigation.
   const csvViewerDirectoryLink = page.locator('a[href="/tools/csv-viewer/"]');
@@ -75,6 +83,25 @@ try {
   await page.locator('[data-csv="tocsv"]').click();
   assert.match(await page.locator("#text").inputValue(), /"Ada, Lovelace"/);
   assert.match(await page.locator("#text").inputValue(), /"said ""hello"""/);
+
+
+  // QR generator: verify the disclosed third-party request occurs only after an explicit action and encodes the input safely.
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="qr"]').click();
+  await page.route("https://api.qrserver.com/**", route => route.fulfill({
+    status: 200,
+    contentType: "image/svg+xml",
+    body: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="#fff"/></svg>'
+  }));
+  const qrInput = "https://example.com/?a=1&b=two words";
+  await page.locator("#text").fill(qrInput);
+  const [qrRequest] = await Promise.all([
+    page.waitForRequest(request => request.url().startsWith("https://api.qrserver.com/v1/create-qr-code/")),
+    page.locator("#run").click()
+  ]);
+  assert.equal(new URL(qrRequest.url()).searchParams.get("data"), qrInput, "QR input must be URL-encoded into the disclosed data parameter");
+  assert.equal(thirdPartyRequests.filter(url => url.hostname === "api.qrserver.com").length, 1, "QR service should be called once after generation is requested");
+  await page.unroute("https://api.qrserver.com/**");
 
   // JSON to TypeScript: reserved interface name and mixed array union.
   await page.locator("#closeWork").click();
@@ -206,6 +233,7 @@ try {
   ]);
   await page.getByText(/Finished 2 image\(s\)/).waitFor();
   assert.match(batchCompressDownload.suggestedFilename(), /compressed-images\.zip$/i);
+  assert.ok(thirdPartyRequests.some(url => url.href.startsWith("https://esm.sh/jszip@3.10.1")), "ZIP library should load on demand when batch compression is run");
   const compressedZip = await JSZip.loadAsync(await readDownloadBuffer(batchCompressDownload));
   const compressedNames = Object.keys(compressedZip.files).filter(name => !compressedZip.files[name].dir).sort();
   assert.deepEqual(compressedNames, ["001-transparent-source.jpg", "002-portrait-source.jpg"]);
@@ -272,6 +300,7 @@ try {
   ]);
   await page.getByText(/Created a PDF with 2 image\(s\)\./).waitFor();
   assert.equal(imagesPdfDownload.suggestedFilename(), "buytools-images.pdf");
+  assert.ok(thirdPartyRequests.some(url => url.href.startsWith("https://esm.sh/jspdf@2.5.2")), "jsPDF should load on demand when Images to PDF is run");
   const imagesPdfBytes = await readDownloadBuffer(imagesPdfDownload);
   assert.ok(imagesPdfBytes.length > 500, "Images-to-PDF output should not be empty");
   const imagesPdf = await PDFDocument.load(imagesPdfBytes);
@@ -322,6 +351,7 @@ try {
   const mergedStream = await mergedDownload.createReadStream();
   let mergedBytes = Buffer.alloc(0);
   for await (const chunk of mergedStream) mergedBytes = Buffer.concat([mergedBytes, chunk]);
+  assert.ok(thirdPartyRequests.some(url => url.href.startsWith("https://esm.sh/pdf-lib@1.17.1")), "PDF library should load on demand when a PDF operation is run");
   const mergedDoc = await PDFDocument.load(mergedBytes);
   assert.equal(mergedDoc.getPageCount(), 3, "PDF merger should preserve all three input pages");
   assert.deepEqual(mergedDoc.getPages().map(p => p.getSize()), [
@@ -371,8 +401,11 @@ try {
   const dimensions = await page.evaluate(() => ({ width: window.innerWidth, scrollWidth: document.documentElement.scrollWidth }));
   assert.ok(dimensions.scrollWidth <= dimensions.width + 2, `Unexpected horizontal page overflow: ${JSON.stringify(dimensions)}`);
 
+  assert.equal(thirdPartyRequests.some(url => url.hostname === "staticimgly.com"), false, "Background-removal model assets must not load until that feature is explicitly run");
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");
-  console.log(`Browser smoke tests passed: ${toolCount} tool cards; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, downloads, theme, 390px mobile layout and axe audits.`);
+  const externalHosts = [...new Set(thirdPartyRequests.map(url => url.hostname))].sort();
+  console.log("On-demand third-party request hosts observed: " + externalHosts.join(", "));
+  console.log(`Browser smoke tests passed: ${toolCount} tool cards; initial first-party-only page load; on-demand QR, PDF, ZIP and image-to-PDF requests; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, downloads, theme, 390px mobile layout and axe audits.`);
 } finally {
   await browser.close();
 }
