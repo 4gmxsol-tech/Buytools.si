@@ -232,6 +232,10 @@ for host in ("api.qrserver.com", "staticimgly.com"):
         fail(f"Third-party processing or asset host missing from privacy policy: {host}")
 if "buytools-theme" not in privacy_text:
     fail("Browser theme storage key is not disclosed in the privacy policy.")
+if "at least 90.2 MiB" not in home or "at least 90.2 MiB" not in (ROOT / "tools/remove-background/index.html").read_text(encoding="utf-8"):
+    fail("Background-removal first-run model-size warning is missing from the workspace or landing page.")
+if "94,553,445 bytes" not in privacy_text or "90.2 MiB" not in privacy_text:
+    fail("Measured background-removal model download size is missing from the privacy policy.")
 catalogue_start = home.find("const tools=[")
 catalogue_end = home.find("\n];", catalogue_start)
 renderer_start = home.find("function toolMarkup(id)")

@@ -11,6 +11,7 @@ const context = await browser.newContext({ viewport: { width: 390, height: 844 }
 const page = await context.newPage();
 const pageErrors = [];
 const thirdPartyRequests = [];
+const thirdPartyRequestDetails = [];
 page.on("pageerror", error => pageErrors.push(error.message));
 page.on("request", request => {
   const requestUrl = new URL(request.url());
@@ -20,7 +21,28 @@ page.on("request", request => {
     requestUrl.hostname !== "localhost"
   ) {
     thirdPartyRequests.push(requestUrl);
+    const postData = request.postDataBuffer();
+    thirdPartyRequestDetails.push({
+      url: request.url(),
+      method: request.method(),
+      resourceType: request.resourceType(),
+      requestBodyBytes: postData ? postData.length : 0,
+      status: null,
+      contentType: null,
+      contentLengthBytes: null
+    });
   }
+});
+page.on("response", response => {
+  const detail = [...thirdPartyRequestDetails].reverse().find(item => item.url === response.url() && item.status === null);
+  if (!detail) return;
+  const headers = response.headers();
+  const contentLength = headers["content-length"];
+  detail.status = response.status();
+  detail.contentType = headers["content-type"] || null;
+  detail.contentLengthBytes = contentLength !== undefined && Number.isFinite(Number(contentLength))
+    ? Number(contentLength)
+    : null;
 });
 
 try {
@@ -402,10 +424,122 @@ try {
   await page.locator("#closeWork").click();
   await page.locator("#themeToggle").click();
   assert.equal(await page.locator("body").evaluate(el => el.classList.contains("light-theme")), true);
+  await page.waitForFunction(() => getComputedStyle(document.body).color === "rgb(23, 32, 51)", null, { timeout: 3000 });
   const dimensions = await page.evaluate(() => ({ width: window.innerWidth, scrollWidth: document.documentElement.scrollWidth }));
   assert.ok(dimensions.scrollWidth <= dimensions.width + 2, `Unexpected horizontal page overflow: ${JSON.stringify(dimensions)}`);
 
+  // Background removal: exercise the existing disclosed AI workflow with a synthetic image,
+  // record third-party response sizes where exposed, and verify no image payload is uploaded.
   assert.equal(thirdPartyRequests.some(url => url.hostname === "staticimgly.com"), false, "Background-removal model assets must not load until that feature is explicitly run");
+  await page.locator('[data-tool="background"]').click();
+  const lightThemeColors = await page.evaluate(() => ({
+    body: getComputedStyle(document.body).color,
+    dropHeading: getComputedStyle(document.querySelector("#drop > strong")).color,
+    filePicker: getComputedStyle(document.querySelector("#drop .filepick")).color,
+    directoryHeading: getComputedStyle(document.querySelector(".tool-directory .feature b")).color
+  }));
+  assert.deepEqual(lightThemeColors, {
+    body: "rgb(23, 32, 51)",
+    dropHeading: "rgb(23, 32, 51)",
+    filePicker: "rgb(23, 32, 51)",
+    directoryHeading: "rgb(23, 32, 51)"
+  }, "Light-theme foregrounds should use readable dark text on pale surfaces");
+  await auditAccessibility("background removal tool in light theme");
+  const backgroundFixtureData = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 128;
+    canvas.height = 128;
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#2457a6";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#f8f8f8";
+    context.beginPath();
+    context.arc(64, 64, 30, 0, Math.PI * 2);
+    context.fill();
+    return canvas.toDataURL("image/png");
+  });
+  const backgroundFixture = Buffer.from(backgroundFixtureData.split(",")[1], "base64");
+  await page.locator("#fileInput").setInputFiles({
+    name: "synthetic-background-audit.png",
+    mimeType: "image/png",
+    buffer: backgroundFixture
+  });
+  const backgroundAuditStart = thirdPartyRequestDetails.length;
+  const [backgroundDownload] = await Promise.all([
+    page.waitForEvent("download", { timeout: 240000 }),
+    page.locator("#run").click()
+  ]);
+  await page.getByText(/Background removal complete/i).waitFor({ timeout: 240000 });
+  const backgroundOutput = await readDownloadBuffer(backgroundDownload);
+  assert.ok(backgroundOutput.length > 8, "Background removal returned an empty file");
+  assert.equal(
+    backgroundOutput.subarray(0, 8).toString("hex"),
+    "89504e470d0a1a0a",
+    "Background removal should produce a valid PNG"
+  );
+
+  const backgroundRequests = thirdPartyRequestDetails.slice(backgroundAuditStart);
+  const backgroundRelevantRequests = backgroundRequests.filter(detail => {
+    const hostname = new URL(detail.url).hostname;
+    return hostname === "esm.sh" || hostname === "staticimgly.com";
+  });
+  assert.ok(
+    backgroundRelevantRequests.some(detail => new URL(detail.url).hostname === "esm.sh" && detail.url.includes("@imgly/background-removal@1.5.5")),
+    "Background removal should load the pinned IMG.LY library on demand"
+  );
+  assert.ok(
+    backgroundRelevantRequests.some(detail => new URL(detail.url).hostname === "staticimgly.com"),
+    "Background removal should fetch its disclosed model/WASM assets on demand"
+  );
+  assert.deepEqual(
+    backgroundRequests.filter(detail => detail.method !== "GET" || detail.requestBodyBytes > 0).map(detail => ({
+      host: new URL(detail.url).hostname,
+      method: detail.method,
+      requestBodyBytes: detail.requestBodyBytes
+    })),
+    [],
+    "Background-removal activation must not upload the selected image in an external request body"
+  );
+  const failedBackgroundResponses = backgroundRelevantRequests.filter(detail => ![200, 206, 304].includes(detail.status));
+  assert.deepEqual(
+    failedBackgroundResponses.map(detail => ({ url: detail.url, status: detail.status })),
+    [],
+    "All observed background-removal library/model requests should complete successfully"
+  );
+  const backgroundResourceTiming = await page.evaluate(() => performance.getEntriesByType("resource")
+    .filter(entry => entry.name.startsWith("http://") || entry.name.startsWith("https://"))
+    .filter(entry => {
+      const hostname = new URL(entry.name).hostname;
+      return hostname === "esm.sh" || hostname === "staticimgly.com";
+    })
+    .map(entry => ({
+      host: new URL(entry.name).hostname,
+      path: new URL(entry.name).pathname,
+      durationMs: Math.round(entry.duration),
+      transferSizeBytes: entry.transferSize || null,
+      encodedBodyBytes: entry.encodedBodySize || null,
+      decodedBodyBytes: entry.decodedBodySize || null
+    })));
+  const knownResponseBytes = backgroundRelevantRequests
+    .filter(detail => detail.contentLengthBytes !== null)
+    .reduce((sum, detail) => sum + detail.contentLengthBytes, 0);
+  console.log("Background-removal network audit: " + JSON.stringify({
+    outputBytes: backgroundOutput.length,
+    externalRequestCount: backgroundRelevantRequests.length,
+    contentLengthKnownResponses: backgroundRelevantRequests.filter(detail => detail.contentLengthBytes !== null).length,
+    summedContentLengthBytes: backgroundRelevantRequests.some(detail => detail.contentLengthBytes !== null) ? knownResponseBytes : null,
+    requests: backgroundRelevantRequests.map(detail => ({
+      host: new URL(detail.url).hostname,
+      path: new URL(detail.url).pathname,
+      method: detail.method,
+      status: detail.status,
+      contentType: detail.contentType,
+      contentLengthBytes: detail.contentLengthBytes,
+      requestBodyBytes: detail.requestBodyBytes
+    })),
+    resourceTiming: backgroundResourceTiming
+  }, null, 2));
+
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");
   const externalHosts = [...new Set(thirdPartyRequests.map(url => url.hostname))].sort();
   console.log("On-demand third-party request hosts observed: " + externalHosts.join(", "));
