@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures
+from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -46,6 +46,24 @@ class ImageCompressorDisclosureTests(unittest.TestCase):
     def test_missing_lossless_caveat_is_reported(self):
         html = "Currently exports JPEG files and does not preserve transparency."
         self.assertEqual(missing_image_compressor_disclosures(html), ["not a lossless png optimizer"])
+
+
+class CsvExportSafetyDisclosureTests(unittest.TestCase):
+    def test_complete_disclosure_is_accepted(self):
+        html = "Formula-like values get a leading apostrophe as a compatibility safeguard."
+        self.assertEqual(missing_csv_export_safety_disclosures(html), [])
+
+    def test_missing_formula_description_is_reported(self):
+        html = "A leading apostrophe is added as a compatibility safeguard."
+        self.assertEqual(missing_csv_export_safety_disclosures(html), ["formula-like values"])
+
+    def test_missing_apostrophe_disclosure_is_reported(self):
+        html = "Formula-like values are changed as a compatibility safeguard."
+        self.assertEqual(missing_csv_export_safety_disclosures(html), ["leading apostrophe"])
+
+    def test_missing_compatibility_caveat_is_reported(self):
+        html = "Formula-like values get a leading apostrophe."
+        self.assertEqual(missing_csv_export_safety_disclosures(html), ["compatibility safeguard"])
 
 
 if __name__ == "__main__":
