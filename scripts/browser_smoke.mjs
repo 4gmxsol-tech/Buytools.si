@@ -325,6 +325,7 @@ try {
   await page.locator("#height").fill("32");
   await page.locator("#run").click();
   await page.locator("#result a").waitFor();
+  const resizedResultUrl = await page.locator("#result a").evaluate(anchor => anchor.href);
   const [resizedDownload] = await Promise.all([
     page.waitForEvent("download"),
     page.locator("#result a").click()
@@ -384,6 +385,7 @@ try {
   // Batch image compressor: validate ZIP contents, JPEG output and transparent-pixel fill.
   await page.locator("#closeWork").click();
   await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), resizePreviewUrl);
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), resizedResultUrl);
   await page.locator('[data-tool="batch-compress"]').click();
   await auditAccessibility("batch image compressor");
   await page.locator("#fileInput").setInputFiles(batchFiles);
@@ -598,6 +600,7 @@ try {
     mimeType: "image/png",
     buffer: backgroundFixture
   });
+  const backgroundInputPreviewUrl = await page.locator("#preview").evaluate(image => image.src);
   const requestsBeforeDecline = thirdPartyRequestDetails.length;
   const declineDialogPromise = page.waitForEvent("dialog");
   const declineClickPromise = page.locator("#run").click();
@@ -632,6 +635,7 @@ try {
   const backgroundDownload = await backgroundDownloadPromise;
   await page.getByText(/Background removal complete/i).waitFor({ timeout: 240000 });
   const backgroundPreviewUrl = await page.locator("#preview").evaluate(image => image.src);
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), backgroundInputPreviewUrl);
   const backgroundDurationMs = Date.now() - backgroundStartedAt;
   const backgroundOutput = await readDownloadBuffer(backgroundDownload);
   assert.ok(backgroundOutput.length > 8, "Background removal returned an empty file");
