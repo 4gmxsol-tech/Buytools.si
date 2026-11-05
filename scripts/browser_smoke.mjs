@@ -154,6 +154,7 @@ try {
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="csv-viewer"]').click();
   assert.match(await page.locator("#csvSafetyNote").innerText(), /leading apostrophe/i);
+  await auditAccessibility("CSV Viewer tool");
   const csvFixture = [
     "sku,product,category,stock,formula,spacedFormula,tabbed,plusNumeric,fullWidth,lineBreak",
     "A-104,Desk lamp,Home,-5,-5,plain,plain,-5,plain,plain",
@@ -188,6 +189,25 @@ try {
   assert.ok(csvOutput.includes("'＝1+1"), "CSV Viewer must neutralize full-width formula markers");
   assert.ok(csvOutput.includes("'\n=3+3"), "CSV Viewer must neutralize formula values after a leading line feed");
   assert.ok(!csvOutput.includes(",=1+1,"), "Unescaped formula-leading values must not remain in exported CSV");
+
+  // CSV Viewer: load a local file in-browser, then enforce the documented size limit.
+  const csvFileText = "sku,product\nA-104,Desk lamp\nB-208,USB cable";
+  const externalRequestsBeforeCsvFile = thirdPartyRequests.length;
+  const csvFileInput = page.locator("#csvFile");
+  assert.equal(await csvFileInput.count(), 1, "CSV Viewer should expose a labeled local file picker");
+  await csvFileInput.setInputFiles({ name: "inventory.csv", mimeType: "text/csv", buffer: Buffer.from(csvFileText) });
+  await page.waitForFunction(() => document.querySelector("#csvFileStatus")?.textContent?.includes("Loaded inventory.csv"));
+  assert.match(await page.locator("#csvFileStatus").innerText(), /Loaded inventory\.csv.*locally/i);
+  assert.equal(await page.locator("#text").inputValue(), csvFileText);
+  assert.equal(thirdPartyRequests.length, externalRequestsBeforeCsvFile, "Reading a local CSV file must not create third-party requests");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#csvTable tbody tr").count(), 2, "A selected local CSV should preview its data rows");
+  const previousCsvText = await page.locator("#text").inputValue();
+  await csvFileInput.setInputFiles({ name: "too-large.csv", mimeType: "text/csv", buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 0x61) });
+  assert.match(await page.locator("#csvFileStatus").innerText(), /exceeds the 5 MiB limit/i);
+  assert.equal(await page.locator("#csvTools").isVisible(), false, "An oversized selection must hide any stale preview");
+  assert.equal(await page.locator("#csvExport").isDisabled(), true, "An oversized selection must disable stale exports");
+  assert.equal(await page.locator("#text").inputValue(), previousCsvText, "Rejecting an oversized file must not replace the current CSV text");
 
   // Browser-native image compression and resizing.
   const pngDataUrl = await page.evaluate(() => {
