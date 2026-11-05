@@ -494,6 +494,7 @@ try {
     "All observed background-removal library/model requests should complete successfully"
   );
   const backgroundResourceTiming = await page.evaluate(() => performance.getEntriesByType("resource")
+    .filter(entry => entry.name.startsWith("http://") || entry.name.startsWith("https://"))
     .filter(entry => {
       const hostname = new URL(entry.name).hostname;
       return hostname === "esm.sh" || hostname === "staticimgly.com";
