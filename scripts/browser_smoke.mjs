@@ -14,6 +14,20 @@ page.on("pageerror", error => pageErrors.push(error.message));
 
 try {
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+
+  // Crawlable homepage directory and reciprocal CSV tool-page navigation.
+  const csvViewerDirectoryLink = page.locator('a[href="/tools/csv-viewer/"]');
+  assert.equal(await csvViewerDirectoryLink.count(), 1, "Homepage should expose one crawlable CSV Viewer link");
+  await csvViewerDirectoryLink.click();
+  await page.waitForURL("**/tools/csv-viewer/");
+  assert.match(await page.locator("h1").innerText(), /CSV Viewer/i);
+  const csvConverterGuideLink = page.locator('a[href="/tools/csv-json-converter/"]');
+  assert.equal(await csvConverterGuideLink.count(), 1, "CSV Viewer should link to the dedicated CSV/JSON guide");
+  await csvConverterGuideLink.click();
+  await page.waitForURL("**/tools/csv-json-converter/");
+  assert.match(await page.locator("h1").innerText(), /CSV to JSON Converter/i);
+
+  await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
   await page.addScriptTag({ content: axe.source });
   async function auditAccessibility(label) {
     const result = await page.evaluate(async () => axe.run(document, {
@@ -358,7 +372,7 @@ try {
   assert.ok(dimensions.scrollWidth <= dimensions.width + 2, `Unexpected horizontal page overflow: ${JSON.stringify(dimensions)}`);
 
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");
-  console.log(`Browser smoke tests passed: ${toolCount} tool cards; JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, downloads, theme, 390px mobile layout and axe audits.`);
+  console.log(`Browser smoke tests passed: ${toolCount} tool cards; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, downloads, theme, 390px mobile layout and axe audits.`);
 } finally {
   await browser.close();
 }
