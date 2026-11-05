@@ -54,15 +54,15 @@ class CsvExportSafetyDisclosureTests(unittest.TestCase):
         self.assertEqual(missing_csv_export_safety_disclosures(html), [])
 
     def test_missing_formula_description_is_reported(self):
-        html = "A leading apostrophe is added as a compatibility safeguard."
+        html = "A leading apostrophe is added as a compatibility safeguard; leading tabs are also handled."
         self.assertEqual(missing_csv_export_safety_disclosures(html), ["formula-like values", "leading tab"])
 
     def test_missing_apostrophe_disclosure_is_reported(self):
-        html = "Formula-like values are changed as a compatibility safeguard."
+        html = "Formula-like values are changed as a compatibility safeguard; leading tabs are also handled."
         self.assertEqual(missing_csv_export_safety_disclosures(html), ["leading apostrophe", "leading tab"])
 
     def test_missing_compatibility_caveat_is_reported(self):
-        html = "Formula-like values get a leading apostrophe."
+        html = "Formula-like values get a leading apostrophe; leading tabs are also handled."
         self.assertEqual(missing_csv_export_safety_disclosures(html), ["compatibility safeguard", "leading tab"])
 
     def test_missing_leading_tab_disclosure_is_reported(self):
