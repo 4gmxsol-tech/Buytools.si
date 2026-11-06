@@ -632,17 +632,48 @@ try {
   await page.locator("#run").click();
   await page.getByText(/100 images or fewer/i).waitFor();
 
-  // Images to PDF: generate two pages from PNG/JPEG and verify page order/orientation.
+  // Images to PDF: cancel large selections before the jsPDF CDN request, then verify binary image handling.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="pdf-images"]').click();
   await auditAccessibility("images to PDF tool");
   await page.locator("#run").click();
   await page.getByText("Choose a file first.").waitFor();
+  const largeImageFixture = Buffer.alloc(26 * 1024 * 1024, 0);
+  const jsPdfRequestsBeforeLargeImageWarning = thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jspdf@2.5.2")).length;
+  await page.locator("#fileInput").setInputFiles({
+    name: "large-image.png",
+    mimeType: "image/png",
+    buffer: largeImageFixture
+  });
+  let imagesPdfWarningMessage = "";
+  page.once("dialog", async dialog => {
+    imagesPdfWarningMessage = dialog.message();
+    await dialog.dismiss();
+  });
+  await page.locator("#run").click();
+  await page.getByText(/Images-to-PDF conversion cancelled/i).waitFor();
+  assert.match(imagesPdfWarningMessage, /25 MiB large-image warning threshold/i);
+  assert.equal(
+    thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jspdf@2.5.2")).length,
+    jsPdfRequestsBeforeLargeImageWarning,
+    "Cancelling a large Images-to-PDF selection must happen before the jsPDF CDN is requested"
+  );
+
   await page.locator("#fileInput").setInputFiles(batchFiles);
+  await page.evaluate(() => {
+    const originalReadAsDataURL = FileReader.prototype.readAsDataURL;
+    window.__buytoolsRestoreImagePdfReader = () => {
+      FileReader.prototype.readAsDataURL = originalReadAsDataURL;
+    };
+    FileReader.prototype.readAsDataURL = function () {
+      throw new Error("Images-to-PDF should pass binary image bytes instead of using a base64 data URL");
+    };
+  });
   const [imagesPdfDownload] = await Promise.all([
     page.waitForEvent("download"),
     page.locator("#run").click()
   ]);
+  await page.evaluate(() => window.__buytoolsRestoreImagePdfReader());
   await page.getByText(/Created a PDF with 2 image\(s\)\./).waitFor();
   assert.equal(imagesPdfDownload.suggestedFilename(), "buytools-images.pdf");
   assert.ok(thirdPartyRequests.some(url => url.href.startsWith("https://esm.sh/jspdf@2.5.2")), "jsPDF should load on demand when Images to PDF is run");
