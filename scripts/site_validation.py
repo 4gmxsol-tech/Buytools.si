@@ -53,9 +53,9 @@ def missing_json_file_workflow_disclosures(html):
 
 def _meta_content(html, attribute, expected):
     """Return the content value for a meta tag matching one attribute."""
-    for tag in re.findall(r"<meta\\b[^>]*>", html, flags=re.IGNORECASE):
+    for tag in re.findall(r"<meta\b[^>]*>", html, flags=re.IGNORECASE):
         attrs = {}
-        for match in re.finditer(r"([a-zA-Z_:][-a-zA-Z0-9_:.]*)\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)')", tag):
+        for match in re.finditer(r"([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*(?:\"([^\"]*)\"|'([^']*)')", tag):
             attrs[match.group(1).lower()] = match.group(2) if match.group(2) is not None else match.group(3)
         if attrs.get(attribute) == expected:
             return attrs.get("content", "")
