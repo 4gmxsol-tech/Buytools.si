@@ -49,3 +49,40 @@ def missing_json_file_workflow_disclosures(html):
         "rather than a direct file upload",
     )
     return [phrase for phrase in required if phrase not in normalized]
+
+
+def _meta_content(html, attribute, expected):
+    """Return the content value for a meta tag matching one attribute."""
+    for tag in re.findall(r"<meta\\b[^>]*>", html, flags=re.IGNORECASE):
+        attrs = {}
+        for match in re.finditer(r"([a-zA-Z_:][-a-zA-Z0-9_:.]*)\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)')", tag):
+            attrs[match.group(1).lower()] = match.group(2) if match.group(2) is not None else match.group(3)
+        if attrs.get(attribute) == expected:
+            return attrs.get("content", "")
+    return ""
+
+
+def missing_batch_image_resizer_disclosures(html):
+    """Return inaccurate or missing metadata and output-format disclosures."""
+    description = " ".join(_meta_content(html, "name", "description").lower().split())
+    og_description = " ".join(_meta_content(html, "property", "og:description").lower().split())
+    visible_text = " ".join(re.sub(r"<[^>]+>", " ", html).lower().split())
+    missing = []
+
+    description_required = ("resize multiple images online", "maximum width and height", "png results")
+    if not all(phrase in description for phrase in description_required) or any(term in description for term in ("compress", "jpeg")):
+        missing.append("meta description must describe PNG resizing rather than JPEG compression")
+
+    og_required = ("resize multiple photos", "png results")
+    if not all(phrase in og_description for phrase in og_required) or any(term in og_description for term in ("compress", "jpeg")):
+        missing.append("Open Graph description must describe PNG resizing rather than JPEG compression")
+
+    output_required = (
+        "the resizer exports png files",
+        "png encoding is lossless for the resized image",
+        "resizing changes its pixel dimensions",
+    )
+    if not all(phrase in visible_text for phrase in output_required):
+        missing.append("visible output-format disclosure must explain PNG encoding and resize dimensions")
+
+    return missing
