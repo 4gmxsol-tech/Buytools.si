@@ -132,7 +132,6 @@ try {
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
 
   // CSV converter: BOM, normal conversion, duplicate-header guard and CSV quoting.
-  await page.locator("#closeWork").click();
   await page.locator('[data-tool="csv-json"]').click();
   await page.locator("#text").fill('\uFEFFname,age\nAda,36');
   await page.locator('[data-csv="tojson"]').click();
