@@ -117,8 +117,13 @@ try {
   assert.equal(cardRendering.contentVisibility, "auto", "Tool cards should defer offscreen rendering");
   assert.match(cardRendering.intrinsicSize, /190px/, "Deferred cards should reserve their existing minimum height");
   await lastToolCard.scrollIntoViewIfNeeded();
-  assert.ok(await lastToolCard.isVisible(), "A deferred tool card must render when brought into view");
-  assert.match(await lastToolCard.innerText(), /Open tool/i);
+  assert.ok(await lastToolCard.isVisible(), "A deferred tool card must remain visible when brought into view");
+  const renderedCard = await lastToolCard.evaluate(card => ({
+    height: card.getBoundingClientRect().height,
+    text: card.textContent || ""
+  }));
+  assert.ok(renderedCard.height >= 190, "A deferred tool card must recover its reserved layout size when brought into view");
+  assert.match(renderedCard.text, /Open tool/i, "Deferred card content must remain in the DOM");
 
   // Search and discoverability.
   await page.locator("#search").fill("CSV Viewer");
