@@ -370,6 +370,20 @@ if any(requirement.lower() not in home.lower() for requirement in qr_notice_requ
     fail("QR generator must show an accessible, tool-level disclosure before text is sent to the third-party QR service.")
 if "buytools-theme" not in privacy_text:
     fail("Browser theme storage key is not disclosed in the privacy policy.")
+
+# Large PDF jobs should warn before importing the browser-side PDF library.
+pdf_import = home.find("const {PDFDocument}=await import('https://esm.sh/pdf-lib@1.17.1')")
+pdf_warning_guard = home.find("const totalPdfBytes=chosenFiles.reduce((total,file)=>total+file.size,0),largePdfWarningThreshold=25*1024*1024")
+pdf_warning_dialog = home.find("25 MiB large-file warning threshold")
+if min(pdf_import, pdf_warning_guard, pdf_warning_dialog) < 0 or not (pdf_warning_guard < pdf_warning_dialog < pdf_import):
+    fail("PDF merge/split must validate size and ask before loading the PDF library for selections above 25 MiB.")
+if '<div class="result" id="result" role="status" aria-live="polite"></div>' not in home:
+    fail("File-processing status messages must be exposed to assistive technology.")
+pdf_merger_text = (ROOT / "tools/pdf-merger/index.html").read_text(encoding="utf-8")
+pdf_splitter_text = (ROOT / "tools/pdf-splitter/index.html").read_text(encoding="utf-8")
+for page_name, page_text in (("PDF merger", pdf_merger_text), ("PDF splitter", pdf_splitter_text)):
+    if "25 MiB" not in page_text or "before loading the PDF library" not in page_text or "especially on mobile" not in page_text:
+        fail(f"{page_name} page must disclose the large-file memory confirmation and mobile-memory caveat.")
 if "at least 90.2 MiB" not in home or "at least 90.2 MiB" not in (ROOT / "tools/remove-background/index.html").read_text(encoding="utf-8"):
     fail("Background-removal first-run model-size warning is missing from the workspace or landing page.")
 if "94,553,445 bytes" not in privacy_text or "90.2 MiB" not in privacy_text:
