@@ -12,6 +12,10 @@ No advertising network is wired into the site by this change. Do not publish a f
 6. Publish accurate privacy and terms information before enabling ad technology. Name the real advertising provider, describe its cookie/data practices, and add a consent mechanism when required for the audience and jurisdiction.
 7. Add ads.txt only with the exact line supplied by the approved advertising provider. Never guess the publisher ID or seller record.
 
+## Third-party license review gate
+
+The Background Removal feature loads `@imgly/background-removal@1.5.5`. The upstream project identifies this package as AGPL-3.0. AGPL-3.0 permits commercial use subject to its conditions; Section 13 includes source-availability obligations for certain modified versions used over a network. The legal effect of this site's browser integration has not been determined. Do not describe this feature as license-cleared for monetization or modify its integration until a qualified review confirms the applicable obligations, or an appropriate alternative license is obtained from IMG.LY. The public attribution notice is at `/licenses/`; keep it synchronized with the actual package version.
+
 ## Suggested placement plan
 - Primary placement: after the searchable tool grid, not inside the active tool workspace.
 - Optional second placement: after a substantial how-to guide, only if the page has enough content and the ad does not interrupt the instructions.

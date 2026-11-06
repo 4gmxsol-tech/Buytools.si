@@ -49,6 +49,20 @@ try {
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
   assert.equal(thirdPartyRequests.length, 0, "Initial page load must not contact third-party hosts before a tool is used");
 
+  // Public third-party license notice: attribution and license links must be reachable without third-party requests.
+  await page.goto("http://127.0.0.1:8000/licenses/", { waitUntil: "load" });
+  assert.match(await page.locator("h1").innerText(), /Open-source software notices/i);
+  assert.match(await page.locator("body").innerText(), /@imgly\/background-removal/);
+  assert.match(await page.locator("body").innerText(), /AGPL-3\.0/);
+  assert.equal(await page.locator('a[href="https://github.com/imgly/background-removal-js"]').count(), 1);
+  assert.equal(await page.locator('a[href="https://www.gnu.org/licenses/agpl-3.0.html"]').count(), 1);
+  await page.addScriptTag({ content: axe.source });
+  const licenseAxe = await page.evaluate(async () => axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } }));
+  assert.equal(licenseAxe.violations.filter(v => ["serious", "critical"].includes(v.impact)).length, 0, "License notice must have no serious or critical accessibility violations");
+  assert.equal(thirdPartyRequests.length, 0, "Reading license notices must not contact third-party hosts");
+  await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+  await page.addScriptTag({ content: axe.source });
+
   // Crawlable homepage directory and reciprocal CSV tool-page navigation.
   const csvViewerDirectoryLink = page.locator('a[href="/tools/csv-viewer/"]');
   assert.equal(await csvViewerDirectoryLink.count(), 1, "Homepage should expose one crawlable CSV Viewer link");
