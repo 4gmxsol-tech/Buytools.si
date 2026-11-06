@@ -296,6 +296,16 @@ for dependency_url in dynamic_import_urls:
 for host in ("api.qrserver.com", "staticimgly.com"):
     if host not in privacy_text:
         fail(f"Third-party processing or asset host missing from privacy policy: {host}")
+qr_notice_requirements = (
+    'for="text"',
+    'aria-describedby="qrPrivacyNotice"',
+    'id="qrPrivacyNotice"',
+    'sent to QRServer',
+    'Do not enter passwords',
+    'href="/privacy/"',
+)
+if any(requirement.lower() not in home.lower() for requirement in qr_notice_requirements):
+    fail("QR generator must show an accessible, tool-level disclosure before text is sent to the third-party QR service.")
 if "buytools-theme" not in privacy_text:
     fail("Browser theme storage key is not disclosed in the privacy policy.")
 if "at least 90.2 MiB" not in home or "at least 90.2 MiB" not in (ROOT / "tools/remove-background/index.html").read_text(encoding="utf-8"):
