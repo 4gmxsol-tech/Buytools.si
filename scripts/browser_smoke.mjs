@@ -75,6 +75,19 @@ try {
   await page.waitForURL("**/tools/csv-json-converter/");
   assert.match(await page.locator("h1").innerText(), /CSV to JSON Converter/i);
 
+  const csvJsonFormattingGuideLink = page.locator('a[href="/guides/format-json-online/"]');
+  assert.equal(await csvJsonFormattingGuideLink.count(), 1, "CSV/JSON converter should link to the JSON formatting guide");
+  await csvJsonFormattingGuideLink.click();
+  await page.waitForURL("**/guides/format-json-online/");
+  assert.match(await page.locator("h1").innerText(), /Format a JSON File Online/i);
+
+  await page.goto("http://127.0.0.1:8000/tools/json-to-typescript/", { waitUntil: "load" });
+  const jsonTypeGuideLink = page.locator('a[href="/guides/format-json-online/"]');
+  assert.equal(await jsonTypeGuideLink.count(), 1, "JSON to TypeScript should link to the JSON formatting guide");
+  await jsonTypeGuideLink.click();
+  await page.waitForURL("**/guides/format-json-online/");
+  assert.match(await page.locator("h1").innerText(), /Format a JSON File Online/i);
+
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
   await page.addScriptTag({ content: axe.source });
   async function auditAccessibility(label) {
