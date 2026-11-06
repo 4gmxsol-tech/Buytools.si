@@ -130,6 +130,7 @@ try {
   assert.match(qrNoticeText, /sent to QRServer/i);
   assert.match(qrNoticeText, /do not enter passwords.*confidential information/i);
   assert.equal(await page.locator("#text").getAttribute("aria-describedby"), "qrPrivacyNotice");
+  await auditAccessibility("QR Generator tool");
   assert.equal(thirdPartyRequests.filter(url => url.hostname === "api.qrserver.com").length, 0, "QR input must not be sent before the user requests generation");
   await page.route("https://api.qrserver.com/**", route => route.fulfill({
     status: 200,
