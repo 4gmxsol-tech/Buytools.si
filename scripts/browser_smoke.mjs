@@ -108,6 +108,23 @@ try {
   const toolCount = await page.locator('[data-tool]').count();
   assert.ok(toolCount >= 38, `Expected at least 38 tools, found ${toolCount}`);
 
+  // Offscreen tool cards should skip initial rendering work but remain in the DOM and render on demand.
+  const lastToolCard = page.locator('[data-tool]').last();
+  const cardRendering = await lastToolCard.evaluate(card => ({
+    contentVisibility: getComputedStyle(card).contentVisibility,
+    intrinsicSize: getComputedStyle(card).containIntrinsicSize
+  }));
+  assert.equal(cardRendering.contentVisibility, "auto", "Tool cards should defer offscreen rendering");
+  assert.match(cardRendering.intrinsicSize, /190px/, "Deferred cards should reserve their existing minimum height");
+  await lastToolCard.scrollIntoViewIfNeeded();
+  assert.ok(await lastToolCard.isVisible(), "A deferred tool card must remain visible when brought into view");
+  const renderedCard = await lastToolCard.evaluate(card => ({
+    height: card.getBoundingClientRect().height,
+    text: card.textContent || ""
+  }));
+  assert.ok(renderedCard.height >= 190, "A deferred tool card must recover its reserved layout size when brought into view");
+  assert.match(renderedCard.text, /Open tool/i, "Deferred card content must remain in the DOM");
+
   // Search and discoverability.
   await page.locator("#search").fill("CSV Viewer");
   assert.equal(await page.locator('[data-tool]').count(), 1);
