@@ -423,6 +423,31 @@ try {
   for await (const chunk of compressedStream) compressedBytes += chunk.length;
   assert.ok(compressedBytes > 0, "Image compressor produced an empty file");
 
+  // A canvas allocation failure must still close the decoded ImageBitmap.
+  await page.evaluate(() => {
+    window.__buytoolsBitmapCloseCount = 0;
+    const originalCreateImageBitmap = window.createImageBitmap;
+    const originalGetContext = HTMLCanvasElement.prototype.getContext;
+    window.__buytoolsRestoreCanvasFailure = () => {
+      window.createImageBitmap = originalCreateImageBitmap;
+      HTMLCanvasElement.prototype.getContext = originalGetContext;
+    };
+    window.createImageBitmap = async () => ({
+      width: 16,
+      height: 8,
+      close() { window.__buytoolsBitmapCloseCount += 1; }
+    });
+    HTMLCanvasElement.prototype.getContext = function (...args) {
+      if (this.width === 16 && this.height === 8) return null;
+      return originalGetContext.apply(this, args);
+    };
+  });
+  await page.locator("#run").click();
+  await page.getByText(/Could not process file: Your browser could not allocate a canvas/i).waitFor();
+  const singleBitmapCloseCount = await page.evaluate(() => window.__buytoolsBitmapCloseCount);
+  await page.evaluate(() => window.__buytoolsRestoreCanvasFailure());
+  assert.equal(singleBitmapCloseCount, 1, "Single-image canvas failure must close its ImageBitmap");
+
   await page.locator("#closeWork").click();
   await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), compressedResultUrl);
   await page.locator('[data-tool="image-resize"]').click();
@@ -526,6 +551,32 @@ try {
   const secondCompressed = await compressedZip.file("002-portrait-source.jpg").async("nodebuffer");
   const secondCompressedInfo = await inspectImageBuffer(secondCompressed, "image/jpeg");
   assert.deepEqual([secondCompressedInfo.width, secondCompressedInfo.height], [8, 16]);
+
+  // A batch canvas failure must close the current ImageBitmap and release its canvas.
+  await page.evaluate(() => {
+    window.__buytoolsBitmapCloseCount = 0;
+    const originalCreateImageBitmap = window.createImageBitmap;
+    const originalGetContext = HTMLCanvasElement.prototype.getContext;
+    window.__buytoolsRestoreCanvasFailure = () => {
+      window.createImageBitmap = originalCreateImageBitmap;
+      HTMLCanvasElement.prototype.getContext = originalGetContext;
+    };
+    window.createImageBitmap = async () => ({
+      width: 16,
+      height: 8,
+      close() { window.__buytoolsBitmapCloseCount += 1; }
+    });
+    HTMLCanvasElement.prototype.getContext = function (...args) {
+      if (this.width === 16 && this.height === 8) return null;
+      return originalGetContext.apply(this, args);
+    };
+  });
+  await page.locator("#run").click();
+  await page.getByText(/Could not process the image batch: Your browser could not allocate a canvas/i).waitFor();
+  const batchBitmapCloseCount = await page.evaluate(() => window.__buytoolsBitmapCloseCount);
+  await page.evaluate(() => window.__buytoolsRestoreCanvasFailure());
+  assert.equal(batchBitmapCloseCount, 1, "Batch-image canvas failure must close its ImageBitmap");
+  await page.locator("#closeWork").click();
 
   // Batch image resizer: inspect both ZIP entries and preserve aspect ratios.
   await page.locator("#closeWork").click();
