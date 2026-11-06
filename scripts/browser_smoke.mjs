@@ -130,6 +130,7 @@ try {
   assert.match(qrNoticeText, /sent to QRServer/i);
   assert.match(qrNoticeText, /do not enter passwords.*confidential information/i);
   assert.equal(await page.locator("#text").getAttribute("aria-describedby"), "qrPrivacyNotice");
+  await auditAccessibility("QR Generator tool");
   assert.equal(thirdPartyRequests.filter(url => url.hostname === "api.qrserver.com").length, 0, "QR input must not be sent before the user requests generation");
   await page.route("https://api.qrserver.com/**", route => route.fulfill({
     status: 200,
@@ -144,6 +145,25 @@ try {
   ]);
   assert.equal(new URL(qrRequest.url()).searchParams.get("data"), qrInput, "QR input must be URL-encoded into the disclosed data parameter");
   assert.equal(thirdPartyRequests.filter(url => url.hostname === "api.qrserver.com").length, 1, "QR service should be called once after generation is requested");
+  // Repeated generation must replace the previous preview rather than accumulate images.
+  await page.locator("#run").click();
+  await page.waitForFunction(() => document.querySelectorAll(".preview").length === 1);
+  assert.equal(await page.locator(".preview").count(), 1, "QR regeneration must leave exactly one preview");
+  await page.locator("#text").fill("updated QR content");
+  assert.equal(await page.locator(".preview").count(), 0, "Changing QR input must clear the previous preview");
+
+  await page.unroute("https://api.qrserver.com/**");
+  // A failed provider request must produce an accessible error state and remove the broken preview.
+  await page.route("https://api.qrserver.com/**", route => route.fulfill({
+    status: 503,
+    contentType: "text/plain",
+    body: "temporarily unavailable"
+  }));
+  await page.locator("#run").click();
+  await page.waitForFunction(() => document.querySelector("#result")?.textContent.includes("could not be generated"));
+  assert.equal(await page.locator(".preview").count(), 0, "Failed QR requests must not leave a broken preview");
+  assert.equal(await page.locator("#result").getAttribute("role"), "status");
+  assert.equal(await page.locator("#result").getAttribute("aria-live"), "polite");
   await page.unroute("https://api.qrserver.com/**");
 
   // JSON to TypeScript: reserved interface name and mixed array union.

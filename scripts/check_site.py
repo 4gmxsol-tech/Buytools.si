@@ -303,6 +303,7 @@ qr_notice_requirements = (
     'sent to QRServer',
     'Do not enter passwords',
     'href="/privacy/"',
+    'id="result" role="status" aria-live="polite"',
 )
 if any(requirement.lower() not in home.lower() for requirement in qr_notice_requirements):
     fail("QR generator must show an accessible, tool-level disclosure before text is sent to the third-party QR service.")
