@@ -83,7 +83,7 @@ try {
   assert.equal(await page.locator('[data-tool="csv-viewer"]').count(), 1);
   await page.locator("#search").fill("");
 
-  // Word Counter: separate whitespace-free and inclusive counts; count Unicode code points.
+  // Word Counter: count visible grapheme clusters, whitespace and singular labels.
   await page.locator('[data-tool="word-counter"]').click();
   await auditAccessibility("Word Counter tool");
   await page.locator("#text").fill("A 😀\nCafe!");
@@ -92,6 +92,25 @@ try {
   assert.match(wordCounterResult, /7 characters \(excluding whitespace\)/);
   assert.match(wordCounterResult, /9 characters including spaces and line breaks/);
   assert.match(wordCounterResult, /1 sentence/);
+
+  await page.locator("#text").fill("e\u0301");
+  const combiningMarkResult = await page.locator("#result").innerText();
+  assert.match(combiningMarkResult, /1 word/);
+  assert.match(combiningMarkResult, /1 character \(excluding whitespace\)/);
+  assert.match(combiningMarkResult, /1 character including spaces and line breaks/);
+
+  await page.locator("#text").fill("👩‍👩‍👧‍👦");
+  const joinedEmojiResult = await page.locator("#result").innerText();
+  assert.match(joinedEmojiResult, /1 character \(excluding whitespace\)/);
+  assert.match(joinedEmojiResult, /1 character including spaces and line breaks/);
+
+  await page.locator("#text").fill("🇸🇩");
+  const flagResult = await page.locator("#result").innerText();
+  assert.match(flagResult, /1 character \(excluding whitespace\)/);
+  assert.match(flagResult, /1 character including spaces and line breaks/);
+
+  await page.locator("#text").fill("Hello");
+  assert.match(await page.locator("#result").innerText(), /1 word · 5 characters/);
   await page.locator("#text").fill("");
   assert.match(await page.locator("#result").innerText(), /0 words · 0 characters \(excluding whitespace\) · 0 characters including spaces and line breaks · 0 sentences/);
   await page.locator("#closeWork").click();

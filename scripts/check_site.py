@@ -148,7 +148,13 @@ for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-resizer/
         fail(f"Recently updated page is missing sitemap lastmod: {required_lastmod_url}")
 
 word_counter_page = (ROOT / "tools/word-counter/index.html").read_text(encoding="utf-8")
-for required_word_counter_disclosure in ("characters excluding whitespace", "spaces and line breaks", "Unicode code points"):
+homepage_word_counter_code = (ROOT / "index.html").read_text(encoding="utf-8")
+if (
+    "new Intl.Segmenter(undefined,{granularity:'grapheme'})" not in homepage_word_counter_code
+    or "Array.from(value).length" not in homepage_word_counter_code
+):
+    fail("Homepage Word Counter must count grapheme clusters with a documented code-point fallback.")
+for required_word_counter_disclosure in ("characters excluding whitespace", "spaces and line breaks", "Unicode grapheme clusters", "Older browsers fall back to Unicode code points"):
     if required_word_counter_disclosure not in word_counter_page:
         fail("Word Counter page is missing accurate character-count disclosure: " + required_word_counter_disclosure)
 
