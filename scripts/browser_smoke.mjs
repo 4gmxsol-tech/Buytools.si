@@ -576,7 +576,6 @@ try {
   const batchBitmapCloseCount = await page.evaluate(() => window.__buytoolsBitmapCloseCount);
   await page.evaluate(() => window.__buytoolsRestoreCanvasFailure());
   assert.equal(batchBitmapCloseCount, 1, "Batch-image canvas failure must close its ImageBitmap");
-  await page.locator("#closeWork").click();
 
   // Batch image resizer: inspect both ZIP entries and preserve aspect ratios.
   await page.locator("#closeWork").click();
