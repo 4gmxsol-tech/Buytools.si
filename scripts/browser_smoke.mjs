@@ -259,7 +259,7 @@ try {
   await page.locator('[data-csv="tocsv"]').click();
   assert.match(await page.locator("#text").inputValue(), /"Ada, Lovelace"/);
   assert.match(await page.locator("#text").inputValue(), /"said ""hello"""/);
-  await page.locator("#text").fill(JSON.stringify([{ formula: "=1+1", expression: "-1+1", negative: -5, plusNumeric: "+5", fullWidth: "＝1+1", total: "@SUM(A1:A2)", tabbed: "\tplain" }]));
+  await page.locator("#text").fill(JSON.stringify([{ formula: "=1+1", expression: "-1+1", negative: -5, plusNumeric: "+5", fullWidth: "＝1+1", total: "@SUM(A1:A2)", tabbed: "\tplain", spacedFormula: "  =2+2", newlineFormula: "\n=3+3", ideographicSpaceFormula: "　＝4+4", spacedNegative: " -5" }]));
   await page.locator('[data-csv="tocsv"]').click();
   const safeConvertedCsv = await page.locator("#text").inputValue();
   assert.ok(safeConvertedCsv.includes("'=1+1"), "JSON-to-CSV must neutralize equals-prefixed formulas");
@@ -269,6 +269,11 @@ try {
   assert.ok(safeConvertedCsv.includes("'\tplain"), "JSON-to-CSV must neutralize cells beginning with a tab");
   assert.ok(safeConvertedCsv.includes("'+5"), "JSON-to-CSV must neutralize plus-prefixed numeric-looking text");
   assert.ok(safeConvertedCsv.includes("'＝1+1"), "JSON-to-CSV must neutralize full-width formula markers");
+  assert.ok(safeConvertedCsv.includes("'  =2+2"), "JSON-to-CSV must neutralize formulas after leading spaces");
+  assert.ok(safeConvertedCsv.includes("'\\n=3+3"), "JSON-to-CSV must neutralize formulas after a leading line break");
+  assert.ok(safeConvertedCsv.includes("'　＝4+4"), "JSON-to-CSV must neutralize full-width formulas after Unicode whitespace");
+  assert.ok(safeConvertedCsv.includes(" -5"), "Whitespace-prefixed negative numeric values should remain unchanged");
+  assert.ok(!safeConvertedCsv.includes("' -5"), "Safe negative numeric values should not be unnecessarily prefixed");
 
 
   // QR generator: verify the disclosed third-party request occurs only after an explicit action and encodes the input safely.
