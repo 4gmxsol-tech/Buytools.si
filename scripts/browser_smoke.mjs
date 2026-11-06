@@ -701,7 +701,7 @@ try {
   await page.locator("#run").click();
   await page.getByText("Choose a file first.").waitFor();
   const largeImageFixture = Buffer.alloc(26 * 1024 * 1024, 0);
-  const jsPdfRequestsBeforeLargeImageWarning = thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jspdf@2.5.2")).length;
+  const jsPdfRequestsBeforeLargeImageWarning = thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jspdf@4.2.1")).length;
   await page.locator("#fileInput").setInputFiles({
     name: "large-image.png",
     mimeType: "image/png",
@@ -716,7 +716,7 @@ try {
   await page.getByText(/Images-to-PDF conversion cancelled/i).waitFor();
   assert.match(imagesPdfWarningMessage, /25 MiB large-image warning threshold/i);
   assert.equal(
-    thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jspdf@2.5.2")).length,
+    thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jspdf@4.2.1")).length,
     jsPdfRequestsBeforeLargeImageWarning,
     "Cancelling a large Images-to-PDF selection must happen before the jsPDF CDN is requested"
   );
@@ -738,7 +738,8 @@ try {
   await page.evaluate(() => window.__buytoolsRestoreImagePdfReader());
   await page.getByText(/Created a PDF with 2 image\(s\)\./).waitFor();
   assert.equal(imagesPdfDownload.suggestedFilename(), "buytools-images.pdf");
-  assert.ok(thirdPartyRequests.some(url => url.href.startsWith("https://esm.sh/jspdf@2.5.2")), "jsPDF should load on demand when Images to PDF is run");
+  assert.ok(thirdPartyRequests.some(url => url.href.startsWith("https://esm.sh/jspdf@4.2.1")), "Patched jsPDF 4.2.1 should load on demand when Images to PDF is run");
+  assert.equal(thirdPartyRequests.some(url => url.href.startsWith("https://esm.sh/jspdf@2.5.2")), false, "Vulnerable jsPDF 2.5.2 must never be requested");
   const imagesPdfBytes = await readDownloadBuffer(imagesPdfDownload);
   assert.ok(imagesPdfBytes.length > 500, "Images-to-PDF output should not be empty");
   const imagesPdf = await PDFDocument.load(imagesPdfBytes);
