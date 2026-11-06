@@ -317,12 +317,18 @@ if 'id="csvFile"' not in home or "maxCsvFileBytes=5*1024*1024" not in home or "r
     fail("CSV Viewer must read selected local CSV files in-browser with a 5 MiB size guard.")
 if (
     "async function readCsvFileText(file)" not in home
-    or "new TextDecoder('utf-16le')" not in home
-    or "new TextDecoder('utf-16be')" not in home
+    or "new TextDecoder('utf-8',{fatal:true})" not in home
+    or "new TextDecoder('utf-16le',{fatal:true})" not in home
+    or "new TextDecoder('utf-16be',{fatal:true})" not in home
+    or "contains invalid text encoding" not in home
 ):
-    fail("CSV Viewer must decode UTF-16LE and UTF-16BE files when a byte-order mark is present.")
-if "UTF-16LE BOM" not in csv_viewer_page or "UTF-16BE BOM" not in csv_viewer_page:
-    fail("CSV Viewer landing page must disclose its supported UTF-16 BOM encodings.")
+    fail("CSV Viewer must strictly decode UTF-8 and UTF-16 BOM files and reject malformed byte sequences.")
+if (
+    "UTF-16LE BOM" not in csv_viewer_page
+    or "UTF-16BE BOM" not in csv_viewer_page
+    or "malformed UTF-8 or UTF-16 sequences are rejected" not in csv_viewer_page
+):
+    fail("CSV Viewer landing page must disclose supported BOM encodings and strict malformed-input handling.")
 if (
     'id="csvDelimiter"' not in home
     or "function parseCSV(input,delimiter=',')" not in home
