@@ -113,6 +113,8 @@ try {
   assert.match(imageQuickAnswerText, /Lossy compression: discards image information/i);
   assert.equal(await imageQuickAnswer.locator('a[href="/tools/image-compressor/"]').count(), 1);
   assert.equal(await imageQuickAnswer.locator('a[href="/tools/image-resizer/"]').count(), 1);
+  assert.match(imageQuickAnswerText, /starts at 75% quality and ranges from 20% to 95%/i);
+  assert.match(imageQuickAnswerText, /browser's JPEG encoder/i);
   await page.addScriptTag({ content: axe.source });
   await auditAccessibility("image-size guide");
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
@@ -477,6 +479,12 @@ try {
   });
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="image-compress"]').click();
+  const qualityControl = page.locator("#quality");
+  assert.equal(await qualityControl.getAttribute("min"), ".2", "Image compressor quality minimum must match the guide");
+  assert.equal(await qualityControl.getAttribute("max"), ".95", "Image compressor quality maximum must match the guide");
+  assert.equal(await qualityControl.getAttribute("step"), ".05", "Image compressor quality step must remain explicit");
+  assert.equal(await qualityControl.inputValue(), "0.75", "Image compressor must retain its documented 75% default");
+  assert.equal(await page.locator("#qval").innerText(), "75%", "Visible quality value must match the slider default");
   const filePicker = page.locator("#fileInput");
   await filePicker.focus();
   const filePickerA11y = await filePicker.evaluate(input => ({

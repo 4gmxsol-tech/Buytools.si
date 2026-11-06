@@ -312,7 +312,18 @@ image_guide_parser.feed(image_guide)
 image_guide_title = "".join(image_guide_parser.title_parts).strip()
 if image_guide_title != "How to Reduce Image File Size Without Losing Quality | BuyTools.si":
     fail("Image guide title must match the verified no-quality-loss search intent.")
-if image_guide.count('"dateModified":') != 1 or '"dateModified":"2026-11-06"' not in image_guide:
+image_compressor_runtime = (ROOT / "index.html").read_text(encoding="utf-8")
+quality_control_markup = 'id="quality" type="range" min=".2" max=".95" step=".05" value=".75"'
+if quality_control_markup not in image_compressor_runtime:
+    fail("Image compressor quality control must retain its documented 20%-95% range and 75% default.")
+for required_quality_detail in (
+    "starts at 75% quality and ranges from 20% to 95%",
+    "browser's JPEG encoder",
+    "not a percentage of pixels or image detail retained",
+):
+    if required_quality_detail not in image_guide:
+        fail("Image guide is missing an accurate quality-control detail: " + required_quality_detail)
+if image_guide.count('"dateModified":') != 1 or '"dateModified":"2026-11-07"' not in image_guide:
     fail("Image guide Article structured data must contain exactly one current dateModified value.")
 for required_image_guide_detail in (
     'id="quick-answer"',
