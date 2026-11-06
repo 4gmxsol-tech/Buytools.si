@@ -91,7 +91,7 @@ try {
   assert.match(wordCounterResult, /3 words/);
   assert.match(wordCounterResult, /7 characters \(excluding whitespace\)/);
   assert.match(wordCounterResult, /9 characters including spaces and line breaks/);
-  assert.match(wordCounterResult, /1 sentences/);
+  assert.match(wordCounterResult, /1 sentence/);
   await page.locator("#text").fill("");
   assert.match(await page.locator("#result").innerText(), /0 words · 0 characters \(excluding whitespace\) · 0 characters including spaces and line breaks · 0 sentences/);
   await page.locator("#closeWork").click();
