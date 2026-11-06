@@ -74,6 +74,23 @@ try {
   }
   await page.locator('[data-tool]').first().waitFor();
   await auditAccessibility("homepage");
+
+  // Image-size guide: answer the observed no-quality-loss query accurately and expose both relevant workflows.
+  await page.goto("http://127.0.0.1:8000/guides/reduce-image-size/", { waitUntil: "load" });
+  assert.match(await page.title(), /Reduce Image File Size Without Losing Quality/i);
+  assert.match(await page.locator("h1").innerText(), /Reduce Image File Size Without Losing Quality/i);
+  const imageQuickAnswer = page.locator("#quick-answer");
+  const imageQuickAnswerText = await imageQuickAnswer.innerText();
+  assert.match(imageQuickAnswerText, /Lossless optimization can reduce file size without changing decoded pixels/i);
+  assert.match(imageQuickAnswerText, /Resizing: changes pixel dimensions/i);
+  assert.match(imageQuickAnswerText, /Lossy compression: discards image information/i);
+  assert.equal(await imageQuickAnswer.locator('a[href="/tools/image-compressor/"]').count(), 1);
+  assert.equal(await imageQuickAnswer.locator('a[href="/tools/image-resizer/"]').count(), 1);
+  await page.addScriptTag({ content: axe.source });
+  await auditAccessibility("image-size guide");
+  await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+  await page.addScriptTag({ content: axe.source });
+
   const toolCount = await page.locator('[data-tool]').count();
   assert.ok(toolCount >= 38, `Expected at least 38 tools, found ${toolCount}`);
 
