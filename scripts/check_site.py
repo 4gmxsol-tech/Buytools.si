@@ -10,7 +10,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures
+from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -236,6 +236,12 @@ image_guide = (ROOT / "guides/reduce-image-size/index.html").read_text(encoding=
 missing_image_disclosures = missing_image_compressor_disclosures(image_guide)
 if missing_image_disclosures:
     fail("Image guide is missing accurate compressor disclosures: " + ", ".join(missing_image_disclosures))
+
+# Keep the batch image resizer metadata and output explanation aligned with its PNG implementation.
+batch_image_resizer_page = (ROOT / "tools/batch-image-resizer/index.html").read_text(encoding="utf-8")
+missing_batch_resizer_disclosures = missing_batch_image_resizer_disclosures(batch_image_resizer_page)
+if missing_batch_resizer_disclosures:
+    fail("Batch image resizer page is inaccurate or incomplete: " + ", ".join(missing_batch_resizer_disclosures))
 
 # Check that each homepage catalogue ID has a corresponding tool renderer branch.
 home = (ROOT / "index.html").read_text(encoding="utf-8")
