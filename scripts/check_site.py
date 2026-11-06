@@ -142,7 +142,7 @@ if sitemap_root is not None:
                 if lastmod_date > date.today():
                     fail(f"Sitemap lastmod must not be in the future: {loc}")
 
-for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-resizer/"):
+for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/privacy/"):
     entry = sitemap_entries.get(required_lastmod_url)
     if entry is None or not entry.findtext("{*}lastmod"):
         fail(f"Recently updated page is missing sitemap lastmod: {required_lastmod_url}")
@@ -256,6 +256,18 @@ json_guide_html = (ROOT / "guides/format-json-online/index.html").read_text(enco
 missing_json_workflow = missing_json_file_workflow_disclosures(json_guide_html)
 if missing_json_workflow:
     fail("JSON guide is missing practical local-file workflow details: " + ", ".join(missing_json_workflow))
+json_tool_page = (ROOT / "tools/json-formatter/index.html").read_text(encoding="utf-8")
+missing_json_tool_workflow = missing_json_file_workflow_disclosures(json_tool_page)
+if missing_json_tool_workflow:
+    fail("JSON Formatter page is missing local-file workflow details: " + ", ".join(missing_json_tool_workflow))
+if (
+    'id="jsonFile"' not in json_tool_page
+    or "MAX_JSON_FILE_BYTES=5*1024*1024" not in json_tool_page
+    or "file.size>MAX_JSON_FILE_BYTES" not in json_tool_page
+):
+    fail("Dedicated JSON Formatter must provide a local file picker and enforce the 5 MiB limit before reading.")
+if "jsonFile" not in home or "maxJsonFileBytes=5*1024*1024" not in home or "file.size>maxJsonFileBytes" not in home:
+    fail("Homepage JSON tool must provide a local file picker and enforce the 5 MiB limit before reading.")
 
 # Keep the image guide aligned with the actual compressor output contract.
 image_guide = (ROOT / "guides/reduce-image-size/index.html").read_text(encoding="utf-8")
@@ -313,6 +325,8 @@ if "Open comma-, semicolon- or tab-delimited CSV files" not in csv_viewer_page o
 privacy_text = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
 if "CSV Viewer" not in privacy_text or "5 MiB" not in privacy_text or "browser File API" not in privacy_text or "not uploaded to a BuyTools.si processing endpoint" not in privacy_text:
     fail("Privacy policy must describe local CSV file reading and the 5 MiB limit.")
+if "JSON Formatter" not in privacy_text or "selected UTF-8 .json file up to 5 MiB" not in privacy_text:
+    fail("Privacy policy must describe local JSON file reading and the 5 MiB limit.")
 
 # Keep privacy disclosures synchronized with third-party requests in the homepage tool code.
 dynamic_import_urls = re.findall(r"""import\(['"](https?://[^'"]+)['"]\)""", home)
