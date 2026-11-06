@@ -94,6 +94,43 @@ try {
   await page.locator('[data-json="pretty"]').click();
   assert.match(await page.locator("#result").innerText(), /Invalid JSON/);
 
+  // Homepage JSON file import: local read, exact 5 MiB boundary and oversize rejection.
+  const jsonFileBytes = 5 * 1024 * 1024;
+  const maxSizeJsonBuffer = Buffer.from('{"data":"' + "a".repeat(jsonFileBytes - 11) + '"}');
+  assert.equal(maxSizeJsonBuffer.length, jsonFileBytes);
+  const thirdPartyBeforeJsonImport = thirdPartyRequests.length;
+  await page.locator("#jsonFile").setInputFiles({ name: "sample.json", mimeType: "application/json", buffer: Buffer.from('{"fromFile":true,"count":2}') });
+  await page.waitForFunction(() => document.querySelector("#text")?.value.includes('"fromFile"'));
+  assert.match(await page.locator("#result").innerText(), /Loaded sample\.json/);
+  assert.equal(thirdPartyRequests.length, thirdPartyBeforeJsonImport, "Local JSON file selection must not create third-party requests");
+  await page.locator('[data-json="pretty"]').click();
+  assert.match(await page.locator("#text").inputValue(), /\n  "fromFile": true/);
+  await page.locator("#jsonFile").setInputFiles({ name: "max-size.json", mimeType: "application/json", buffer: maxSizeJsonBuffer });
+  await page.waitForFunction(() => document.querySelector("#text")?.value.length === 5 * 1024 * 1024);
+  assert.match(await page.locator("#result").innerText(), /Loaded max-size\.json/);
+  const oversizedJsonBuffer = Buffer.alloc(jsonFileBytes + 1, 0x20);
+  await page.locator("#jsonFile").setInputFiles({ name: "too-large.json", mimeType: "application/json", buffer: oversizedJsonBuffer });
+  assert.match(await page.locator("#result").innerText(), /5 MiB/);
+  assert.equal(await page.locator("#text").inputValue(), "", "Oversize JSON selection must clear previous input instead of leaving stale data");
+
+  // The canonical standalone formatter must offer the same local-file behavior.
+  await page.locator("#closeWork").click();
+  await page.goto("http://127.0.0.1:8000/tools/json-formatter/", { waitUntil: "load" });
+  await page.addScriptTag({ content: axe.source });
+  await auditAccessibility("standalone JSON formatter");
+  const thirdPartyBeforeStandaloneJsonImport = thirdPartyRequests.length;
+  await page.locator("#jsonFile").setInputFiles({ name: "standalone.json", mimeType: "application/json", buffer: Buffer.from('{"standalone":true}') });
+  await page.waitForFunction(() => document.querySelector("#jsonInput")?.value.includes('"standalone"'));
+  assert.match(await page.locator("#status").innerText(), /Loaded standalone\.json/);
+  assert.equal(thirdPartyRequests.length, thirdPartyBeforeStandaloneJsonImport, "Standalone local JSON import must not contact third-party hosts");
+  await page.locator("#formatBtn").click();
+  assert.match(await page.locator("#jsonOutput").inputValue(), /\n  "standalone": true/);
+  await page.locator("#jsonFile").setInputFiles({ name: "too-large.json", mimeType: "application/json", buffer: oversizedJsonBuffer });
+  assert.match(await page.locator("#status").innerText(), /5 MiB/);
+  assert.equal(await page.locator("#jsonInput").inputValue(), "", "Oversize standalone JSON selection must clear previous input");
+
+  await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+
   // CSV converter: BOM, normal conversion, duplicate-header guard and CSV quoting.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="csv-json"]').click();
