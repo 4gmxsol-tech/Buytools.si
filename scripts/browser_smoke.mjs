@@ -442,7 +442,19 @@ try {
   });
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="image-compress"]').click();
-  await page.locator("#fileInput").setInputFiles({ name: "preview-first.png", mimeType: "image/png", buffer: pngBuffer });
+  const filePicker = page.locator("#fileInput");
+  await filePicker.focus();
+  const filePickerA11y = await filePicker.evaluate(input => ({
+    visibleToKeyboard: getComputedStyle(input).display !== "none" && input.tabIndex >= 0,
+    hasAssociatedLabel: input.labels?.length === 1 && /Choose file/i.test(input.labels[0].textContent || ""),
+    focusIndicator: getComputedStyle(input.parentElement).outlineStyle === "solid"
+  }));
+  assert.deepEqual(filePickerA11y, {
+    visibleToKeyboard: true,
+    hasAssociatedLabel: true,
+    focusIndicator: true
+  }, "Image file picker must remain keyboard reachable, labeled, and visibly focused");
+  await filePicker.setInputFiles({ name: "preview-first.png", mimeType: "image/png", buffer: pngBuffer });
   await page.waitForFunction(() => document.querySelector("#preview")?.naturalWidth === 16);
   const firstPreviewUrl = await page.evaluate(() => window.__buytoolsObjectUrlAudit.created.at(-1));
   await page.locator("#fileInput").setInputFiles({ name: "preview-second.png", mimeType: "image/png", buffer: pngBuffer });
