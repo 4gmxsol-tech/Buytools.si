@@ -158,6 +158,18 @@ for required_word_counter_disclosure in ("characters excluding whitespace", "spa
     if required_word_counter_disclosure not in word_counter_page:
         fail("Word Counter page is missing accurate character-count disclosure: " + required_word_counter_disclosure)
 
+licenses_page_path = ROOT / "licenses" / "index.html"
+if not licenses_page_path.is_file():
+    fail("Third-party license notice page is missing: licenses/index.html")
+else:
+    licenses_page = licenses_page_path.read_text(encoding="utf-8")
+    for required_notice in ("@imgly/background-removal", "1.5.5", "AGPL-3.0", "https://github.com/imgly/background-removal-js", "https://www.gnu.org/licenses/agpl-3.0.html"):
+        if required_notice not in licenses_page:
+            fail("Third-party license notice is missing required attribution: " + required_notice)
+for linked_page in (ROOT / "privacy" / "index.html", ROOT / "tools" / "remove-background" / "index.html"):
+    if 'href="/licenses/"' not in linked_page.read_text(encoding="utf-8"):
+        fail("Relevant page must link to the third-party license notice: " + str(linked_page.relative_to(ROOT)))
+
 seen_urls = set()
 for url in sitemap_urls:
     if url in seen_urls:
