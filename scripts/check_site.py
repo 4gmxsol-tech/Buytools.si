@@ -142,7 +142,7 @@ if sitemap_root is not None:
                 if lastmod_date > date.today():
                     fail(f"Sitemap lastmod must not be in the future: {loc}")
 
-for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/tools/word-counter/", DOMAIN + "/privacy/"):
+for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/tools/word-counter/", DOMAIN + "/tools/images-to-pdf/", DOMAIN + "/guides/convert-images-to-pdf/", DOMAIN + "/privacy/"):
     entry = sitemap_entries.get(required_lastmod_url)
     if entry is None or not entry.findtext("{*}lastmod"):
         fail(f"Recently updated page is missing sitemap lastmod: {required_lastmod_url}")
@@ -372,6 +372,25 @@ if "buytools-theme" not in privacy_text:
     fail("Browser theme storage key is not disclosed in the privacy policy.")
 
 # Large PDF jobs should warn before importing the browser-side PDF library.
+# Images-to-PDF should warn before loading jsPDF and avoid base64 data-URL expansion.
+images_pdf_start = home.find("if(id==='pdf-images'){")
+images_pdf_end = home.find("if(id==='background')", images_pdf_start)
+images_pdf_branch = home[images_pdf_start:images_pdf_end] if images_pdf_start >= 0 and images_pdf_end > images_pdf_start else ""
+images_pdf_import = images_pdf_branch.find("const mod=await import('https://esm.sh/jspdf@2.5.2')")
+images_pdf_guard = images_pdf_branch.find("const totalImageBytes=files.reduce((total,file)=>total+file.size,0),largeImageWarningThreshold=25*1024*1024")
+images_pdf_warning = images_pdf_branch.find("25 MiB large-image warning threshold")
+if min(images_pdf_import, images_pdf_guard, images_pdf_warning) < 0 or not (images_pdf_guard < images_pdf_warning < images_pdf_import):
+    fail("Images-to-PDF must confirm large selections before loading jsPDF.")
+if "new Uint8Array(await f.arrayBuffer())" not in images_pdf_branch or "doc.addImage(imageBytes" not in images_pdf_branch or "readAsDataURL" in images_pdf_branch:
+    fail("Images-to-PDF must pass binary image bytes to jsPDF instead of creating base64 data URLs.")
+images_pdf_tool_page = (ROOT / "tools/images-to-pdf/index.html").read_text(encoding="utf-8")
+images_pdf_guide = (ROOT / "guides/convert-images-to-pdf/index.html").read_text(encoding="utf-8")
+for page_name, page_text in (("Images-to-PDF tool", images_pdf_tool_page), ("Images-to-PDF guide", images_pdf_guide)):
+    if "25 MiB" not in page_text or "before loading the PDF library" not in page_text or "especially on mobile" not in page_text or "warning, not a hard" not in page_text:
+        fail(f"{page_name} must disclose the 25 MiB memory warning, mobile caveat and soft-limit behavior.")
+if "25 MiB" not in privacy_text or "before requesting the library" not in privacy_text or "cancelling prevents that request" not in privacy_text:
+    fail("Privacy policy must explain the Images-to-PDF CDN request confirmation behavior.")
+
 pdf_import = home.find("const {PDFDocument}=await import('https://esm.sh/pdf-lib@1.17.1')")
 pdf_warning_guard = home.find("const totalPdfBytes=chosenFiles.reduce((total,file)=>total+file.size,0),largePdfWarningThreshold=25*1024*1024")
 pdf_warning_dialog = home.find("25 MiB large-file warning threshold")
