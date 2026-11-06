@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures)
+from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -46,6 +46,47 @@ class ImageCompressorDisclosureTests(unittest.TestCase):
     def test_missing_lossless_caveat_is_reported(self):
         html = "Currently exports JPEG files and does not preserve transparency."
         self.assertEqual(missing_image_compressor_disclosures(html), ["not a lossless png optimizer"])
+
+
+class BatchImageResizerDisclosureTests(unittest.TestCase):
+    def test_accurate_png_resizer_metadata_and_output_disclosure_is_accepted(self):
+        html = (
+            '<meta name="description" content="Resize multiple images online to fit maximum width and height, '
+            'keep aspect ratios, and download PNG results in one ZIP.">' 
+            '<meta property="og:description" content="Resize multiple photos to maximum dimensions and '
+            'download PNG results together in one ZIP.">' 
+            '<p>The resizer exports PNG files. PNG encoding is lossless for the resized image, '
+            'but resizing changes its pixel dimensions.</p>'
+        )
+        self.assertEqual(missing_batch_image_resizer_disclosures(html), [])
+
+    def test_jpeg_compressor_metadata_is_rejected(self):
+        html = (
+            '<meta name="description" content="Compress multiple images and download JPEGs.">' 
+            '<meta property="og:description" content="Compress multiple images into JPEG files.">' 
+            '<p>The resizer exports PNG files. PNG encoding is lossless for the resized image, '
+            'but resizing changes its pixel dimensions.</p>'
+        )
+        self.assertEqual(
+            missing_batch_image_resizer_disclosures(html),
+            [
+                "meta description must describe PNG resizing rather than JPEG compression",
+                "Open Graph description must describe PNG resizing rather than JPEG compression",
+            ],
+        )
+
+    def test_incomplete_png_output_explanation_is_rejected(self):
+        html = (
+            '<meta name="description" content="Resize multiple images online to fit maximum width and height, '
+            'keep aspect ratios, and download PNG results in one ZIP.">' 
+            '<meta property="og:description" content="Resize multiple photos to maximum dimensions and '
+            'download PNG results together in one ZIP.">' 
+            '<p>The resizer exports PNG files.</p>'
+        )
+        self.assertEqual(
+            missing_batch_image_resizer_disclosures(html),
+            ["visible output-format disclosure must explain PNG encoding and resize dimensions"],
+        )
 
 
 class CsvExportSafetyDisclosureTests(unittest.TestCase):
