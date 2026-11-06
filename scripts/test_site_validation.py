@@ -114,31 +114,34 @@ class CsvExportSafetyDisclosureTests(unittest.TestCase):
 class JsonFileWorkflowDisclosureTests(unittest.TestCase):
     def test_complete_local_file_workflow_is_accepted(self):
         html = (
-            "Open the .json file in a text editor, copy the complete contents, "
-            "paste the text into the JSON Formatter, and save it as a new .json file. "
-            "The tool accepts pasted text rather than a direct file upload."
+            "Select a local UTF-8 .json file up to 5 MiB. The browser File API reads it locally; "
+            "the file is not uploaded to a BuyTools.si processing endpoint."
         )
         self.assertEqual(missing_json_file_workflow_disclosures(html), [])
 
-    def test_missing_direct_upload_limitation_is_reported(self):
+    def test_missing_file_size_limit_is_reported(self):
         html = (
-            "Open the .json file in a text editor, copy the complete contents, "
-            "paste the text into the JSON Formatter, and save it as a new .json file."
+            "Select a local UTF-8 .json file. The browser File API reads it locally; "
+            "the file is not uploaded to a BuyTools.si processing endpoint."
         )
+        self.assertEqual(missing_json_file_workflow_disclosures(html), ["up to 5 mib"])
+
+    def test_missing_local_processing_disclosure_is_reported(self):
+        html = "Select a local UTF-8 .json file up to 5 MiB."
         self.assertEqual(
             missing_json_file_workflow_disclosures(html),
-            ["rather than a direct file upload"],
+            ["browser file api", "not uploaded to a buytools.si processing endpoint"],
         )
 
-    def test_missing_save_as_new_file_step_is_reported(self):
+    def test_outdated_copy_only_workflow_is_rejected(self):
         html = (
-            "Open the .json file in a text editor, copy the complete contents, "
-            "paste the text into the JSON Formatter. It accepts pasted text "
-            "rather than a direct file upload."
+            "Select a local UTF-8 .json file up to 5 MiB. The browser File API reads it locally; "
+            "the file is not uploaded to a BuyTools.si processing endpoint. "
+            "The tool accepts pasted text rather than a direct file upload."
         )
         self.assertEqual(
             missing_json_file_workflow_disclosures(html),
-            ["save it as a new .json file"],
+            ["outdated copy-only file workflow disclosure"],
         )
 
 
