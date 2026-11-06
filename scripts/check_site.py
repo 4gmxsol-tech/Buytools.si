@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Dependency-light structural, SEO, internal-link and inline-JavaScript checks."""
+from datetime import date
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
@@ -114,12 +115,37 @@ if not (ROOT / "assets" / "favicon.svg").is_file():
 
 # Parse sitemap and require exact coverage of all indexable HTML pages.
 sitemap_path = ROOT / "sitemap.xml"
+sitemap_root = None
 try:
     sitemap_root = ET.parse(sitemap_path).getroot()
     sitemap_urls = [node.text.strip() for node in sitemap_root.findall(".//{*}loc") if node.text]
 except (ET.ParseError, OSError) as exc:
     fail(f"sitemap.xml cannot be parsed: {exc}")
     sitemap_urls = []
+
+# Validate optional lastmod values and require them for the recently updated homepage and resizer.
+sitemap_entries = {}
+if sitemap_root is not None:
+    for entry in sitemap_root.findall(".//{*}url"):
+        loc = entry.findtext("{*}loc")
+        if not loc:
+            continue
+        loc = loc.strip()
+        sitemap_entries[loc] = entry
+        lastmod = entry.findtext("{*}lastmod")
+        if lastmod:
+            try:
+                lastmod_date = date.fromisoformat(lastmod.strip())
+            except ValueError:
+                fail(f"Invalid sitemap lastmod date for {loc}: {lastmod!r}")
+            else:
+                if lastmod_date > date.today():
+                    fail(f"Sitemap lastmod must not be in the future: {loc}")
+
+for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-resizer/"):
+    entry = sitemap_entries.get(required_lastmod_url)
+    if entry is None or not entry.findtext("{*}lastmod"):
+        fail(f"Recently updated page is missing sitemap lastmod: {required_lastmod_url}")
 
 seen_urls = set()
 for url in sitemap_urls:
