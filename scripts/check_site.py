@@ -266,7 +266,8 @@ if (
     or "file.size>MAX_JSON_FILE_BYTES" not in json_tool_page
 ):
     fail("Dedicated JSON Formatter must provide a local file picker and enforce the 5 MiB limit before reading.")
-if "jsonFile" not in home or "maxJsonFileBytes=5*1024*1024" not in home or "file.size>maxJsonFileBytes" not in home:
+homepage_json_page = (ROOT / "index.html").read_text(encoding="utf-8")
+if "jsonFile" not in homepage_json_page or "maxJsonFileBytes=5*1024*1024" not in homepage_json_page or "file.size>maxJsonFileBytes" not in homepage_json_page:
     fail("Homepage JSON tool must provide a local file picker and enforce the 5 MiB limit before reading.")
 
 # Keep the image guide aligned with the actual compressor output contract.
