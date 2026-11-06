@@ -270,7 +270,7 @@ try {
   assert.ok(safeConvertedCsv.includes("'+5"), "JSON-to-CSV must neutralize plus-prefixed numeric-looking text");
   assert.ok(safeConvertedCsv.includes("'＝1+1"), "JSON-to-CSV must neutralize full-width formula markers");
   assert.ok(safeConvertedCsv.includes("'  =2+2"), "JSON-to-CSV must neutralize formulas after leading spaces");
-  assert.ok(safeConvertedCsv.includes("'\\n=3+3"), "JSON-to-CSV must neutralize formulas after a leading line break");
+  assert.ok(safeConvertedCsv.includes("'\n=3+3"), "JSON-to-CSV must neutralize formulas after a leading line break");
   assert.ok(safeConvertedCsv.includes("'　＝4+4"), "JSON-to-CSV must neutralize full-width formulas after Unicode whitespace");
   assert.ok(safeConvertedCsv.includes(" -5"), "Whitespace-prefixed negative numeric values should remain unchanged");
   assert.ok(!safeConvertedCsv.includes("' -5"), "Safe negative numeric values should not be unnecessarily prefixed");
