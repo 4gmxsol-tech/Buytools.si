@@ -358,7 +358,24 @@ try {
   assert.equal(await page.locator("#csvTable tbody tr").count(), 2, "UTF-16BE CSV rows should parse correctly");
   assert.equal(thirdPartyRequests.length, externalRequestsBeforeCsvFile, "UTF-16 CSV decoding must remain local");
 
+  const utf8BomCsv = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(csvFileText, "utf8")]);
+  await csvFileInput.setInputFiles({ name: "inventory-utf8-bom.csv", mimeType: "text/csv", buffer: utf8BomCsv });
+  await page.waitForFunction(() => document.querySelector("#csvFileStatus")?.textContent?.includes("Loaded inventory-utf8-bom.csv"));
+  assert.equal(await page.locator("#text").inputValue(), csvFileText, "UTF-8 BOM CSV files should decode without retaining the BOM");
+
   const previousCsvText = await page.locator("#text").inputValue();
+  const invalidUtf8Csv = Buffer.from([0x73, 0x6b, 0x75, 0x2c, 0x70, 0x72, 0x6f, 0x64, 0x75, 0x63, 0x74, 0x0a, 0x41, 0x2d, 0x31, 0x30, 0x34, 0x2c, 0xff]);
+  await csvFileInput.setInputFiles({ name: "invalid-utf8.csv", mimeType: "text/csv", buffer: invalidUtf8Csv });
+  await page.waitForFunction(() => document.querySelector("#csvFileStatus")?.textContent?.includes("invalid text encoding"));
+  assert.equal(await page.locator("#text").inputValue(), previousCsvText, "Malformed UTF-8 must not silently replace the current CSV text");
+  assert.equal(await page.locator("#csvTools").isVisible(), false, "Malformed UTF-8 must hide stale previews");
+  assert.equal(await page.locator("#csvExport").isDisabled(), true, "Malformed UTF-8 must disable stale exports");
+
+  const invalidUtf16Le = Buffer.from([0xff, 0xfe, 0x00, 0xd8]);
+  await csvFileInput.setInputFiles({ name: "invalid-utf16le.csv", mimeType: "text/csv", buffer: invalidUtf16Le });
+  await page.waitForFunction(() => document.querySelector("#csvFileStatus")?.textContent?.includes("invalid text encoding"));
+  assert.equal(await page.locator("#text").inputValue(), previousCsvText, "Malformed UTF-16 must not silently replace the current CSV text");
+  assert.equal(thirdPartyRequests.length, externalRequestsBeforeCsvFile, "Strict CSV decoding must remain local");
   await csvFileInput.setInputFiles({ name: "too-large.csv", mimeType: "text/csv", buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 0x61) });
   assert.match(await page.locator("#csvFileStatus").innerText(), /exceeds the 5 MiB limit/i);
   assert.equal(await page.locator("#csvTools").isVisible(), false, "An oversized selection must hide any stale preview");
