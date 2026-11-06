@@ -323,7 +323,7 @@ async function processBatchImages(id){
  }
  try{
   out.textContent='Loading ZIP utility…';
-  const {default:JSZip}=await import('https://esm.sh/jszip@3.10.1'),zip=new JSZip();let totalBefore=0,totalAfter=0;
+  const {default:JSZip}=await import('https://esm.sh/jszip@3.10.2'),zip=new JSZip();let totalBefore=0,totalAfter=0;
   for(let i=0;i<files.length;i++){
    const f=files[i];out.textContent='Processing image '+(i+1)+' of '+files.length+'…';
    const bitmap=await createImageBitmap(f);let canvas;
