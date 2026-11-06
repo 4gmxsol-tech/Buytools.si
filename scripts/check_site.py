@@ -142,10 +142,15 @@ if sitemap_root is not None:
                 if lastmod_date > date.today():
                     fail(f"Sitemap lastmod must not be in the future: {loc}")
 
-for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/privacy/"):
+for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/tools/word-counter/", DOMAIN + "/privacy/"):
     entry = sitemap_entries.get(required_lastmod_url)
     if entry is None or not entry.findtext("{*}lastmod"):
         fail(f"Recently updated page is missing sitemap lastmod: {required_lastmod_url}")
+
+word_counter_page = (ROOT / "tools/word-counter/index.html").read_text(encoding="utf-8")
+for required_word_counter_disclosure in ("characters excluding whitespace", "spaces and line breaks", "Unicode code points"):
+    if required_word_counter_disclosure not in word_counter_page:
+        fail("Word Counter page is missing accurate character-count disclosure: " + required_word_counter_disclosure)
 
 seen_urls = set()
 for url in sitemap_urls:
