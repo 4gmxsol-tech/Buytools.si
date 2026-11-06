@@ -679,6 +679,34 @@ try {
     pdfFixtures.push(Buffer.from(await doc.save()));
   }
 
+  // Large PDF selections require an explicit memory warning before the PDF CDN is loaded.
+  const oversizedPdfBuffer = Buffer.alloc(26 * 1024 * 1024, 0x20);
+  oversizedPdfBuffer.write("%PDF-1.4", 0, "ascii");
+  const pdfLibraryRequestsBeforeWarning = thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/pdf-lib@1.17.1")).length;
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="pdf-merge"]').click();
+  await page.locator("#fileInput").setInputFiles([
+    { name: "large-part-1.pdf", mimeType: "application/pdf", buffer: oversizedPdfBuffer.subarray(0, 13 * 1024 * 1024) },
+    { name: "large-part-2.pdf", mimeType: "application/pdf", buffer: oversizedPdfBuffer.subarray(13 * 1024 * 1024) }
+  ]);
+  assert.equal(await page.locator("#result").getAttribute("role"), "status", "PDF operation feedback should be announced as a status message");
+  let mergeWarningMessage = "";
+  page.once("dialog", async dialog => { mergeWarningMessage = dialog.message(); await dialog.dismiss(); });
+  await page.locator("#run").click();
+  await page.getByText(/PDF processing cancelled/i).waitFor();
+  assert.match(mergeWarningMessage, /25 MiB large-file warning threshold/i);
+  assert.equal(thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/pdf-lib@1.17.1")).length, pdfLibraryRequestsBeforeWarning, "Cancelling a large PDF merge must happen before the PDF CDN is loaded");
+
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="pdf-split"]').click();
+  await page.locator("#fileInput").setInputFiles({ name: "large-document.pdf", mimeType: "application/pdf", buffer: oversizedPdfBuffer });
+  let splitWarningMessage = "";
+  page.once("dialog", async dialog => { splitWarningMessage = dialog.message(); await dialog.dismiss(); });
+  await page.locator("#run").click();
+  await page.getByText(/PDF processing cancelled/i).waitFor();
+  assert.match(splitWarningMessage, /25 MiB large-file warning threshold/i);
+  assert.equal(thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/pdf-lib@1.17.1")).length, pdfLibraryRequestsBeforeWarning, "Cancelling a large PDF split must happen before the PDF CDN is loaded");
+
   // Merge three PDFs and verify the downloaded document structurally.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="pdf-merge"]').click();
