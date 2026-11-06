@@ -83,6 +83,19 @@ try {
   assert.equal(await page.locator('[data-tool="csv-viewer"]').count(), 1);
   await page.locator("#search").fill("");
 
+  // Word Counter: separate whitespace-free and inclusive counts; count Unicode code points.
+  await page.locator('[data-tool="word-counter"]').click();
+  await auditAccessibility("Word Counter tool");
+  await page.locator("#text").fill("A 😀\nCafe!");
+  const wordCounterResult = await page.locator("#result").innerText();
+  assert.match(wordCounterResult, /3 words/);
+  assert.match(wordCounterResult, /7 characters \(excluding whitespace\)/);
+  assert.match(wordCounterResult, /9 characters including spaces and line breaks/);
+  assert.match(wordCounterResult, /1 sentences/);
+  await page.locator("#text").fill("");
+  assert.match(await page.locator("#result").innerText(), /0 words · 0 characters \(excluding whitespace\) · 0 characters including spaces and line breaks · 0 sentences/);
+  await page.locator("#closeWork").click();
+
   // JSON formatter: valid and invalid input.
   await page.locator('[data-tool="json"]').click();
   await auditAccessibility("JSON formatter tool");
