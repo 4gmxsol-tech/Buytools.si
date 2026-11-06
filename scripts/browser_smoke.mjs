@@ -130,6 +130,7 @@ try {
   assert.equal(await page.locator("#jsonInput").inputValue(), "", "Oversize standalone JSON selection must clear previous input");
 
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+  await page.addScriptTag({ content: axe.source });
 
   // CSV converter: BOM, normal conversion, duplicate-header guard and CSV quoting.
   await page.locator('[data-tool="csv-json"]').click();
