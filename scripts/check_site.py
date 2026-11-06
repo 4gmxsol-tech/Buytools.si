@@ -275,6 +275,15 @@ if json_tool_parser and "/guides/format-json-online/" not in json_tool_parser.hr
 if json_guide_parser and "/tools/json-formatter/" not in json_guide_parser.hrefs:
     fail("JSON formatting guide must link to the JSON Formatter landing page.")
 
+# Extend the JSON guide's topical cluster from adjacent JSON utilities.
+for related_json_page in (
+    ROOT / "tools/csv-json-converter/index.html",
+    ROOT / "tools/json-to-typescript/index.html",
+):
+    parser = all_parsers.get(related_json_page)
+    if parser and "/guides/format-json-online/" not in parser.hrefs:
+        fail(f"Related JSON utility must link to the practical JSON formatting guide: {related_json_page.relative_to(ROOT)}")
+
 json_guide_html = (ROOT / "guides/format-json-online/index.html").read_text(encoding="utf-8")
 missing_json_workflow = missing_json_file_workflow_disclosures(json_guide_html)
 if missing_json_workflow:
