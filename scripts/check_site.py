@@ -142,7 +142,7 @@ if sitemap_root is not None:
                 if lastmod_date > date.today():
                     fail(f"Sitemap lastmod must not be in the future: {loc}")
 
-for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/tools/word-counter/", DOMAIN + "/tools/images-to-pdf/", DOMAIN + "/guides/convert-images-to-pdf/", DOMAIN + "/privacy/"):
+for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-compressor/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/tools/word-counter/", DOMAIN + "/tools/images-to-pdf/", DOMAIN + "/guides/convert-images-to-pdf/", DOMAIN + "/privacy/"):
     entry = sitemap_entries.get(required_lastmod_url)
     if entry is None or not entry.findtext("{*}lastmod"):
         fail(f"Recently updated page is missing sitemap lastmod: {required_lastmod_url}")
@@ -296,8 +296,26 @@ missing_batch_resizer_disclosures = missing_batch_image_resizer_disclosures(batc
 if missing_batch_resizer_disclosures:
     fail("Batch image resizer page is inaccurate or incomplete: " + ", ".join(missing_batch_resizer_disclosures))
 
+batch_image_compressor_page = (ROOT / "tools/batch-image-compressor/index.html").read_text(encoding="utf-8")
+for page_name, page_text in (("Batch image compressor", batch_image_compressor_page), ("Batch image resizer", batch_image_resizer_page)):
+    if "25 MiB" not in page_text or "before loading the ZIP library" not in page_text or "warning, not a hard limit" not in page_text or "especially on mobile" not in page_text:
+        fail(f"{page_name} page must disclose the 25 MiB memory warning, mobile caveat and soft-limit behavior.")
+
 # Check that each homepage catalogue ID has a corresponding tool renderer branch.
 home = (ROOT / "index.html").read_text(encoding="utf-8")
+batch_process_start = home.find("async function processBatchImages(id){")
+batch_process_end = home.find("async function processImages(id){", batch_process_start)
+batch_process_branch = home[batch_process_start:batch_process_end] if batch_process_start >= 0 and batch_process_end > batch_process_start else ""
+batch_guard = batch_process_branch.find("const totalBatchBytes=files.reduce((total,file)=>total+file.size,0),largeBatchWarningThreshold=25*1024*1024")
+batch_warning = batch_process_branch.find("25 MiB batch-image warning threshold")
+batch_import = batch_process_branch.find("await import('https://esm.sh/jszip@3.10.1')")
+if min(batch_guard, batch_warning, batch_import) < 0 or not (batch_guard < batch_warning < batch_import):
+    fail("Batch image tools must confirm large selections before loading JSZip.")
+if "Batch image processing cancelled" not in batch_process_branch:
+    fail("Batch image tools must expose an actionable cancellation status.")
+batch_privacy = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
+if "25 MiB" not in batch_privacy or "before requesting the library" not in batch_privacy or "cancelling prevents that request" not in batch_privacy:
+    fail("Privacy policy must explain the batch-image ZIP library confirmation behavior.")
 csv_viewer_page = (ROOT / "tools/csv-viewer/index.html").read_text(encoding="utf-8")
 csv_converter_page = (ROOT / "tools/csv-json-converter/index.html").read_text(encoding="utf-8")
 for page_path, page_html in (

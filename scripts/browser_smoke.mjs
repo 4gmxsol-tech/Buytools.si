@@ -546,6 +546,51 @@ try {
   await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), resizedResultUrl);
   await page.locator('[data-tool="batch-compress"]').click();
   await auditAccessibility("batch image compressor");
+  const largeBatchFixture = Buffer.alloc(26 * 1024 * 1024, 0);
+  const jsZipRequestsBeforeBatchWarnings = thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jszip@3.10.1")).length;
+  await page.locator("#fileInput").setInputFiles({
+    name: "large-batch-image.png",
+    mimeType: "image/png",
+    buffer: largeBatchFixture
+  });
+  let batchCompressorWarningMessage = "";
+  page.once("dialog", async dialog => {
+    batchCompressorWarningMessage = dialog.message();
+    await dialog.dismiss();
+  });
+  await page.locator("#run").click();
+  await page.getByText(/Batch image processing cancelled/i).waitFor();
+  assert.match(batchCompressorWarningMessage, /25 MiB batch-image warning threshold/i);
+  assert.equal(
+    thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jszip@3.10.1")).length,
+    jsZipRequestsBeforeBatchWarnings,
+    "Cancelling a large batch-compression selection must happen before the JSZip CDN is requested"
+  );
+
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="batch-resize"]').click();
+  await auditAccessibility("batch image resizer large-batch warning");
+  await page.locator("#fileInput").setInputFiles({
+    name: "large-batch-image.png",
+    mimeType: "image/png",
+    buffer: largeBatchFixture
+  });
+  let batchResizerWarningMessage = "";
+  page.once("dialog", async dialog => {
+    batchResizerWarningMessage = dialog.message();
+    await dialog.dismiss();
+  });
+  await page.locator("#run").click();
+  await page.getByText(/Batch image processing cancelled/i).waitFor();
+  assert.match(batchResizerWarningMessage, /25 MiB batch-image warning threshold/i);
+  assert.equal(
+    thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jszip@3.10.1")).length,
+    jsZipRequestsBeforeBatchWarnings,
+    "Cancelling a large batch-resize selection must happen before the JSZip CDN is requested"
+  );
+
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="batch-compress"]').click();
   await page.locator("#fileInput").setInputFiles(batchFiles);
   const [batchCompressDownload] = await Promise.all([
     page.waitForEvent("download"),
