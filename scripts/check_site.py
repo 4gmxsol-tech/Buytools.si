@@ -291,6 +291,8 @@ image_guide_parser.feed(image_guide)
 image_guide_title = "".join(image_guide_parser.title_parts).strip()
 if image_guide_title != "How to Reduce Image File Size Without Losing Quality | BuyTools.si":
     fail("Image guide title must match the verified no-quality-loss search intent.")
+if image_guide.count('"dateModified":') != 1 or '"dateModified":"2026-11-06"' not in image_guide:
+    fail("Image guide Article structured data must contain exactly one current dateModified value.")
 for required_image_guide_detail in (
     'id="quick-answer"',
     "Lossless optimization can reduce file size without changing decoded pixels",
