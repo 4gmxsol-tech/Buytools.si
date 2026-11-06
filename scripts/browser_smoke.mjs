@@ -564,7 +564,7 @@ try {
   await page.locator('[data-tool="batch-compress"]').click();
   await auditAccessibility("batch image compressor");
   const largeBatchFixture = Buffer.alloc(26 * 1024 * 1024, 0);
-  const jsZipRequestsBeforeBatchWarnings = thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jszip@3.10.1")).length;
+  const jsZipRequestsBeforeBatchWarnings = thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jszip@3.10.2")).length;
   await page.locator("#fileInput").setInputFiles({
     name: "large-batch-image.png",
     mimeType: "image/png",
@@ -579,7 +579,7 @@ try {
   await page.getByText(/Batch image processing cancelled/i).waitFor();
   assert.match(batchCompressorWarningMessage, /25 MiB batch-image warning threshold/i);
   assert.equal(
-    thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jszip@3.10.1")).length,
+    thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jszip@3.10.2")).length,
     jsZipRequestsBeforeBatchWarnings,
     "Cancelling a large batch-compression selection must happen before the JSZip CDN is requested"
   );
@@ -601,7 +601,7 @@ try {
   await page.getByText(/Batch image processing cancelled/i).waitFor();
   assert.match(batchResizerWarningMessage, /25 MiB batch-image warning threshold/i);
   assert.equal(
-    thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jszip@3.10.1")).length,
+    thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/jszip@3.10.2")).length,
     jsZipRequestsBeforeBatchWarnings,
     "Cancelling a large batch-resize selection must happen before the JSZip CDN is requested"
   );
@@ -615,7 +615,7 @@ try {
   ]);
   await page.getByText(/Finished 2 image\(s\)/).waitFor();
   assert.match(batchCompressDownload.suggestedFilename(), /compressed-images\.zip$/i);
-  assert.ok(thirdPartyRequests.some(url => url.href.startsWith("https://esm.sh/jszip@3.10.1")), "ZIP library should load on demand when batch compression is run");
+  assert.ok(thirdPartyRequests.some(url => url.href.startsWith("https://esm.sh/jszip@3.10.2")), "ZIP library should load on demand when batch compression is run");
   const compressedZip = await JSZip.loadAsync(await readDownloadBuffer(batchCompressDownload));
   const compressedNames = Object.keys(compressedZip.files).filter(name => !compressedZip.files[name].dir).sort();
   assert.deepEqual(compressedNames, ["001-transparent-source.jpg", "002-portrait-source.jpg"]);
