@@ -112,6 +112,7 @@ try {
   const invalidUtf8Json = Buffer.from([0x7b, 0x22, 0x76, 0x22, 0x3a, 0x22, 0xff, 0x22, 0x7d]);
   const thirdPartyBeforeInvalidUtf8 = thirdPartyRequests.length;
   await page.locator("#jsonFile").setInputFiles({ name: "invalid-utf8.json", mimeType: "application/json", buffer: invalidUtf8Json });
+  await page.waitForFunction(() => /Could not read this file.*UTF-8/.test(document.querySelector("#result")?.textContent || ""));
   assert.match(await page.locator("#result").innerText(), /Could not read this file.*UTF-8/);
   assert.equal(await page.locator("#text").inputValue(), "", "Malformed UTF-8 must not be imported with replacement characters");
   assert.equal(thirdPartyRequests.length, thirdPartyBeforeInvalidUtf8, "Invalid local JSON must not create third-party requests");
@@ -140,6 +141,7 @@ try {
   assert.equal(await page.locator("#jsonInput").inputValue(), '{"bom":true}', "Standalone formatter should strip a UTF-8 BOM");
   const thirdPartyBeforeStandaloneInvalidUtf8 = thirdPartyRequests.length;
   await page.locator("#jsonFile").setInputFiles({ name: "invalid-utf8.json", mimeType: "application/json", buffer: invalidUtf8Json });
+  await page.waitForFunction(() => /Could not read this file.*UTF-8/.test(document.querySelector("#status")?.textContent || ""));
   assert.match(await page.locator("#status").innerText(), /Could not read this file.*UTF-8/);
   assert.equal(await page.locator("#jsonInput").inputValue(), "", "Standalone formatter must reject malformed UTF-8");
   assert.equal(thirdPartyRequests.length, thirdPartyBeforeStandaloneInvalidUtf8, "Invalid local JSON must not contact third-party hosts");
