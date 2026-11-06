@@ -469,19 +469,25 @@ pdf_splitter_text = (ROOT / "tools/pdf-splitter/index.html").read_text(encoding=
 for page_name, page_text in (("PDF merger", pdf_merger_text), ("PDF splitter", pdf_splitter_text)):
     if "25 MiB" not in page_text or "before loading the PDF library" not in page_text or "especially on mobile" not in page_text:
         fail(f"{page_name} page must disclose the large-file memory confirmation and mobile-memory caveat.")
-if "at least 90.2 MiB" not in home or "at least 90.2 MiB" not in (ROOT / "tools/remove-background/index.html").read_text(encoding="utf-8"):
-    fail("Background-removal first-run model-size warning is missing from the workspace or landing page.")
-if "94,553,445 bytes" not in privacy_text or "90.2 MiB" not in privacy_text:
-    fail("Measured background-removal model download size is missing from the privacy policy.")
-consent_key = "buytools-background-removal-consent-v1"
-consent_gate = home.find("const consentKey='" + consent_key + "'")
+background_tool_page = (ROOT / "tools/remove-background/index.html").read_text(encoding="utf-8")
+for required in ('id="backgroundModel"', 'aria-describedby="backgroundModelHelp"', 'value="isnet_fp16"', 'value="isnet_quint8"'):
+    if required not in home:
+        fail(f"Background-removal model selector is missing: {required}")
+if "const selectedBackgroundModel=$('#backgroundModel')?.value==='isnet_quint8'?'isnet_quint8':'isnet_fp16'" not in home or "model:selectedBackgroundModel" not in home:
+    fail("Background removal must pass the user's selected model to IMG.LY.")
+if "at least 90.2 MiB" not in home or "at least 48.4 MiB" not in home or "at least 48.4 MiB" not in background_tool_page:
+    fail("Background-removal workspace and landing page must disclose both measured first-download lower bounds.")
+if "94,553,445 bytes" not in privacy_text or "50,749,677 bytes" not in privacy_text or "46.3%" not in privacy_text:
+    fail("Privacy policy must disclose both measured model-transfer lower bounds and their observed comparison.")
+consent_key = "buytools-background-removal-consent-v1:"
+consent_gate = home.find("const consentKey='" + consent_key + "'+selectedBackgroundModel")
 model_import = home.find("const mod=await import('https://esm.sh/@imgly/background-removal@1.5.5')")
 if consent_gate < 0 or model_import < 0 or consent_gate > model_import or "window.confirm(" not in home:
-    fail("Background-removal model assets must be gated by explicit first-use consent before the third-party import.")
+    fail("Each background-removal model must require its own explicit consent before the third-party import.")
 if consent_key not in privacy_text:
-    fail("Temporary background-removal consent storage must be disclosed in the privacy policy.")
-if "confirmation is shown before the first model download" not in (ROOT / "tools/remove-background/index.html").read_text(encoding="utf-8").lower():
-    fail("Background-removal landing page must explain the first-use download confirmation.")
+    fail("Model-specific temporary background-removal consent storage must be disclosed in the privacy policy.")
+if "separate confirmation is shown for each model" not in background_tool_page.lower():
+    fail("Background-removal landing page must explain model-specific first-use confirmation.")
 catalogue_start = home.find("const tools=[")
 catalogue_end = home.find("\n];", catalogue_start)
 renderer_start = home.find("function toolMarkup(id)")
