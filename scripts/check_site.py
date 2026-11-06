@@ -323,7 +323,7 @@ for required_quality_detail in (
 ):
     if required_quality_detail not in image_guide:
         fail("Image guide is missing an accurate quality-control detail: " + required_quality_detail)
-if image_guide.count('"dateModified":') != 1 or '"dateModified":"2026-11-07"' not in image_guide:
+if image_guide.count('"dateModified":') != 1 or '"dateModified":"2026-11-06"' not in image_guide:
     fail("Image guide Article structured data must contain exactly one current dateModified value.")
 for required_image_guide_detail in (
     'id="quick-answer"',
