@@ -142,7 +142,7 @@ if sitemap_root is not None:
                 if lastmod_date > date.today():
                     fail(f"Sitemap lastmod must not be in the future: {loc}")
 
-for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-compressor/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/tools/word-counter/", DOMAIN + "/tools/images-to-pdf/", DOMAIN + "/guides/convert-images-to-pdf/", DOMAIN + "/privacy/"):
+for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-compressor/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/tools/word-counter/", DOMAIN + "/tools/images-to-pdf/", DOMAIN + "/guides/convert-images-to-pdf/", DOMAIN + "/guides/reduce-image-size/", DOMAIN + "/privacy/"):
     entry = sitemap_entries.get(required_lastmod_url)
     if entry is None or not entry.findtext("{*}lastmod"):
         fail(f"Recently updated page is missing sitemap lastmod: {required_lastmod_url}")
@@ -286,6 +286,23 @@ if strict_utf8_decoder not in json_tool_page or "new TextDecoder('utf-8',{fatal:
 
 # Keep the image guide aligned with the actual compressor output contract.
 image_guide = (ROOT / "guides/reduce-image-size/index.html").read_text(encoding="utf-8")
+image_guide_parser = PageParser()
+image_guide_parser.feed(image_guide)
+image_guide_title = "".join(image_guide_parser.title_parts).strip()
+if image_guide_title != "How to Reduce Image File Size Without Losing Quality | BuyTools.si":
+    fail("Image guide title must match the verified no-quality-loss search intent.")
+if image_guide.count('"dateModified":') != 1 or '"dateModified":"2026-11-06"' not in image_guide:
+    fail("Image guide Article structured data must contain exactly one current dateModified value.")
+for required_image_guide_detail in (
+    'id="quick-answer"',
+    "Lossless optimization can reduce file size without changing decoded pixels",
+    "Resizing:</strong> changes pixel dimensions",
+    "Lossy compression:</strong> discards image information",
+    'href="/tools/image-compressor/"',
+    'href="/tools/image-resizer/"',
+):
+    if required_image_guide_detail not in image_guide:
+        fail("Image guide is missing a search-intent or accuracy detail: " + required_image_guide_detail)
 missing_image_disclosures = missing_image_compressor_disclosures(image_guide)
 if missing_image_disclosures:
     fail("Image guide is missing accurate compressor disclosures: " + ", ".join(missing_image_disclosures))
