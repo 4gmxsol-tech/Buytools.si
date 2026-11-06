@@ -124,6 +124,13 @@ try {
   // QR generator: verify the disclosed third-party request occurs only after an explicit action and encodes the input safely.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="qr"]').click();
+  const qrPrivacyNotice = page.locator("#qrPrivacyNotice");
+  assert.ok(await qrPrivacyNotice.isVisible(), "QR generator must show its third-party data disclosure before use");
+  const qrNoticeText = await qrPrivacyNotice.innerText();
+  assert.match(qrNoticeText, /sent to QRServer/i);
+  assert.match(qrNoticeText, /do not enter passwords.*confidential information/i);
+  assert.equal(await page.locator("#text").getAttribute("aria-describedby"), "qrPrivacyNotice");
+  assert.equal(thirdPartyRequests.filter(url => url.hostname === "api.qrserver.com").length, 0, "QR input must not be sent before the user requests generation");
   await page.route("https://api.qrserver.com/**", route => route.fulfill({
     status: 200,
     contentType: "image/svg+xml",
