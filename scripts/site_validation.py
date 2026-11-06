@@ -39,16 +39,19 @@ def missing_csv_export_safety_disclosures(html):
 
 
 def missing_json_file_workflow_disclosures(html):
-    """Return practical local-file workflow details missing from the JSON guide."""
+    """Return practical local JSON file workflow details missing from a page."""
     normalized = " ".join(re.sub(r"<[^>]+>", " ", html).lower().split())
     required = (
-        "open the .json file in a text editor",
-        "copy the complete contents",
-        "paste the text into the json formatter",
-        "save it as a new .json file",
-        "rather than a direct file upload",
+        "local",
+        ".json file",
+        "up to 5 mib",
+        "browser file api",
+        "not uploaded to a buytools.si processing endpoint",
     )
-    return [phrase for phrase in required if phrase not in normalized]
+    missing = [phrase for phrase in required if phrase not in normalized]
+    if "rather than a direct file upload" in normalized or "not currently. the json formatter accepts pasted text" in normalized:
+        missing.append("outdated copy-only file workflow disclosure")
+    return missing
 
 
 def _meta_content(html, attribute, expected):

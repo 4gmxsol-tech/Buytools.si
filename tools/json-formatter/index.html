@@ -6,12 +6,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0d0f17">
 <title>Free JSON Formatter &amp; Syntax Checker Online | BuyTools.si</title>
-<meta name="description" content="Format, validate and minify JSON online. Check if JSON is valid, diagnose syntax errors with line and column details, and copy clean output for free.">
+<meta name="description" content="Open local JSON files up to 5 MiB or paste text, format, validate and minify JSON online. Diagnose syntax errors with line and column details in your browser.">
 <link rel="canonical" href="https://buytools.si/tools/json-formatter/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BuyTools.si">
 <meta property="og:title" content="Free JSON Formatter &amp; Syntax Checker Online">
-<meta property="og:description" content="Format JSON, check whether it is valid, and find syntax errors with line and column details.">
+<meta property="og:description" content="Open local JSON files up to 5 MiB or paste text, then format, validate and minify them privately in your browser.">
 <meta property="og:url" content="https://buytools.si/tools/json-formatter/">
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">
@@ -23,13 +23,13 @@
    "@id":"https://buytools.si/tools/json-formatter/#webapp",
    "name":"Free JSON Formatter and Validator",
    "url":"https://buytools.si/tools/json-formatter/",
-   "description":"A free browser-based tool to format, validate and minify JSON, with line and column diagnostics for invalid JSON.",
+   "description":"A free browser-based tool to open local UTF-8 JSON files up to 5 MiB or paste text, then format, validate and minify JSON with line and column diagnostics.",
    "applicationCategory":"DeveloperApplication",
    "operatingSystem":"Any",
    "browserRequirements":"Requires JavaScript and a modern web browser.",
    "isAccessibleForFree":true,
    "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
-   "featureList":["Format and beautify JSON","Validate JSON syntax","Minify JSON","Copy formatted JSON","Show syntax error type, line and column"],
+   "featureList":["Open local UTF-8 JSON files up to 5 MiB","Format and beautify JSON","Validate JSON syntax","Minify JSON","Copy formatted JSON","Show syntax error type, line and column"],
    "publisher":{"@type":"Organization","name":"BuyTools.si","url":"https://buytools.si/"}
   },
   {
@@ -39,7 +39,8 @@
     {"@type":"Question","name":"Does formatting change my JSON data?","acceptedAnswer":{"@type":"Answer","text":"Formatting changes whitespace and indentation only. It does not change the JSON data structure."}},
     {"@type":"Question","name":"How do I find an error in invalid JSON?","acceptedAnswer":{"@type":"Answer","text":"Paste the JSON and select Validate. The tool reports the detected error category and, when the browser provides a usable error position, the line and column to inspect."}},
     {"@type":"Question","name":"Is my JSON uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. JSON parsing, formatting and minification run locally in your browser. The text is not sent to BuyTools.si by this page."}},
-    {"@type":"Question","name":"Can I minify JSON?","acceptedAnswer":{"@type":"Answer","text":"Yes. Select Minify to remove unnecessary whitespace while preserving valid JSON data."}}
+    {"@type":"Question","name":"Can I open a JSON file directly?","acceptedAnswer":{"@type":"Answer","text":"Yes. Choose a local UTF-8 .json file up to 5 MiB. The browser reads it locally; the file is not uploaded to a BuyTools.si processing endpoint."}},
+     {"@type":"Question","name":"Can I minify JSON?","acceptedAnswer":{"@type":"Answer","text":"Yes. Select Minify to remove unnecessary whitespace while preserving valid JSON data."}}
    ]
   }
  ]
@@ -61,7 +62,7 @@ h1{margin:10px 0;font-size:clamp(34px,6vw,54px);line-height:1.08;letter-spacing:
 .editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.editor-label{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:0 0 8px;font-size:13px;font-weight:750}.editor-label small{color:var(--muted);font-weight:500}
 textarea{display:block;width:100%;min-height:330px;resize:vertical;background:#0b0e16;color:#edf2ff;border:1px solid var(--line);border-radius:12px;padding:14px;line-height:1.55;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;tab-size:2}
 textarea[readonly]{background:#101521}.status{min-height:48px;margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;color:var(--muted);background:#0f1320;font-size:13px}
-.status.success{color:var(--success);border-color:#9bea834d}.status.error{color:#ffc0c0;border-color:#ff858566}.diagnostic-title{color:var(--danger);font-weight:800;margin-bottom:4px}.privacy-note{color:var(--muted);font-size:12px;margin:12px 2px 0}
+.status.success{color:var(--success);border-color:#9bea834d}.status.error{color:#ffc0c0;border-color:#ff858566}.diagnostic-title{color:var(--danger);font-weight:800;margin-bottom:4px}.privacy-note{color:var(--muted);font-size:12px;margin:12px 2px 0}.file-picker{display:grid;gap:7px;margin:0 0 14px}.file-picker label{font-size:13px;font-weight:750}.file-picker input{max-width:100%;color:var(--muted)}.file-picker .privacy-note{margin:0}
 .content-card{margin-top:18px;padding:22px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}.content-card h2{margin:0 0 10px;font-size:23px}.content-card h3{margin:18px 0 6px;font-size:17px}.content-card p,.content-card li{color:var(--muted)}.content-card code{color:var(--accent)}
 details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;font-weight:700}details p{margin-bottom:0}
 .site-footer{padding:26px 0 38px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}.site-footer a{margin-right:14px;text-decoration:none}
@@ -74,7 +75,7 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 <main class="wrap">
 <span class="eyebrow">Free browser-based developer tool</span>
 <h1>JSON Formatter &amp; Syntax Checker</h1>
-<p class="intro">Format JSON online, check whether a JSON string is valid, and diagnose syntax errors with line and column details. Minify clean JSON in your browser without uploading your text.</p>
+<p class="intro">Open a local JSON file up to 5 MiB or paste JSON text, then format, validate and minify it in your browser. Diagnose syntax errors with line and column details without uploading the file.</p>
 <p class="privacy-note">New to JSON syntax? Read our <a href="/guides/format-json-online/">JSON formatting and validation guide</a> for examples, common errors and debugging steps.</p>
 <section class="tool-panel" aria-label="JSON formatter tool">
 <div class="toolbar" role="group" aria-label="JSON actions">
@@ -85,6 +86,7 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 <button class="btn" id="sampleBtn" type="button">Load example</button>
 <button class="btn" id="clearBtn" type="button">Clear</button>
 </div>
+<div class="file-picker"><label for="jsonFile">Open a local UTF-8 JSON file</label><input id="jsonFile" type="file" accept=".json,application/json,text/json" aria-describedby="jsonFileHelp privacyNote"><p class="privacy-note" id="jsonFileHelp">Choose a .json file up to 5 MiB. The browser File API reads it locally; it is not uploaded to a BuyTools.si processing endpoint.</p></div>
 <div class="editor-grid">
 <div><label class="editor-label" for="jsonInput"><span>Input JSON</span><small id="inputCount">0 characters</small></label>
 <textarea id="jsonInput" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="privacyNote" placeholder='Paste JSON here, for example:
@@ -96,12 +98,12 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 <div><label class="editor-label" for="jsonOutput"><span>Output</span><small id="outputCount">0 characters</small></label>
 <textarea id="jsonOutput" spellcheck="false" readonly placeholder="Formatted or minified JSON will appear here."></textarea></div>
 </div>
-<div id="status" class="status" role="status" aria-live="polite">Paste JSON, then choose Format or Validate.</div>
-<p class="privacy-note" id="privacyNote">Privacy: parsing and formatting run locally in this browser. This page does not upload your JSON.</p>
+<div id="status" class="status" role="status" aria-live="polite">Choose a local .json file up to 5 MiB or paste JSON, then choose Format or Validate.</div>
+<p class="privacy-note" id="privacyNote">Privacy: selected files and pasted JSON are read and processed locally in this browser. They are not uploaded to a BuyTools.si processing endpoint.</p>
 </section>
 <section class="content-card">
 <h2>How to use the JSON formatter</h2>
-<ol><li>Paste or type your JSON into the input editor.</li><li>Select <strong>Format</strong> to add readable indentation.</li><li>Select <strong>Validate</strong> to check whether the JSON syntax is valid.</li><li>Select <strong>Minify</strong> to remove unnecessary whitespace from valid JSON.</li><li>Use <strong>Copy output</strong> to copy the result.</li></ol>
+<ol><li>Choose a local UTF-8 <code>.json</code> file up to 5 MiB, or paste or type JSON into the input editor.</li><li>Select <strong>Format</strong> to add readable indentation.</li><li>Select <strong>Validate</strong> to check whether the JSON syntax is valid.</li><li>Select <strong>Minify</strong> to remove unnecessary whitespace from valid JSON.</li><li>Use <strong>Copy output</strong> to copy the result, then save it as a new file if needed.</li></ol>
 <h3>Common JSON syntax errors</h3>
 <ul><li>Using single quotes instead of double quotes around strings and property names.</li><li>Leaving a trailing comma after the final property or array item.</li><li>Forgetting a comma between properties or array values.</li><li>Using comments, <code>undefined</code> or other JavaScript syntax that JSON does not support.</li><li>Leaving a closing brace or bracket out of place.</li></ul>
 </section>
@@ -128,6 +130,7 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 <details><summary>Does formatting change my JSON data?</summary><p>Formatting changes whitespace and indentation only. It does not change the JSON data structure.</p></details>
 <details><summary>How do I find an error in invalid JSON?</summary><p>Paste the JSON and select Validate. The tool reports the detected error category and, when the browser provides a usable error position, the line and column to inspect.</p></details>
 <details><summary>Is my JSON uploaded to a server?</summary><p>No. JSON parsing, formatting and minification run locally in your browser. The text is not sent to BuyTools.si by this page.</p></details>
+<details><summary>Can I open a JSON file directly?</summary><p>Yes. Choose a local UTF-8 .json file up to 5 MiB. The browser reads it locally; files larger than 5 MiB are rejected before reading. You can also paste JSON text.</p></details>
 <details><summary>Can I minify JSON?</summary><p>Yes. Select Minify to remove unnecessary whitespace while preserving valid JSON data.</p></details>
 </section>
 <section class="content-card"><h2>Explore more developer tools</h2><p>Try the <a href="/tools/csv-json-converter/">CSV to JSON converter</a>, <a href="/tools/json-to-typescript/">JSON to TypeScript</a>, <a href="/tools/regex-tester/">Regex tester</a> and <a href="/tools/markdown-preview/">Markdown preview</a>.</p></section>
@@ -136,7 +139,8 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 <footer class="wrap site-footer"><a href="/">Home</a><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><p>© 2026 BuyTools.si · Free tools for everyday work.</p></footer>
 <script>
 (()=>{"use strict";
-const input=document.getElementById("jsonInput"),output=document.getElementById("jsonOutput"),status=document.getElementById("status"),inputCount=document.getElementById("inputCount"),outputCount=document.getElementById("outputCount");
+const input=document.getElementById("jsonInput"),output=document.getElementById("jsonOutput"),status=document.getElementById("status"),inputCount=document.getElementById("inputCount"),outputCount=document.getElementById("outputCount"),fileInput=document.getElementById("jsonFile"),MAX_JSON_FILE_BYTES=5*1024*1024;
+let fileReadRequest=0;
 function updateCounts(){inputCount.textContent=input.value.length.toLocaleString()+" characters";outputCount.textContent=output.value.length.toLocaleString()+" characters"}
 function setStatus(message,type=""){status.className="status"+(type?" "+type:"");status.textContent=message}
 function classifyError(message,source,position){
@@ -168,13 +172,14 @@ const detail=document.createElement("div");detail.textContent=kind+". Line "+loc
 const code=document.createElement("code");code.style.cssText="display:block;margin-top:7px;white-space:pre-wrap";code.textContent=excerpt+"\n"+pointer;
 const note=document.createElement("div");note.style.marginTop="6px";note.textContent="Browser error: "+String(error.message||error);
 status.append(title,detail,code,note);output.value="";updateCounts();return null}}
+fileInput.addEventListener("change",async()=>{const file=fileInput.files&&fileInput.files[0];if(!file)return;const requestId=++fileReadRequest;input.value="";output.value="";updateCounts();if(file.size>MAX_JSON_FILE_BYTES){fileInput.value="";setStatus("File exceeds the 5 MiB limit. Choose a smaller JSON file or paste its contents.","error");return}setStatus("Reading "+file.name+"…");try{const contents=await file.text();if(requestId!==fileReadRequest)return;input.value=contents;setStatus("Loaded "+file.name+". Select Format, Validate or Minify.");updateCounts();input.focus()}catch(error){if(requestId!==fileReadRequest)return;fileInput.value="";input.value="";output.value="";updateCounts();setStatus("Could not read this file. Choose a UTF-8 .json file and try again.","error")}});
 document.getElementById("formatBtn").addEventListener("click",()=>{const p=parseInput();if(!p)return;output.value=JSON.stringify(p.value,null,2);setStatus("Valid JSON. Formatting completed successfully.","success");updateCounts()});
 document.getElementById("validateBtn").addEventListener("click",()=>{if(!parseInput())return;setStatus("Valid JSON. No syntax errors were found.","success");updateCounts()});
 document.getElementById("minifyBtn").addEventListener("click",()=>{const p=parseInput();if(!p)return;output.value=JSON.stringify(p.value);setStatus("Valid JSON. Minification completed successfully.","success");updateCounts()});
 document.getElementById("copyBtn").addEventListener("click",async()=>{if(!output.value){setStatus("There is no output to copy. Format or minify valid JSON first.","error");return}try{await navigator.clipboard.writeText(output.value);setStatus("Output copied to clipboard.","success")}catch(_){output.focus();output.select();const ok=document.execCommand("copy");setStatus(ok?"Output copied to clipboard.":"Clipboard access was blocked. Select and copy manually.",ok?"success":"error")}});
-document.getElementById("sampleBtn").addEventListener("click",()=>{input.value=JSON.stringify({project:"BuyTools",active:true,version:2,features:["format","validate","minify"],owner:{team:"engineering",contact:null}},null,2);output.value="";setStatus("Example loaded. Select Format, Validate or Minify.");updateCounts();input.focus()});
-document.getElementById("clearBtn").addEventListener("click",()=>{input.value="";output.value="";setStatus("Editors cleared. Paste JSON to begin.");updateCounts();input.focus()});
-input.addEventListener("input",updateCounts);updateCounts();
+document.getElementById("sampleBtn").addEventListener("click",()=>{fileReadRequest++;fileInput.value="";input.value=JSON.stringify({project:"BuyTools",active:true,version:2,features:["format","validate","minify"],owner:{team:"engineering",contact:null}},null,2);output.value="";setStatus("Example loaded. Select Format, Validate or Minify.");updateCounts();input.focus()});
+document.getElementById("clearBtn").addEventListener("click",()=>{fileReadRequest++;fileInput.value="";input.value="";output.value="";setStatus("Editors cleared. Paste JSON to begin.");updateCounts();input.focus()});
+input.addEventListener("input",()=>{fileReadRequest++;fileInput.value="";updateCounts()});updateCounts();
 })();
 </script>
 </body>
