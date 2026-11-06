@@ -934,6 +934,13 @@ try {
   // record third-party response sizes where exposed, and verify no image payload is uploaded.
   assert.equal(thirdPartyRequests.some(url => url.hostname === "staticimgly.com"), false, "Background-removal model assets must not load until that feature is explicitly run");
   await page.locator('[data-tool="background"]').click();
+  const backgroundModelSelector = page.locator("#backgroundModel");
+  assert.equal(await backgroundModelSelector.inputValue(), "isnet_fp16", "Standard model should remain the default");
+  assert.deepEqual(
+    await backgroundModelSelector.locator("option").evaluateAll(options => options.map(option => option.value)),
+    ["isnet_fp16", "isnet_quint8"],
+    "Background removal should offer the standard and smaller quantized models"
+  );
   const lightThemeColors = await page.evaluate(() => ({
     body: getComputedStyle(document.body).color,
     dropHeading: getComputedStyle(document.querySelector("#drop > strong")).color,
@@ -1329,13 +1336,59 @@ try {
     knownTransferReductionPercent: Number(((1 - quantizedKnownBytes / defaultKnownBytes) * 100).toFixed(1))
   }, null, 2));
 
+  // The smaller model has a separate session consent gate; declining it must not reuse
+  // acceptance of the standard model. Then exercise the smaller model through the UI.
+  await backgroundModelSelector.selectOption("isnet_quint8");
+  const smallerRequestsBeforeDecline = thirdPartyRequestDetails.length;
+  const smallerDeclineDialogPromise = page.waitForEvent("dialog");
+  const smallerDeclineClickPromise = page.locator("#run").click();
+  const smallerDeclineDialog = await smallerDeclineDialogPromise;
+  assert.match(smallerDeclineDialog.message(), /at least 48\.4 MiB/i, "Smaller-model consent should disclose its measured lower bound");
+  await smallerDeclineDialog.dismiss();
+  await smallerDeclineClickPromise;
+  await page.getByText(/Background removal cancelled\. No AI model assets were requested\./i).waitFor();
+  assert.equal(
+    thirdPartyRequestDetails.length,
+    smallerRequestsBeforeDecline,
+    "Declining smaller-model consent must not request the IMG.LY library or model assets"
+  );
+
+  const smallerDownloadPromise = page.waitForEvent("download", { timeout: 240000 });
+  const smallerAcceptDialogPromise = page.waitForEvent("dialog");
+  const smallerClickPromise = page.locator("#run").click();
+  const smallerAcceptDialog = await smallerAcceptDialogPromise;
+  assert.match(smallerAcceptDialog.message(), /smaller quantized model/i, "The consent dialog should identify the selected model");
+  await smallerAcceptDialog.accept();
+  await smallerClickPromise;
+  const smallerDownload = await smallerDownloadPromise;
+  await page.getByText(/Background removal complete with the smaller quantized model/i).waitFor({ timeout: 240000 });
+  const smallerOutput = await readDownloadBuffer(smallerDownload);
+  assert.ok(smallerOutput.length > 8, "Smaller-model background removal returned an empty file");
+  assert.equal(
+    smallerOutput.subarray(0, 8).toString("hex"),
+    "89504e470d0a1a0a",
+    "Smaller-model background removal should produce a valid PNG"
+  );
+  const smallerPreviewUrl = await page.locator("#preview").evaluate(image => image.src);
+  const smallerUiRequests = thirdPartyRequestDetails.slice(smallerRequestsBeforeDecline);
+  assert.deepEqual(
+    smallerUiRequests.filter(detail => detail.method !== "GET" || detail.requestBodyBytes > 0).map(detail => ({
+      host: new URL(detail.url).hostname,
+      method: detail.method,
+      requestBodyBytes: detail.requestBodyBytes
+    })),
+    [],
+    "Smaller-model UI processing must not upload the selected image"
+  );
+
   await page.locator("#closeWork").click();
   await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), backgroundPreviewUrl);
+  await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), smallerPreviewUrl);
 
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");
   const externalHosts = [...new Set(thirdPartyRequests.map(url => url.hostname))].sort();
   console.log("On-demand third-party request hosts observed: " + externalHosts.join(", "));
-  console.log(`Browser smoke tests passed: ${toolCount} tool cards; initial first-party-only page load; on-demand QR, PDF, ZIP and image-to-PDF requests; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, stage-aware background-removal download/decode/inference/encode progress, quantized-model benchmark, downloads, theme, 390px mobile layout and axe audits.`);
+  console.log(`Browser smoke tests passed: ${toolCount} tool cards; initial first-party-only page load; on-demand QR, PDF, ZIP and image-to-PDF requests; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, stage-aware background-removal progress, per-model consent, standard and smaller quantized-model UI workflows, synthetic model benchmark, downloads, theme, 390px mobile layout and axe audits.`);
 } finally {
   await browser.close();
 }
