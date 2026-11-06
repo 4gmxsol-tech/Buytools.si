@@ -269,6 +269,9 @@ if (
 homepage_json_page = (ROOT / "index.html").read_text(encoding="utf-8")
 if "jsonFile" not in homepage_json_page or "maxJsonFileBytes=5*1024*1024" not in homepage_json_page or "file.size>maxJsonFileBytes" not in homepage_json_page:
     fail("Homepage JSON tool must provide a local file picker and enforce the 5 MiB limit before reading.")
+strict_utf8_decoder = 'new TextDecoder("utf-8",{fatal:true}).decode(await file.arrayBuffer())'
+if strict_utf8_decoder not in json_tool_page or "new TextDecoder('utf-8',{fatal:true}).decode(await file.arrayBuffer())" not in homepage_json_page:
+    fail("Both JSON file importers must reject malformed UTF-8 instead of silently replacing invalid bytes.")
 
 # Keep the image guide aligned with the actual compressor output contract.
 image_guide = (ROOT / "guides/reduce-image-size/index.html").read_text(encoding="utf-8")
