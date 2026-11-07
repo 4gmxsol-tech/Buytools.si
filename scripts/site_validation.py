@@ -265,7 +265,7 @@ def missing_runtime_dependency_notices(manifest, licenses_html):
     if not isinstance(packages, list) or not packages:
         return ["Runtime dependency baseline has no observed modules."]
 
-    if not re.search(r"""id\\s*=\\s*["']background-removal-runtime["']""", licenses_html, flags=re.IGNORECASE):
+    if not re.search(r"""id\s*=\s*["']background-removal-runtime["']""", licenses_html, flags=re.IGNORECASE):
         missing.append("License page is missing the background-removal runtime inventory section.")
 
     license_text = " ".join(re.sub(r"<[^>]+>", " ", licenses_html).casefold().split())
@@ -280,7 +280,7 @@ def missing_runtime_dependency_notices(manifest, licenses_html):
 
         pattern = (
             re.escape(name.casefold())
-            + r"\\s*[—–-]\\s*version\\s*"
+            + r"\s*[—–-]\s*version\s*"
             + re.escape(version.casefold())
             + r"(?![0-9a-z.-])"
         )
