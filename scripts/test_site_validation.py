@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures)
+from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -191,6 +191,37 @@ class JsonMetadataScopeDisclosureTests(unittest.TestCase):
         self.assertEqual(
             missing_json_scope_metadata_disclosures(html),
             ["Open Graph description must describe JSON syntax validation"],
+        )
+
+
+class HomepageJsonSyntaxDisclosureTests(unittest.TestCase):
+    COMPLETE = (
+        "<script>const tools=[{id:'json',name:'JSON Formatter',cat:'Developer',"
+        "desc:'Format, check JSON syntax and minify JSON data.',"
+        "tags:'developer code json syntax check validate pretty print'}];</script>"
+    )
+
+    def test_json_card_description_and_search_tags_identify_syntax(self):
+        self.assertEqual(missing_homepage_json_syntax_disclosure(self.COMPLETE), [])
+
+    def test_missing_syntax_in_description_is_reported(self):
+        html = self.COMPLETE.replace("check JSON syntax", "validate")
+        self.assertEqual(
+            missing_homepage_json_syntax_disclosure(html),
+            ["description must identify JSON syntax checking"],
+        )
+
+    def test_missing_syntax_search_tag_is_reported(self):
+        html = self.COMPLETE.replace("json syntax check", "developer syntax check")
+        self.assertEqual(
+            missing_homepage_json_syntax_disclosure(html),
+            ["search tags must include JSON syntax"],
+        )
+
+    def test_missing_json_card_is_reported(self):
+        self.assertEqual(
+            missing_homepage_json_syntax_disclosure("<script>const tools=[];</script>"),
+            ["Homepage JSON Formatter catalogue entry is missing."],
         )
 
 
