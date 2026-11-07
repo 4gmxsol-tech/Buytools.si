@@ -379,6 +379,90 @@ def missing_upstream_lock_evidence(manifest):
                     missing.append(f"Transitive advisory record is missing {field}: {name}.")
     if not str(manifest.get("securityReview", {}).get("transitiveExposureConclusion", "")).strip():
         missing.append("Transitive dependency exposure conclusion is missing.")
+
+    bundle = manifest.get("upstreamBundleEvidence")
+    if not isinstance(bundle, dict):
+        missing.append("Upstream ONNX Runtime ESM source-map evidence is missing.")
+    else:
+        if bundle.get("packageManifestUrl") != "https://unpkg.com/onnxruntime-web@1.18.0/package.json":
+            missing.append("ONNX Runtime package manifest URL is inconsistent.")
+        if bundle.get("cpuEsmExport") != "./dist/esm/ort.min.js":
+            missing.append("ONNX Runtime CPU ESM export path is inconsistent.")
+        if bundle.get("cpuSourceMapUrl") != "https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.min.js.map":
+            missing.append("ONNX Runtime CPU source-map URL is inconsistent.")
+        if bundle.get("webgpuEsmExport") != "./dist/esm/ort.webgpu.min.js":
+            missing.append("ONNX Runtime WebGPU ESM export path is inconsistent.")
+        if bundle.get("webgpuSourceMapUrl") != "https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.webgpu.min.js.map":
+            missing.append("ONNX Runtime WebGPU source-map URL is inconsistent.")
+
+        cpu_sources = bundle.get("cpuSourcePaths")
+        if not isinstance(cpu_sources, list):
+            missing.append("ONNX Runtime CPU source-map paths must be a list.")
+            cpu_sources = []
+        for required_path, message in (
+            ("../../node_modules/protobufjs/src/reader.js", "ONNX Runtime CPU source map must include protobufjs reader code."),
+            ("../../node_modules/protobufjs/src/writer.js", "ONNX Runtime CPU source map must include protobufjs writer code."),
+            ("../../node_modules/@protobufjs/utf8/index.js", "ONNX Runtime CPU source map must include @protobufjs/utf8."),
+        ):
+            if required_path not in cpu_sources:
+                missing.append(message)
+
+        webgpu_protobuf_sources = bundle.get("webgpuProtobufSourcePaths")
+        if not isinstance(webgpu_protobuf_sources, list) or webgpu_protobuf_sources:
+            missing.append("WebGPU source-map review must not claim protobufjs/@protobufjs source paths.")
+
+        confirmed = bundle.get("confirmedBundledPackages")
+        if not isinstance(confirmed, list) or not confirmed:
+            missing.append("Confirmed ONNX Runtime source-map package records are missing.")
+            confirmed = []
+        confirmed_names = set()
+        for package in confirmed:
+            if not isinstance(package, dict):
+                missing.append("Confirmed source-map package record must be an object.")
+                continue
+            name = str(package.get("name", "")).strip()
+            confirmed_names.add(name)
+            record = by_name.get(name)
+            if not record:
+                missing.append(f"Confirmed bundled dependency has no upstream lockfile record: {name}.")
+                continue
+            if package.get("version") != record.get("version") or package.get("license") != record.get("license"):
+                missing.append(f"Confirmed bundled dependency version/license differs from source-lock evidence: {name}.")
+            source_paths = package.get("sourcePaths")
+            if not isinstance(source_paths, list) or not source_paths or not any(path in cpu_sources for path in source_paths):
+                missing.append(f"Confirmed bundled dependency has no matching CPU source-map path: {name}.")
+        for required_name in ("protobufjs", "@protobufjs/utf8"):
+            if required_name not in confirmed_names:
+                missing.append(f"CPU source-map evidence must confirm advisory-relevant package: {required_name}.")
+
+        unconfirmed = bundle.get("unconfirmedLockPackages")
+        if not isinstance(unconfirmed, list):
+            missing.append("Unconfirmed source-lock package list must be explicit.")
+        else:
+            for name in unconfirmed:
+                if name not in by_name:
+                    missing.append(f"Unconfirmed source-lock package has no lockfile record: {name}.")
+
+        observed_ort = next(
+            (module for module in manifest.get("observedModules", []) if isinstance(module, dict) and module.get("name") == "onnxruntime-web"),
+            None,
+        )
+        if not observed_ort or observed_ort.get("resolvedVersion") != "1.18.0":
+            missing.append("Observed runtime baseline must identify onnxruntime-web@1.18.0.")
+        else:
+            module_paths = observed_ort.get("modulePaths", [])
+            if not all(path in module_paths for path in (
+                "/onnxruntime-web@1.18.0/es2022/onnxruntime-web.mjs",
+                "/onnxruntime-web@1.18.0/es2022/webgpu.mjs",
+            )):
+                missing.append("Observed esm.sh CPU and WebGPU module paths are incomplete.")
+
+        scope_note = str(bundle.get("scopeNote", "")).casefold()
+        if "not a byte-for-byte comparison" not in scope_note or "esm.sh" not in scope_note:
+            missing.append("Bundle source-map scope note must distinguish upstream evidence from the esm.sh transformed response.")
+        runtime_hash_note = str(bundle.get("runtimeHashNote", "")).casefold()
+        if "sha-256" not in runtime_hash_note or "subresource integrity" not in runtime_hash_note:
+            missing.append("Bundle runtime hash limitation must distinguish CI hashes from runtime Subresource Integrity.")
     return missing
 
 def has_head_license_declaration(html):
