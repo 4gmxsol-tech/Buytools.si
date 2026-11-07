@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { readFile, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { createRequire } from "node:module";
+
+const runtimeBaseline = JSON.parse(await readFile(new URL("../audits/background-removal-runtime-baseline.json", import.meta.url), "utf8"));
 const require = createRequire(import.meta.url);
 const axe = require("axe-core");
 import { PDFDocument } from "pdf-lib";
@@ -12,6 +16,7 @@ const page = await context.newPage();
 const pageErrors = [];
 const thirdPartyRequests = [];
 const thirdPartyRequestDetails = [];
+const responseHashPromises = [];
 page.on("pageerror", error => pageErrors.push(error.message));
 page.on("request", request => {
   const requestUrl = new URL(request.url());
@@ -29,7 +34,10 @@ page.on("request", request => {
       requestBodyBytes: postData ? postData.length : 0,
       status: null,
       contentType: null,
-      contentLengthBytes: null
+      contentLengthBytes: null,
+      responseBodyBytes: null,
+      sha256: null,
+      hashError: null
     });
   }
 });
@@ -43,6 +51,20 @@ page.on("response", response => {
   detail.contentLengthBytes = contentLength !== undefined && Number.isFinite(Number(contentLength))
     ? Number(contentLength)
     : null;
+  const responseUrl = new URL(response.url());
+  const isObservedModule = responseUrl.hostname === "esm.sh" &&
+    runtimeBaseline.observedModules.some(module =>
+      module.pathPrefix && responseUrl.pathname.startsWith(module.pathPrefix)
+    );
+  const isModelAsset = responseUrl.hostname === runtimeBaseline.assetOrigin.host;
+  if (detail.status === 200 && (isObservedModule || isModelAsset)) {
+    responseHashPromises.push(response.body().then(body => {
+      detail.responseBodyBytes = body.length;
+      detail.sha256 = createHash("sha256").update(body).digest("hex");
+    }).catch(error => {
+      detail.hashError = error.message;
+    }));
+  }
 });
 
 try {
@@ -1262,6 +1284,14 @@ try {
     [],
     "All observed background-removal library/model requests should complete successfully"
   );
+  for (const module of runtimeBaseline.observedModules.filter(item => item.modulePaths?.length)) {
+    for (const modulePath of module.modulePaths) {
+      assert.ok(
+        backgroundRelevantRequests.some(detail => new URL(detail.url).pathname === modulePath),
+        `Expected runtime module path was not observed: ${module.name}@${module.resolvedVersion} ${modulePath}`
+      );
+    }
+  }
   const backgroundResourceTiming = await page.evaluate(() => performance.getEntriesByType("resource")
     .filter(entry => entry.name.startsWith("http://") || entry.name.startsWith("https://"))
     .filter(entry => {
@@ -1530,9 +1560,97 @@ try {
   await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), backgroundPreviewUrl);
   await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), smallerPreviewUrl);
 
+  await Promise.all(responseHashPromises);
+  const expectedRuntimeModules = runtimeBaseline.observedModules.filter(item => item.modulePaths?.length);
+  for (const module of expectedRuntimeModules) {
+    for (const modulePath of module.modulePaths) {
+      const response = backgroundRelevantRequests.find(detail => new URL(detail.url).pathname === modulePath);
+      assert.ok(
+        response && response.status === 200 && /^[0-9a-f]{64}$/.test(response.sha256 || "") && response.responseBodyBytes > 0,
+        `Runtime module response must have a captured SHA-256: ${module.name}@${module.resolvedVersion} ${modulePath}`
+      );
+    }
+  }
+  const allModelAssetRequests = [...defaultModelRequests, ...quantizedModelRequests];
+  assert.ok(
+    allModelAssetRequests.every(detail =>
+      new URL(detail.url).pathname.startsWith(runtimeBaseline.assetOrigin.pathPrefix) &&
+      detail.status === 200 &&
+      /^[0-9a-f]{64}$/.test(detail.sha256 || "") &&
+      detail.responseBodyBytes > 0
+    ),
+    "Every observed model/WASM response must have a successful status, the versioned origin path and a SHA-256 response hash"
+  );
+  assert.ok(
+    allModelAssetRequests.some(detail => new URL(detail.url).pathname === runtimeBaseline.assetOrigin.manifestPath),
+    "The versioned model resource manifest should be observed"
+  );
+
+  const evidence = detail => ({
+    url: detail.url,
+    method: detail.method,
+    status: detail.status,
+    contentType: detail.contentType,
+    contentLengthBytes: detail.contentLengthBytes,
+    responseBodyBytes: detail.responseBodyBytes,
+    sha256: detail.sha256
+  });
+  const runtimeProvenance = {
+    schemaVersion: 1,
+    capturedAt: new Date().toISOString(),
+    sourceCommit: process.env.GITHUB_SHA || null,
+    workflowRunId: process.env.GITHUB_RUN_ID || null,
+    baselineFile: "audits/background-removal-runtime-baseline.json",
+    modules: runtimeBaseline.observedModules.map(module => ({
+      name: module.name,
+      requestedRange: module.requestedRange,
+      resolvedVersion: module.resolvedVersion,
+      license: module.license,
+      role: module.role,
+      bundled: module.modulePaths.length === 0,
+      requests: module.pathPrefix
+        ? backgroundRelevantRequests
+            .filter(detail => new URL(detail.url).hostname === "esm.sh" && new URL(detail.url).pathname.startsWith(module.pathPrefix))
+            .map(evidence)
+        : []
+    })),
+    assets: {
+      origin: runtimeBaseline.assetOrigin,
+      standardModel: {
+        name: runtimeBaseline.assetOrigin.models.standard,
+        requestCount: defaultModelRequests.length,
+        knownContentLengthResponses: defaultModelRequests.filter(detail => detail.contentLengthBytes !== null).length,
+        knownTransferLowerBoundBytes: defaultKnownBytes,
+        requests: defaultModelRequests.map(evidence)
+      },
+      quantizedModel: {
+        name: runtimeBaseline.assetOrigin.models.quantized,
+        requestCount: quantizedModelRequests.length,
+        knownContentLengthResponses: quantizedModelRequests.filter(detail => detail.contentLengthBytes !== null).length,
+        knownTransferLowerBoundBytes: quantizedKnownBytes,
+        requests: quantizedModelRequests.map(evidence)
+      }
+    },
+    integrity: {
+      algorithm: "SHA-256",
+      scope: "response-body audit snapshot",
+      runtimeSubresourceIntegrityEnforced: false
+    }
+  };
+  await writeFile(new URL("../runtime-provenance.json", import.meta.url), JSON.stringify(runtimeProvenance, null, 2) + "\n");
+
   assert.deepEqual(pageErrors, [], "Browser console reported uncaught page errors");
   const externalHosts = [...new Set(thirdPartyRequests.map(url => url.hostname))].sort();
   console.log("On-demand third-party request hosts observed: " + externalHosts.join(", "));
+  console.log("Background-removal runtime SHA-256 snapshot: " + JSON.stringify({
+    sourceCommit: runtimeProvenance.sourceCommit,
+    workflowRunId: runtimeProvenance.workflowRunId,
+    moduleResponseCount: runtimeProvenance.modules.reduce((sum, module) => sum + module.requests.length, 0),
+    hashedModuleResponses: runtimeProvenance.modules.reduce((sum, module) => sum + module.requests.filter(item => item.sha256).length, 0),
+    modelAssetResponseCount: allModelAssetRequests.length,
+    hashedModelAssetResponses: allModelAssetRequests.filter(item => item.sha256).length,
+    artifact: "runtime-provenance.json"
+  }, null, 2));
   console.log(`Browser smoke tests passed: ${toolCount} tool cards; initial first-party-only page load; on-demand QR, PDF, ZIP and image-to-PDF requests; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, stage-aware background-removal progress, per-model consent, standard and smaller quantized-model UI workflows, synthetic model benchmark, downloads, theme, 390px mobile layout and axe audits.`);
 } finally {
   await browser.close();
