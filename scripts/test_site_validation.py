@@ -323,10 +323,6 @@ class ImageLosslessWorkflowDisclosureTests(unittest.TestCase):
         )
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class LicenseDiscoveryLinkTests(unittest.TestCase):
     def test_license_link_in_footer_is_accepted(self):
         html = '<footer><a href="/privacy/">Privacy</a><a href="/licenses/">Licenses</a></footer>'
@@ -342,3 +338,7 @@ class LicenseDiscoveryLinkTests(unittest.TestCase):
 
     def test_missing_footer_is_reported(self):
         self.assertEqual(missing_license_footer_link('<main>Content</main>'), "Page footer is missing.")
+
+
+if __name__ == "__main__":
+    unittest.main()
