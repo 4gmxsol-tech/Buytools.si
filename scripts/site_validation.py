@@ -26,6 +26,20 @@ def missing_image_compressor_disclosures(html):
     return [phrase for phrase in required if phrase not in normalized]
 
 
+def missing_image_lossless_workflow_disclosures(html):
+    """Return missing or inaccurate guidance about pixel-preserving image workflows."""
+    visible_text = " ".join(re.sub(r"<[^>]+>", " ", html).lower().split())
+    required = (
+        "does not currently offer a pixel-preserving lossless image optimizer",
+        "keeps the original pixel dimensions and decoded pixel values",
+        "image compressor exports lossy jpeg files",
+        "image resizer exports png files but changes pixel dimensions",
+        "keep an untouched original copy",
+        "can remove exif, orientation or color-profile information",
+    )
+    return [phrase for phrase in required if phrase not in visible_text]
+
+
 def missing_csv_export_safety_disclosures(html):
     """Return required user-facing CSV formula-safety disclosures missing from a page."""
     normalized = " ".join(html.lower().split())
