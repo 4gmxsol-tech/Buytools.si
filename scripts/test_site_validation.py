@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch)
+from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -163,6 +163,40 @@ class HomepageToolCountTests(unittest.TestCase):
             homepage_tool_count_mismatch(html),
             "Homepage static tool count label is missing or malformed.",
         )
+
+class ImageLosslessWorkflowDisclosureTests(unittest.TestCase):
+    COMPLETE = (
+        "<p>BuyTools.si does not currently offer a pixel-preserving lossless image optimizer. "
+        "Lossless optimization keeps the original pixel dimensions and decoded pixel values. "
+        "The Image Compressor exports lossy JPEG files. "
+        "The Image Resizer exports PNG files but changes pixel dimensions. "
+        "Keep an untouched original copy. Metadata removal can remove EXIF, orientation or "
+        "color-profile information.</p>"
+    )
+
+    def test_complete_lossless_workflow_disclosure_is_accepted(self):
+        self.assertEqual(missing_image_lossless_workflow_disclosures(self.COMPLETE), [])
+
+    def test_missing_product_limitation_is_reported(self):
+        html = self.COMPLETE.replace(
+            "does not currently offer a pixel-preserving lossless image optimizer",
+            "offers a lossless image optimizer",
+        )
+        self.assertEqual(
+            missing_image_lossless_workflow_disclosures(html),
+            ["does not currently offer a pixel-preserving lossless image optimizer"],
+        )
+
+    def test_missing_metadata_caveat_is_reported(self):
+        html = self.COMPLETE.replace(
+            "Metadata removal can remove EXIF, orientation or color-profile information.",
+            "",
+        )
+        self.assertEqual(
+            missing_image_lossless_workflow_disclosures(html),
+            ["can remove exif, orientation or color-profile information"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
