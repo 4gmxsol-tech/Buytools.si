@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-11-07T21:01:24Z",
+  "sourceCommit": "a69ff0bbf3b0c799fd495f85cf3886563ee7eb33",
+  "workflowRunId": 42413597856,
+  "captureMethod": "Chromium browser smoke test against the repository's local static server; generated synthetic fixtures; cold browser context.",
+  "entryPackage": {
+    "name": "@imgly/background-removal",
+    "requestedVersion": "1.5.5",
+    "resolvedVersion": "1.5.5",
+    "license": "AGPL-3.0",
+    "delivery": "esm.sh",
+    "importUrl": "https://esm.sh/@imgly/background-removal@1.5.5"
+  },
+  "observedModules": [
+    {
+      "name": "@imgly/background-removal",
+      "requestedRange": "1.5.5",
+      "resolvedVersion": "1.5.5",
+      "license": "AGPL-3.0",
+      "npmUrl": "https://www.npmjs.com/package/@imgly/background-removal/v/1.5.5",
+      "pathPrefix": "/@imgly/background-removal@1.5.5",
+      "modulePaths": [
+        "/@imgly/background-removal@1.5.5/es2022/background-removal.mjs"
+      ],
+      "role": "Entry package"
+    },
+    {
+      "name": "onnxruntime-web",
+      "requestedRange": "~1.18.0",
+      "resolvedVersion": "1.18.0",
+      "license": "MIT",
+      "npmUrl": "https://www.npmjs.com/package/onnxruntime-web/v/1.18.0",
+      "pathPrefix": "/onnxruntime-web@1.18.0",
+      "modulePaths": [
+        "/onnxruntime-web@1.18.0/es2022/onnxruntime-web.mjs",
+        "/onnxruntime-web@1.18.0/es2022/webgpu.mjs"
+      ],
+      "role": "Browser ONNX Runtime entry points"
+    },
+    {
+      "name": "zod",
+      "requestedRange": "^3.23.8",
+      "resolvedVersion": "3.25.76",
+      "license": "MIT",
+      "npmUrl": "https://www.npmjs.com/package/zod/v/3.25.76",
+      "pathPrefix": "/zod@3.25.76",
+      "modulePaths": [
+        "/zod@3.25.76/es2022/zod.mjs"
+      ],
+      "role": "Zod v3 configuration-schema validation"
+    },
+    {
+      "name": "ndarray",
+      "requestedRange": "~1.0.0",
+      "resolvedVersion": "1.0.19",
+      "license": "MIT",
+      "npmUrl": "https://www.npmjs.com/package/ndarray/v/1.0.19",
+      "pathPrefix": "/ndarray@1.0.19",
+      "modulePaths": [
+        "/ndarray@1.0.19/es2022/ndarray.mjs"
+      ],
+      "role": "Array helpers used by the image-processing package"
+    },
+    {
+      "name": "iota-array",
+      "requestedRange": "^1.0.0",
+      "resolvedVersion": "1.0.0",
+      "license": "MIT",
+      "npmUrl": "https://www.npmjs.com/package/iota-array/v/1.0.0",
+      "pathPrefix": "/iota-array@1.0.0",
+      "modulePaths": [
+        "/iota-array@1.0.0/es2022/iota-array.mjs"
+      ],
+      "role": "ndarray runtime dependency"
+    },
+    {
+      "name": "is-buffer",
+      "requestedRange": "^1.0.2",
+      "resolvedVersion": "1.1.6",
+      "license": "MIT",
+      "npmUrl": "https://www.npmjs.com/package/is-buffer/v/1.1.6",
+      "pathPrefix": "/is-buffer@1.1.6",
+      "modulePaths": [
+        "/is-buffer@1.1.6/es2022/is-buffer.mjs"
+      ],
+      "role": "ndarray runtime dependency"
+    },
+    {
+      "name": "lodash",
+      "requestedRange": "Bundled in the published distribution",
+      "resolvedVersion": "4.17.21",
+      "license": "MIT",
+      "npmUrl": "https://www.npmjs.com/package/lodash/v/4.17.21",
+      "pathPrefix": null,
+      "modulePaths": [],
+      "role": "Source-map component embedded in the published IMG.LY distribution; no separate browser request observed"
+    }
+  ],
+  "assetOrigin": {
+    "host": "staticimgly.com",
+    "pathPrefix": "/@imgly/background-removal-data/1.5.5/dist/",
+    "manifestPath": "/@imgly/background-removal-data/1.5.5/dist/resources.json",
+    "models": {
+      "standard": "isnet_fp16",
+      "quantized": "isnet_quint8"
+    }
+  },
+  "observedAssetMetrics": {
+    "standardModel": {
+      "requests": 27,
+      "contentLengthKnownResponses": 24,
+      "knownTransferLowerBoundBytes": 94553445
+    },
+    "quantizedModel": {
+      "requests": 16,
+      "contentLengthKnownResponses": 13,
+      "knownTransferLowerBoundBytes": 50749677,
+      "knownTransferReductionPercent": 46.3
+    },
+    "note": "Content-Length sums are lower bounds because some responses did not expose a length. The run used synthetic fixtures; alpha-mask agreement is diagnostic, not a real-photo quality score."
+  },
+  "unresolvedBundledDependencies": [
+    {
+      "parent": "onnxruntime-web@1.18.0",
+      "name": "flatbuffers",
+      "requestedRange": "^1.12.0"
+    },
+    {
+      "parent": "onnxruntime-web@1.18.0",
+      "name": "guid-typescript",
+      "requestedRange": "^1.0.9"
+    },
+    {
+      "parent": "onnxruntime-web@1.18.0",
+      "name": "long",
+      "requestedRange": "^5.2.3"
+    },
+    {
+      "parent": "onnxruntime-web@1.18.0",
+      "name": "onnxruntime-common",
+      "requestedRange": "1.18.0"
+    },
+    {
+      "parent": "onnxruntime-web@1.18.0",
+      "name": "platform",
+      "requestedRange": "^1.3.6"
+    },
+    {
+      "parent": "onnxruntime-web@1.18.0",
+      "name": "protobufjs",
+      "requestedRange": "^7.2.4"
+    }
+  ],
+  "integrity": {
+    "ciArtifactRecordsSha256ForObservedModuleAndAssetResponses": true,
+    "runtimeSubresourceIntegrityEnforced": false,
+    "assetPathNamesTreatedAsCryptographicDigests": false,
+    "note": "The CI response hashes are an audit snapshot, not runtime SRI enforcement or a complete reproducible build."
+  },
+  "securityReview": {
+    "package": "zod@3.25.76",
+    "advisory": "GHSA-mrhx-c7xc-m3w5",
+    "githubAdvisoryAffectedRange": "<4.6.6",
+    "associatedCve": "CVE-2023-54404",
+    "cveStatus": "Rejected by its CNA on 2026-10-28",
+    "advisoryUrl": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5",
+    "cveUrl": "https://nvd.nist.gov/vuln/detail/CVE-2023-54404",
+    "assessment": "The GitHub advisory remains visible, but the associated CVE was rejected by its CNA. In the current static-site integration, the upstream Zod schema validates a fixed site-generated configuration object; the selected image is passed separately as a Blob. No attacker-controlled array-validation path or server-side Zod endpoint was identified. This is not a confirmed exploitable BuyTools vulnerability. Do not force a Zod 4 override without an upstream-compatible API migration."
+  },
+  "nextPriority": "Resolve the remaining bundled ONNX Runtime dependency versions and license evidence, then evaluate a reviewed integrity-pinned or locally hosted distribution before monetization."
+}
