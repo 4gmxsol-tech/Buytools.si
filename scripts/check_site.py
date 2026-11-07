@@ -169,6 +169,9 @@ else:
 for linked_page in (ROOT / "privacy" / "index.html", ROOT / "tools" / "remove-background" / "index.html"):
     if 'href="/licenses/"' not in linked_page.read_text(encoding="utf-8"):
         fail("Relevant page must link to the third-party license notice: " + str(linked_page.relative_to(ROOT)))
+homepage_html = (ROOT / "index.html").read_text(encoding="utf-8")
+if '<nav class="footerlinks" aria-label="Legal">' not in homepage_html or '<a href="/licenses/">Licenses</a>' not in homepage_html:
+    fail("Homepage legal footer must expose a crawlable link to the third-party license notice.")
 
 seen_urls = set()
 for url in sitemap_urls:
