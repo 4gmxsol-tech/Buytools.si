@@ -476,6 +476,15 @@ pdf_warning_guard = home.find("const totalPdfBytes=chosenFiles.reduce((total,fil
 pdf_warning_dialog = home.find("25 MiB large-file warning threshold")
 if min(pdf_import, pdf_warning_guard, pdf_warning_dialog) < 0 or not (pdf_warning_guard < pdf_warning_dialog < pdf_import):
     fail("PDF merge/split must validate size and ask before loading the PDF library for selections above 25 MiB.")
+pdf_privacy_requirements = (
+    "selected PDF files total more than 25 MiB",
+    "before requesting the library",
+    "cancelling prevents that request",
+    "warning, not a hard limit",
+    "especially on mobile devices",
+)
+if any(requirement not in privacy_text for requirement in pdf_privacy_requirements):
+    fail("Privacy policy must disclose the PDF merge/split 25 MiB confirmation, cancellation behavior and mobile-memory caveat.")
 if '<div class="result" id="result" role="status" aria-live="polite"></div>' not in home:
     fail("File-processing status messages must be exposed to assistive technology.")
 pdf_merger_text = (ROOT / "tools/pdf-merger/index.html").read_text(encoding="utf-8")
