@@ -124,32 +124,62 @@
     {
       "parent": "onnxruntime-web@1.18.0",
       "name": "flatbuffers",
-      "requestedRange": "^1.12.0"
+      "requestedRange": "^1.12.0",
+      "upstreamLockedVersion": "1.12.0",
+      "license": "Apache-2.0",
+      "npmUrl": "https://www.npmjs.com/package/flatbuffers/v/1.12.0",
+      "lockPath": "node_modules/flatbuffers",
+      "runtimeObservation": "Not individually observed as a separate browser module; upstream lockfile evidence only."
     },
     {
       "parent": "onnxruntime-web@1.18.0",
       "name": "guid-typescript",
-      "requestedRange": "^1.0.9"
+      "requestedRange": "^1.0.9",
+      "upstreamLockedVersion": "1.0.9",
+      "license": "ISC",
+      "npmUrl": "https://www.npmjs.com/package/guid-typescript/v/1.0.9",
+      "lockPath": "node_modules/guid-typescript",
+      "runtimeObservation": "Not individually observed as a separate browser module; upstream lockfile evidence only."
     },
     {
       "parent": "onnxruntime-web@1.18.0",
       "name": "long",
-      "requestedRange": "^5.2.3"
+      "requestedRange": "^5.2.3",
+      "upstreamLockedVersion": "5.2.3",
+      "license": "Apache-2.0",
+      "npmUrl": "https://www.npmjs.com/package/long/v/5.2.3",
+      "lockPath": "node_modules/long",
+      "runtimeObservation": "Not individually observed as a separate browser module; upstream lockfile evidence only."
     },
     {
       "parent": "onnxruntime-web@1.18.0",
       "name": "onnxruntime-common",
-      "requestedRange": "1.18.0"
+      "requestedRange": "1.18.0",
+      "upstreamLockedVersion": "1.18.0",
+      "license": "MIT",
+      "npmUrl": "https://www.npmjs.com/package/onnxruntime-common/v/1.18.0",
+      "lockPath": "../common",
+      "runtimeObservation": "Not individually observed as a separate browser module; upstream lockfile evidence only."
     },
     {
       "parent": "onnxruntime-web@1.18.0",
       "name": "platform",
-      "requestedRange": "^1.3.6"
+      "requestedRange": "^1.3.6",
+      "upstreamLockedVersion": "1.3.6",
+      "license": "MIT",
+      "npmUrl": "https://www.npmjs.com/package/platform/v/1.3.6",
+      "lockPath": "node_modules/platform",
+      "runtimeObservation": "Not individually observed as a separate browser module; upstream lockfile evidence only."
     },
     {
       "parent": "onnxruntime-web@1.18.0",
       "name": "protobufjs",
-      "requestedRange": "^7.2.4"
+      "requestedRange": "^7.2.4",
+      "upstreamLockedVersion": "7.2.5",
+      "license": "BSD-3-Clause",
+      "npmUrl": "https://www.npmjs.com/package/protobufjs/v/7.2.5",
+      "lockPath": "node_modules/protobufjs",
+      "runtimeObservation": "Not individually observed as a separate browser module; upstream lockfile evidence only."
     }
   ],
   "integrity": {
@@ -167,7 +197,253 @@
     "cveStatus": "Rejected by its CNA on 2026-10-28",
     "advisoryUrl": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5",
     "cveUrl": "https://nvd.nist.gov/vuln/detail/CVE-2023-54404",
-    "assessment": "The GitHub advisory remains visible, but the associated CVE was rejected by its CNA. In the current static-site integration, the upstream Zod schema validates a fixed site-generated configuration object; the selected image is passed separately as a Blob. No attacker-controlled array-validation path or server-side Zod endpoint was identified. This is not a confirmed exploitable BuyTools vulnerability. Do not force a Zod 4 override without an upstream-compatible API migration."
+    "assessment": "The GitHub advisory remains visible, but the associated CVE was rejected by its CNA. In the current static-site integration, the upstream Zod schema validates a fixed site-generated configuration object; the selected image is passed separately as a Blob. No attacker-controlled array-validation path or server-side Zod endpoint was identified. This is not a confirmed exploitable BuyTools vulnerability. Do not force a Zod 4 override without an upstream-compatible API migration.",
+    "transitiveAdvisoryReviewCapturedAt": "2026-11-07T22:50:00Z",
+    "transitiveAdvisories": [
+      {
+        "package": "protobufjs",
+        "version": "7.2.5",
+        "advisory": "GHSA-xq3m-2v4x-88gg",
+        "cve": "CVE-2026-41242",
+        "advisoryUrl": "https://github.com/advisories/GHSA-xq3m-2v4x-88gg",
+        "affectedRange": "<7.5.5",
+        "patchedVersion": "7.5.5",
+        "preconditions": "Attacker-controlled protobuf schema or JSON descriptor must be loaded through reflection APIs and reach a generated-code path.",
+        "buytoolsAssessment": "The inspected UI supplies an image File/Blob, not a protobuf schema or JSON descriptor. No user-controlled schema-loading path was identified."
+      },
+      {
+        "package": "protobufjs",
+        "version": "7.2.5",
+        "advisory": "GHSA-685m-2w69-288q",
+        "cve": "CVE-2026-44289",
+        "advisoryUrl": "https://github.com/advisories/GHSA-685m-2w69-288q",
+        "affectedRange": "<=7.5.5",
+        "patchedVersion": "7.5.6",
+        "preconditions": "Attacker-controlled protobuf binary data must reach the affected nested-message decoding path.",
+        "buytoolsAssessment": "No user-supplied ONNX/protobuf model path was identified. The model is fetched from the library's third-party static asset host; compromise or malicious replacement of that upstream asset remains a supply-chain consideration, not a demonstrated exploit."
+      },
+      {
+        "package": "protobufjs",
+        "version": "7.2.5",
+        "advisory": "GHSA-wcpc-wj8m-hjx6",
+        "cve": "CVE-2026-48712",
+        "advisoryUrl": "https://github.com/advisories/GHSA-wcpc-wj8m-hjx6",
+        "affectedRange": "<=7.6.0",
+        "patchedVersion": "7.6.1",
+        "preconditions": "Untrusted protobuf data containing deeply nested google.protobuf.Any values must be decoded and converted to JSON/plain objects through the affected path.",
+        "buytoolsAssessment": "No attacker-controlled protobuf input or Any-to-JSON path was identified in the inspected UI. The model asset remains externally hosted, so runtime reachability is not conclusively ruled out."
+      },
+      {
+        "package": "@protobufjs/utf8",
+        "version": "1.1.0",
+        "advisory": "GHSA-q6x5-8v7m-xcrf",
+        "cve": "CVE-2026-44288",
+        "advisoryUrl": "https://github.com/advisories/GHSA-q6x5-8v7m-xcrf",
+        "affectedRange": "<=1.1.0",
+        "patchedVersion": "1.1.1",
+        "preconditions": "Attacker-controlled protobuf bytes must be decoded through the affected fallback UTF-8 path, where byte-level filtering relies on strict decoding.",
+        "buytoolsAssessment": "No user-supplied protobuf bytes are accepted by the UI. The externally downloaded model is a protobuf-formatted asset; exact parser-path reachability has not been demonstrated."
+      },
+      {
+        "package": "protobufjs",
+        "version": "7.2.5",
+        "advisory": "GHSA-2pr8-phx7-x9h3",
+        "cve": "CVE-2026-44294",
+        "advisoryUrl": "https://github.com/advisories/GHSA-2pr8-phx7-x9h3",
+        "affectedRange": "<=7.5.5",
+        "patchedVersion": "7.5.6",
+        "preconditions": "An attacker-controlled protobuf schema or JSON descriptor with control characters in field names must be loaded and trigger generated accessors.",
+        "buytoolsAssessment": "The inspected application does not expose schema or descriptor upload; no direct user-controlled path was found."
+      }
+    ],
+    "transitiveExposureConclusion": "These source-lock versions fall within published GitHub advisory ranges. Advisory preconditions require attacker-controlled protobuf schemas or binary data; BuyTools currently passes user images as File/Blob and fetches its model from staticimgly.com. No direct exploit path was demonstrated. Because the model is an externally hosted protobuf-formatted asset and the final CDN-transformed bundle has not been fully resolved, treat this as conditional supply-chain exposure pending runtime-bundle verification and a compatibility-tested upgrade."
   },
-  "nextPriority": "Resolve the remaining bundled ONNX Runtime dependency versions and license evidence, then evaluate a reviewed integrity-pinned or locally hosted distribution before monetization."
+  "nextPriority": "Verify which source-lock dependencies and advisory-affected protobuf code are actually retained in the esm.sh browser bundle; then test a compatible patched ONNX Runtime/protobuf chain against both background-removal models, browser fallbacks and real image fixtures before changing production.",
+  "upstreamLockEvidence": {
+    "capturedAt": "2026-11-07T22:50:00Z",
+    "sourceUrl": "https://raw.githubusercontent.com/microsoft/onnxruntime/v1.18.0/js/web/package-lock.json",
+    "sourceTag": "v1.18.0",
+    "lockfileVersion": 2,
+    "scope": "Resolved production dependency records for onnxruntime-web@1.18.0 in the upstream npm lockfile, including protobufjs transitive packages. This is source-lock evidence, not proof that every package is separately requested or retained in esm.sh's transformed browser bundle.",
+    "requiredPackageNames": [
+      "flatbuffers",
+      "guid-typescript",
+      "long",
+      "onnxruntime-common",
+      "platform",
+      "protobufjs",
+      "@protobufjs/aspromise",
+      "@protobufjs/base64",
+      "@protobufjs/codegen",
+      "@protobufjs/eventemitter",
+      "@protobufjs/fetch",
+      "@protobufjs/float",
+      "@protobufjs/inquire",
+      "@protobufjs/path",
+      "@protobufjs/pool",
+      "@protobufjs/utf8"
+    ],
+    "packages": [
+      {
+        "name": "flatbuffers",
+        "version": "1.12.0",
+        "license": "Apache-2.0",
+        "lockPath": "node_modules/flatbuffers",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/flatbuffers/-/flatbuffers-1.12.0.tgz",
+        "integrity": "sha512-c7CZADjRcl6j0PlvFy0ZqXQ67qSEZfrVPynmnL+2zPc+NtMvrF8Y0QceMo7QqnSPc7+uWjUIAbvCQ5WIKlMVdQ==",
+        "npmUrl": "https://www.npmjs.com/package/flatbuffers/v/1.12.0"
+      },
+      {
+        "name": "guid-typescript",
+        "version": "1.0.9",
+        "license": "ISC",
+        "lockPath": "node_modules/guid-typescript",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/guid-typescript/-/guid-typescript-1.0.9.tgz",
+        "integrity": "sha512-Y8T4vYhEfwJOTbouREvG+3XDsjr8E3kIr7uf+JZ0BYloFsttiHU0WfvANVsR7TxNUJa/WpCnw/Ino/p+DeBhBQ==",
+        "npmUrl": "https://www.npmjs.com/package/guid-typescript/v/1.0.9"
+      },
+      {
+        "name": "long",
+        "version": "5.2.3",
+        "license": "Apache-2.0",
+        "lockPath": "node_modules/long",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/long/-/long-5.2.3.tgz",
+        "integrity": "sha512-lcHwpNoggQTObv5apGNCTdJrO69eHOZMi4BNC+rTLER8iHAqGrUVeLh/irVIM7zTw2bOXA8T6uNPeujwOLg/2Q==",
+        "npmUrl": "https://www.npmjs.com/package/long/v/5.2.3"
+      },
+      {
+        "name": "onnxruntime-common",
+        "version": "1.18.0",
+        "license": "MIT",
+        "lockPath": "../common",
+        "resolutionType": "source-local-file",
+        "resolved": null,
+        "integrity": null,
+        "npmUrl": "https://www.npmjs.com/package/onnxruntime-common/v/1.18.0"
+      },
+      {
+        "name": "platform",
+        "version": "1.3.6",
+        "license": "MIT",
+        "lockPath": "node_modules/platform",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/platform/-/platform-1.3.6.tgz",
+        "integrity": "sha512-fnWVljUchTro6RiCFvCXBbNhJc2NijN7oIQxbwsyL0buWJPG85v81ehlHI9fXrJsMNgTofEoWIQeClKpgxFLrg==",
+        "npmUrl": "https://www.npmjs.com/package/platform/v/1.3.6"
+      },
+      {
+        "name": "protobufjs",
+        "version": "7.2.5",
+        "license": "BSD-3-Clause",
+        "lockPath": "node_modules/protobufjs",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/protobufjs/-/protobufjs-7.2.5.tgz",
+        "integrity": "sha512-gGXRSXvxQ7UiPgfw8gevrfRWcTlSbOFg+p/N+JVJEK5VhueL2miT6qTymqAmjr1Q5WbOCyJbyrk6JfWKwlFn6A==",
+        "npmUrl": "https://www.npmjs.com/package/protobufjs/v/7.2.5"
+      },
+      {
+        "name": "@protobufjs/aspromise",
+        "version": "1.1.2",
+        "license": "BSD-3-Clause",
+        "lockPath": "node_modules/@protobufjs/aspromise",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/@protobufjs/aspromise/-/aspromise-1.1.2.tgz",
+        "integrity": "sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==",
+        "npmUrl": "https://www.npmjs.com/package/@protobufjs/aspromise/v/1.1.2"
+      },
+      {
+        "name": "@protobufjs/base64",
+        "version": "1.1.2",
+        "license": "BSD-3-Clause",
+        "lockPath": "node_modules/@protobufjs/base64",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/@protobufjs/base64/-/base64-1.1.2.tgz",
+        "integrity": "sha512-AZkcAA5vnN/v4PDqKyMR5lx7hZttPDgClv83E//FMNhR2TMcLUhfRUBHCmSl0oi9zMgDDqRUJkSxO3wm85+XLg==",
+        "npmUrl": "https://www.npmjs.com/package/@protobufjs/base64/v/1.1.2"
+      },
+      {
+        "name": "@protobufjs/codegen",
+        "version": "2.0.4",
+        "license": "BSD-3-Clause",
+        "lockPath": "node_modules/@protobufjs/codegen",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/@protobufjs/codegen/-/codegen-2.0.4.tgz",
+        "integrity": "sha512-YyFaikqM5sH0ziFZCN3xDC7zeGaB/d0IUb9CATugHWbd1FRFwWwt4ld4OYMPWu5a3Xe01mGAULCdqhMlPl29Jg==",
+        "npmUrl": "https://www.npmjs.com/package/@protobufjs/codegen/v/2.0.4"
+      },
+      {
+        "name": "@protobufjs/eventemitter",
+        "version": "1.1.0",
+        "license": "BSD-3-Clause",
+        "lockPath": "node_modules/@protobufjs/eventemitter",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/@protobufjs/eventemitter/-/eventemitter-1.1.0.tgz",
+        "integrity": "sha512-j9ednRT81vYJ9OfVuXG6ERSTdEL1xVsNgqpkxMsbIabzSo3goCjDIveeGv5d03om39ML71RdmrGNjG5SReBP/Q==",
+        "npmUrl": "https://www.npmjs.com/package/@protobufjs/eventemitter/v/1.1.0"
+      },
+      {
+        "name": "@protobufjs/fetch",
+        "version": "1.1.0",
+        "license": "BSD-3-Clause",
+        "lockPath": "node_modules/@protobufjs/fetch",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/@protobufjs/fetch/-/fetch-1.1.0.tgz",
+        "integrity": "sha512-lljVXpqXebpsijW71PZaCYeIcE5on1w5DlQy5WH6GLbFryLUrBD4932W/E2BSpfRJWseIL4v/KPgBFxDOIdKpQ==",
+        "npmUrl": "https://www.npmjs.com/package/@protobufjs/fetch/v/1.1.0"
+      },
+      {
+        "name": "@protobufjs/float",
+        "version": "1.0.2",
+        "license": "BSD-3-Clause",
+        "lockPath": "node_modules/@protobufjs/float",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/@protobufjs/float/-/float-1.0.2.tgz",
+        "integrity": "sha512-Ddb+kVXlXst9d+R9PfTIxh1EdNkgoRe5tOX6t01f1lYWOvJnSPDBlG241QLzcyPdoNTsblLUdujGSE4RzrTZGQ==",
+        "npmUrl": "https://www.npmjs.com/package/@protobufjs/float/v/1.0.2"
+      },
+      {
+        "name": "@protobufjs/inquire",
+        "version": "1.1.0",
+        "license": "BSD-3-Clause",
+        "lockPath": "node_modules/@protobufjs/inquire",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/@protobufjs/inquire/-/inquire-1.1.0.tgz",
+        "integrity": "sha512-kdSefcPdruJiFMVSbn801t4vFK7KB/5gd2fYvrxhuJYg8ILrmn9SKSX2tZdV6V+ksulWqS7aXjBcRXl3wHoD9Q==",
+        "npmUrl": "https://www.npmjs.com/package/@protobufjs/inquire/v/1.1.0"
+      },
+      {
+        "name": "@protobufjs/path",
+        "version": "1.1.2",
+        "license": "BSD-3-Clause",
+        "lockPath": "node_modules/@protobufjs/path",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/@protobufjs/path/-/path-1.1.2.tgz",
+        "integrity": "sha512-6JOcJ5Tm08dOHAbdR3GrvP+yUUfkjG5ePsHYczMFLq3ZmMkAD98cDgcT2iA1lJ9NVwFd4tH/iSSoe44YWkltEA==",
+        "npmUrl": "https://www.npmjs.com/package/@protobufjs/path/v/1.1.2"
+      },
+      {
+        "name": "@protobufjs/pool",
+        "version": "1.1.0",
+        "license": "BSD-3-Clause",
+        "lockPath": "node_modules/@protobufjs/pool",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/@protobufjs/pool/-/pool-1.1.0.tgz",
+        "integrity": "sha512-0kELaGSIDBKvcgS4zkjz1PeddatrjYcmMWOlAuAPwAeccUrPHdUqo/J6LiymHHEiJT5NrF1UVwxY14f+fy4WQw==",
+        "npmUrl": "https://www.npmjs.com/package/@protobufjs/pool/v/1.1.0"
+      },
+      {
+        "name": "@protobufjs/utf8",
+        "version": "1.1.0",
+        "license": "BSD-3-Clause",
+        "lockPath": "node_modules/@protobufjs/utf8",
+        "resolutionType": "npm-registry-tarball",
+        "resolved": "https://registry.npmjs.org/@protobufjs/utf8/-/utf8-1.1.0.tgz",
+        "integrity": "sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==",
+        "npmUrl": "https://www.npmjs.com/package/@protobufjs/utf8/v/1.1.0"
+      }
+    ]
+  }
 }
