@@ -68,6 +68,19 @@ def missing_json_file_workflow_disclosures(html):
     return missing
 
 
+def missing_json_schema_scope_disclosures(html):
+    """Return missing distinctions between JSON syntax parsing and schema validation."""
+    visible_text = " ".join(re.sub(r"<[^>]+>", " ", html).lower().split())
+    required = (
+        "json syntax only",
+        "does not validate json schema",
+        "required fields",
+        "expected value types",
+        "api contract",
+    )
+    return [phrase for phrase in required if phrase not in visible_text]
+
+
 def _meta_content(html, attribute, expected):
     """Return the content value for a meta tag matching one attribute."""
     for tag in re.findall(r"<meta\b[^>]*>", html, flags=re.IGNORECASE):

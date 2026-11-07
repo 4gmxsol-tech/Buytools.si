@@ -11,7 +11,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures
+from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -309,6 +309,14 @@ json_tool_page = (ROOT / "tools/json-formatter/index.html").read_text(encoding="
 missing_json_tool_workflow = missing_json_file_workflow_disclosures(json_tool_page)
 if missing_json_tool_workflow:
     fail("JSON Formatter page is missing local-file workflow details: " + ", ".join(missing_json_tool_workflow))
+json_scope_pages = (
+    ("JSON guide", json_guide_html),
+    ("JSON Formatter", json_tool_page),
+)
+for page_name, page_text in json_scope_pages:
+    missing_json_scope = missing_json_schema_scope_disclosures(page_text)
+    if missing_json_scope:
+        fail(f"{page_name} must distinguish JSON syntax validation from JSON Schema validation: " + ", ".join(missing_json_scope))
 if (
     'id="jsonFile"' not in json_tool_page
     or "MAX_JSON_FILE_BYTES=5*1024*1024" not in json_tool_page

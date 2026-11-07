@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="index,follow,max-image-preview:large">
 <title>How to Format a JSON File Online: Examples &amp; Validation | BuyTools.si</title>
-<meta name="description" content="Learn how to format a JSON file or string, validate syntax, fix common errors and minify data with clear steps, examples and a free browser-based formatter.">
+<meta name="description" content="Learn to format JSON, validate syntax, distinguish JSON Schema checks from parsing, fix common errors and minify data with clear examples.">
 <link rel="canonical" href="https://buytools.si/guides/format-json-online/"><link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <meta name="theme-color" content="#0d0f17"><meta property="og:type" content="article"><meta property="og:site_name" content="BuyTools.si">
 <meta property="og:title" content="How to Format a JSON File Online: Examples and Validation"><meta property="og:description" content="Follow practical steps to format a JSON file, validate syntax and fix common errors with clear examples."><meta property="og:url" content="https://buytools.si/guides/format-json-online/"><meta name="twitter:card" content="summary">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
-{"@type":"Article","headline":"How to Format a JSON File Online: Examples and Validation","description":"Follow practical steps to format a JSON file, validate syntax and fix common errors with clear examples.","dateModified":"2026-11-06","mainEntityOfPage":"https://buytools.si/guides/format-json-online/","author":{"@type":"Organization","name":"BuyTools.si"},"publisher":{"@type":"Organization","name":"BuyTools.si","url":"https://buytools.si/"}},
+{"@type":"Article","headline":"How to Format a JSON File Online: Examples and Validation","description":"Learn to format JSON, validate syntax, distinguish JSON Schema checks from parsing, and fix common errors with clear examples.","dateModified":"2026-11-07","mainEntityOfPage":"https://buytools.si/guides/format-json-online/","author":{"@type":"Organization","name":"BuyTools.si"},"publisher":{"@type":"Organization","name":"BuyTools.si","url":"https://buytools.si/"}},
 {"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://buytools.si/"},{"@type":"ListItem","position":2,"name":"Guides","item":"https://buytools.si/guides/"},{"@type":"ListItem","position":3,"name":"Format and Validate JSON","item":"https://buytools.si/guides/format-json-online/"}]}
 ]}
 </script>
@@ -90,6 +90,15 @@ console.log(formatted);</pre>
 <p>JSON validation checks the document against JSON syntax rules. Paste the text into the <a href="/tools/json-formatter/">online JSON validator</a> and choose <strong>Validate</strong>. If the input is valid, the tool confirms that no syntax errors were found. If parsing fails, inspect the reported line and column, then check the surrounding quotes, commas, colons and brackets.</p>
 <ul><li><strong>Unexpected end of input:</strong> check for a missing closing brace, bracket, quote or value.</li><li><strong>Unexpected token:</strong> inspect the character at or near the reported position.</li><li><strong>Property name error:</strong> make sure object keys use double quotes.</li><li><strong>Comma or delimiter error:</strong> check separators between properties and array items, and remove trailing commas.</li></ul>
 <p>Error wording and position details can vary by browser because the page uses the browser's built-in JSON parser. Treat the reported location as a starting point and inspect nearby characters too.</p>
+<h2>JSON syntax validation vs JSON Schema validation</h2>
+<p>JSON syntax validation checks whether text follows JSON grammar: property names and strings use double quotes, separators are in the right places, brackets match, and values use supported JSON types. That is different from checking whether the data has the fields and value types an application expects.</p>
+<p>For example, this is syntactically valid JSON:</p>
+<pre class="code-sample">{
+  "id": "42",
+  "active": "yes"
+}</pre>
+<p>An API contract that requires <code>id</code> to be an integer and <code>active</code> to be a Boolean would still reject those values. A document can therefore parse as valid JSON and still fail an application's schema or business rules.</p>
+<p>The BuyTools.si JSON Formatter checks JSON syntax only. It does not validate JSON Schema, required fields, expected value types or an API contract. Use the schema validator defined by your API or application to check those constraints. The <a href="/tools/json-to-typescript/">JSON to TypeScript converter</a> can generate a starting type from sample data, but generated types are not runtime validation.</p>
 <h2>Formatted JSON vs minified JSON</h2>
 <p>Use formatted JSON when reading API responses, reviewing configuration files or debugging nested data. Use minified JSON when compact output is useful. Both represent the same data when produced from the same valid input; minification only removes unnecessary whitespace.</p>
 <h2>Is it safe to use an online JSON formatter?</h2>
@@ -106,6 +115,7 @@ console.log(formatted);</pre>
 <details><summary>Does a JSON formatter fix invalid JSON?</summary><p>No. A formatter can make valid JSON easier to read, but invalid syntax must be corrected first. Use the validation error and its line context to locate the problem.</p></details>
 <details><summary>Does formatting change the JSON data?</summary><p>Formatting changes whitespace and indentation only. It preserves the represented values and structure when the input is valid JSON.</p></details>
 <details><summary>What is the difference between JSON and a JavaScript object?</summary><p>JSON is a text data format with stricter syntax. For example, JSON requires double quotes around property names and strings, and it does not allow comments, functions or undefined values.</p></details>
+<details><summary>Does valid JSON mean it matches my API schema?</summary><p>No. Valid JSON confirms syntax only. This formatter does not validate JSON Schema, required fields, expected value types or API-specific rules. Use your application's schema validator to check those constraints.</p></details>
 <details><summary>Can I format large JSON files?</summary><p>Browser memory and device performance set practical limits. For very large documents, use a trusted local editor or command-line JSON tool and avoid loading sensitive data into an online service.</p></details>
 <div class="related"><a href="/tools/json-formatter/">JSON formatter &amp; validator</a><a href="/tools/csv-json-converter/">CSV to JSON</a><a href="/tools/json-to-typescript/">JSON to TypeScript</a></div>
 </section>
