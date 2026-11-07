@@ -4,6 +4,7 @@ from datetime import date
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
+import json
 import re
 import shutil
 import subprocess
@@ -11,7 +12,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, has_head_license_declaration
+from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, has_head_license_declaration
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -168,6 +169,18 @@ else:
     for required_notice in ("@imgly/background-removal", "1.5.5", "AGPL-3.0", "https://github.com/imgly/background-removal-js", "https://www.gnu.org/licenses/agpl-3.0.html", "pdf-lib", "1.17.1", "https://esm.sh/pdf-lib@1.17.1", "https://github.com/Hopding/pdf-lib/blob/v1.17.1/LICENSE.md", "JSZip", "3.10.2", "MIT or GPL-3.0", "https://esm.sh/jszip@3.10.2", "https://github.com/Stuk/jszip/blob/v3.10.2/LICENSE.markdown", "jsPDF", "4.2.1", "https://esm.sh/jspdf@4.2.1", "https://github.com/parallax/jsPDF/blob/v4.2.1/LICENSE"):
         if required_notice not in licenses_page:
             fail("Third-party license notice is missing required attribution: " + required_notice)
+    runtime_manifest_path = ROOT / "audits" / "background-removal-runtime-baseline.json"
+    if not runtime_manifest_path.is_file():
+        fail("Background-removal runtime dependency baseline is missing: audits/background-removal-runtime-baseline.json")
+    else:
+        try:
+            runtime_manifest = json.loads(runtime_manifest_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as error:
+            fail("Background-removal runtime dependency baseline is not valid JSON: " + str(error))
+        else:
+            missing_runtime_notices = missing_runtime_dependency_notices(runtime_manifest, licenses_page)
+            if missing_runtime_notices:
+                fail("Background-removal runtime license inventory is incomplete: " + "; ".join(missing_runtime_notices))
 for linked_page in (ROOT / "privacy" / "index.html", ROOT / "tools" / "remove-background" / "index.html"):
     if 'href="/licenses/"' not in linked_page.read_text(encoding="utf-8"):
         fail("Relevant page must link to the third-party license notice: " + str(linked_page.relative_to(ROOT)))
