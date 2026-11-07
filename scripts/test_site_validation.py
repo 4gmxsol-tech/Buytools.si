@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, has_head_license_declaration)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -339,6 +339,24 @@ class LicenseDiscoveryLinkTests(unittest.TestCase):
     def test_missing_footer_is_reported(self):
         self.assertEqual(missing_license_footer_link('<main>Content</main>'), "Page footer is missing.")
 
+
+
+
+class HeadLicenseDeclarationTests(unittest.TestCase):
+    def test_document_level_license_in_head_is_detected(self):
+        html = '<head><link rel="license" href="https://www.gnu.org/licenses/agpl-3.0.html"></head>'
+        self.assertTrue(has_head_license_declaration(html))
+
+    def test_component_license_link_in_body_is_not_document_level(self):
+        html = '<head></head><body><a rel="license" href="https://opensource.org/license/mit/">MIT</a></body>'
+        self.assertFalse(has_head_license_declaration(html))
+
+    def test_license_token_is_detected_with_other_rel_tokens(self):
+        html = '<head><link rel="alternate license" href="/license"></head>'
+        self.assertTrue(has_head_license_declaration(html))
+
+    def test_missing_head_does_not_create_a_license_declaration(self):
+        self.assertFalse(has_head_license_declaration('<body>Notices</body>'))
 
 
 class DirectBrowserPackageNoticeTests(unittest.TestCase):
