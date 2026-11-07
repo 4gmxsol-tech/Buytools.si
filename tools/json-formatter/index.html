@@ -23,7 +23,7 @@
    "@id":"https://buytools.si/tools/json-formatter/#webapp",
    "name":"Free JSON Formatter and Validator",
    "url":"https://buytools.si/tools/json-formatter/",
-   "description":"A free browser-based tool to open local UTF-8 JSON files up to 5 MiB or paste text, then format, validate and minify JSON with line and column diagnostics.",
+   "description":"A free browser-based tool to open local UTF-8 JSON files up to 5 MiB or paste text, then format, validate JSON syntax (not JSON Schema) and minify JSON with line and column diagnostics.",
    "applicationCategory":"DeveloperApplication",
    "operatingSystem":"Any",
    "browserRequirements":"Requires JavaScript and a modern web browser.",
@@ -40,7 +40,8 @@
     {"@type":"Question","name":"How do I find an error in invalid JSON?","acceptedAnswer":{"@type":"Answer","text":"Paste the JSON and select Validate. The tool reports the detected error category and, when the browser provides a usable error position, the line and column to inspect."}},
     {"@type":"Question","name":"Is my JSON uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. JSON parsing, formatting and minification run locally in your browser. The text is not sent to BuyTools.si by this page."}},
     {"@type":"Question","name":"Can I open a JSON file directly?","acceptedAnswer":{"@type":"Answer","text":"Yes. Choose a local UTF-8 .json file up to 5 MiB. The browser reads it locally; the file is not uploaded to a BuyTools.si processing endpoint."}},
-     {"@type":"Question","name":"Can I minify JSON?","acceptedAnswer":{"@type":"Answer","text":"Yes. Select Minify to remove unnecessary whitespace while preserving valid JSON data."}}
+     {"@type":"Question","name":"Can I minify JSON?","acceptedAnswer":{"@type":"Answer","text":"Yes. Select Minify to remove unnecessary whitespace while preserving valid JSON data."}},
+    {"@type":"Question","name":"Does valid JSON mean it matches my API schema?","acceptedAnswer":{"@type":"Answer","text":"No. This tool checks JSON syntax only. It does not validate JSON Schema, required fields, expected value types or API-specific rules. Use your application schema validator to check those constraints."}}
    ]
   }
  ]
@@ -76,6 +77,7 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 <span class="eyebrow">Free browser-based developer tool</span>
 <h1>JSON Formatter &amp; Syntax Checker</h1>
 <p class="intro">Open a local JSON file up to 5 MiB or paste JSON text, then format, validate and minify it in your browser. Diagnose syntax errors with line and column details without uploading the file.</p>
+<p class="privacy-note" id="validationScopeNote">Validation scope: This tool checks JSON syntax only. It does not validate JSON Schema, required fields, expected value types or your API contract. A document can be valid JSON and still fail an application's schema or business rules.</p>
 <p class="privacy-note">New to JSON syntax? Read our <a href="/guides/format-json-online/">JSON formatting and validation guide</a> for examples, common errors and debugging steps.</p>
 <section class="tool-panel" aria-label="JSON formatter tool">
 <div class="toolbar" role="group" aria-label="JSON actions">
@@ -132,6 +134,7 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 <details><summary>Is my JSON uploaded to a server?</summary><p>No. JSON parsing, formatting and minification run locally in your browser. The text is not sent to BuyTools.si by this page.</p></details>
 <details><summary>Can I open a JSON file directly?</summary><p>Yes. Choose a local UTF-8 .json file up to 5 MiB. The browser reads it locally; files larger than 5 MiB are rejected before reading. You can also paste JSON text.</p></details>
 <details><summary>Can I minify JSON?</summary><p>Yes. Select Minify to remove unnecessary whitespace while preserving valid JSON data.</p></details>
+<details><summary>Does valid JSON mean it matches my API schema?</summary><p>No. Valid JSON confirms syntax only. This tool does not validate JSON Schema, required fields, expected value types or API-specific rules. Use your application's schema validator to check those constraints.</p></details>
 </section>
 <section class="content-card"><h2>Explore more developer tools</h2><p>Try the <a href="/tools/csv-json-converter/">CSV to JSON converter</a>, <a href="/tools/json-to-typescript/">JSON to TypeScript</a>, <a href="/tools/regex-tester/">Regex tester</a> and <a href="/tools/markdown-preview/">Markdown preview</a>.</p></section>
 <section class="content-card"><h2>Learn how to format and validate JSON</h2><p>New to JSON formatting? Follow the <a href="/guides/format-json-online/">JSON formatting and syntax guide</a> for valid examples, common parsing errors, line-and-column diagnostics, and the difference between formatted and minified JSON.</p></section>
