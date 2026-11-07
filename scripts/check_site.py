@@ -11,7 +11,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures
+from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -386,6 +386,9 @@ home = (ROOT / "index.html").read_text(encoding="utf-8")
 count_mismatch = homepage_tool_count_mismatch(home)
 if count_mismatch:
     fail(count_mismatch)
+missing_homepage_json = missing_homepage_json_syntax_disclosure(home)
+if missing_homepage_json:
+    fail("Homepage JSON Formatter card must identify JSON syntax search intent: " + ", ".join(missing_homepage_json))
 batch_process_start = home.find("async function processBatchImages(id){")
 batch_process_end = home.find("async function processImages(id){", batch_process_start)
 batch_process_branch = home[batch_process_start:batch_process_end] if batch_process_start >= 0 and batch_process_end > batch_process_start else ""

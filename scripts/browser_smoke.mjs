@@ -176,6 +176,10 @@ try {
   assert.equal(await page.locator("#search").inputValue(), "CSV Viewer", "SearchAction deep links must prefill the search input");
   assert.equal(await page.locator('[data-tool]').count(), 1, "SearchAction deep links must render filtered results");
   assert.equal(await page.locator('[data-tool="csv-viewer"]').count(), 1);
+  await page.locator("#search").fill("JSON syntax");
+  assert.equal(await page.locator('[data-tool="json"]').count(), 1, "Searching for JSON syntax must discover the JSON Formatter");
+  await page.locator("#search").fill("JSON Schema");
+  assert.equal(await page.locator('[data-tool="json"]').count(), 0, "The syntax-only formatter must not be presented as a JSON Schema validator");
   await page.locator("#search").fill("JSON Formatter");
   assert.equal(await page.locator('[data-tool]').count(), 1, "Typing must filter matching tools immediately");
   await page.locator("#searchBtn").click();

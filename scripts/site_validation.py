@@ -100,6 +100,25 @@ def missing_json_scope_metadata_disclosures(html):
     return missing
 
 
+def missing_homepage_json_syntax_disclosure(html):
+    """Return missing JSON syntax wording from the homepage tool card and search tags."""
+    match = re.search(
+        r"\{id:'json',name:'JSON Formatter'.*?desc:'([^']*)',tags:'([^']*)'",
+        html,
+        flags=re.DOTALL,
+    )
+    if not match:
+        return ["Homepage JSON Formatter catalogue entry is missing."]
+
+    description, tags = match.groups()
+    missing = []
+    if "json syntax" not in description.lower():
+        missing.append("description must identify JSON syntax checking")
+    if "json syntax" not in tags.lower():
+        missing.append("search tags must include JSON syntax")
+    return missing
+
+
 def _meta_content(html, attribute, expected):
     """Return the content value for a meta tag matching one attribute."""
     for tag in re.findall(r"<meta\b[^>]*>", html, flags=re.IGNORECASE):
