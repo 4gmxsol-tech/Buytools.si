@@ -11,7 +11,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch
+from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -340,7 +340,7 @@ for required_quality_detail in (
 ):
     if required_quality_detail not in image_guide:
         fail("Image guide is missing an accurate quality-control detail: " + required_quality_detail)
-if image_guide.count('"dateModified":') != 1 or '"dateModified":"2026-11-06"' not in image_guide:
+if image_guide.count('"dateModified":') != 1 or '"dateModified":"2026-11-07"' not in image_guide:
     fail("Image guide Article structured data must contain exactly one current dateModified value.")
 for required_image_guide_detail in (
     'id="quick-answer"',
@@ -355,6 +355,9 @@ for required_image_guide_detail in (
 missing_image_disclosures = missing_image_compressor_disclosures(image_guide)
 if missing_image_disclosures:
     fail("Image guide is missing accurate compressor disclosures: " + ", ".join(missing_image_disclosures))
+missing_lossless_workflow = missing_image_lossless_workflow_disclosures(image_guide)
+if missing_lossless_workflow:
+    fail("Image guide is missing accurate lossless-workflow guidance: " + ", ".join(missing_lossless_workflow))
 
 # Keep the batch image resizer metadata and output explanation aligned with its PNG implementation.
 batch_image_resizer_page = (ROOT / "tools/batch-image-resizer/index.html").read_text(encoding="utf-8")
