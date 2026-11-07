@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, has_head_license_declaration)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, has_head_license_declaration)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -405,6 +405,67 @@ class DirectBrowserPackageNoticeTests(unittest.TestCase):
         self.assertEqual(
             missing_direct_browser_package_notices(html, self.LICENSE_NOTICES),
             ["Direct esm.sh package import must pin a version: example-package"],
+        )
+
+
+class RuntimeDependencyNoticeTests(unittest.TestCase):
+    MANIFEST = {
+        "schemaVersion": 1,
+        "observedModules": [
+            {
+                "name": "onnxruntime-web",
+                "resolvedVersion": "1.18.0",
+                "license": "MIT",
+                "npmUrl": "https://www.npmjs.com/package/onnxruntime-web/v/1.18.0",
+            },
+            {
+                "name": "zod",
+                "resolvedVersion": "3.25.76",
+                "license": "MIT",
+                "npmUrl": "https://www.npmjs.com/package/zod/v/3.25.76",
+            },
+        ],
+    }
+    COMPLETE = """
+    <section id="background-removal-runtime">
+      <h3>onnxruntime-web — version 1.18.0</h3>
+      <p>License: MIT</p>
+      <a href="https://www.npmjs.com/package/onnxruntime-web/v/1.18.0">Package</a>
+      <h3>zod — version 3.25.76</h3>
+      <p>License: MIT</p>
+      <a href="https://www.npmjs.com/package/zod/v/3.25.76">Package</a>
+    </section>
+    """
+
+    def test_complete_runtime_inventory_is_accepted(self):
+        self.assertEqual(missing_runtime_dependency_notices(self.MANIFEST, self.COMPLETE), [])
+
+    def test_missing_runtime_section_is_reported(self):
+        html = self.COMPLETE.replace('id="background-removal-runtime"', 'id="other-section"')
+        self.assertIn(
+            "License page is missing the background-removal runtime inventory section.",
+            missing_runtime_dependency_notices(self.MANIFEST, html),
+        )
+
+    def test_missing_resolved_package_version_is_reported(self):
+        html = self.COMPLETE.replace("zod — version 3.25.76", "zod — version 3.25.75")
+        self.assertIn(
+            "Runtime dependency license notice missing exact package/version: zod@3.25.76",
+            missing_runtime_dependency_notices(self.MANIFEST, html),
+        )
+
+    def test_missing_license_metadata_link_is_reported(self):
+        html = self.COMPLETE.replace('href="https://www.npmjs.com/package/zod/v/3.25.76"', 'href="/licenses/"')
+        self.assertIn(
+            "Runtime dependency license notice missing versioned npm metadata link: zod@3.25.76",
+            missing_runtime_dependency_notices(self.MANIFEST, html),
+        )
+
+    def test_unsupported_manifest_schema_is_rejected(self):
+        manifest = dict(self.MANIFEST, schemaVersion=2)
+        self.assertEqual(
+            missing_runtime_dependency_notices(manifest, self.COMPLETE),
+            ["Runtime dependency baseline is missing or has an unsupported schema version."],
         )
 
 
