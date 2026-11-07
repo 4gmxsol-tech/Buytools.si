@@ -471,6 +471,13 @@ try {
   assert.equal(await page.locator("#csvTable tbody tr").count(), 2, "An empty quoted field must remain a valid cell");
   assert.equal(await page.locator("#csvTable tbody tr").first().locator("td").nth(1).textContent(), "", "An empty quoted cell must not disappear");
 
+  const emptyQuotedHeaderFixture = '""\nvalue';
+  await page.locator("#text").fill(emptyQuotedHeaderFixture);
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#csvTable tbody tr").count(), 1, "A leading empty quoted header must remain a field");
+  assert.match(await page.locator("#csvTable thead button").first().innerText(), /^Column 1/, "An empty quoted header should receive the documented fallback label");
+  assert.equal(await page.locator("#csvTable tbody tr").first().locator("td").first().textContent(), "value");
+
   const malformedCsvFixtures = [
     { csv: 'name,note\nAda,"quoted"suffix', error: "Unexpected character after a closing quote" },
     { csv: 'name,note\nAda,un"escaped', error: "Unexpected quote in an unquoted CSV field" }
