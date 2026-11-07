@@ -225,3 +225,33 @@ def missing_license_footer_link(html):
     if not re.search(r"""href\s*=\s*["']/licenses/["']""", footer.group(1), flags=re.IGNORECASE):
         return "Page footer must link to /licenses/."
     return None
+
+def missing_direct_browser_package_notices(site_html, licenses_html):
+    """Return missing license entries for version-pinned esm.sh dynamic imports."""
+    imports = re.findall(
+        r"""import\s*\(\s*(['"])https://esm\.sh/([^'"]+)\1\s*\)""",
+        site_html,
+        flags=re.IGNORECASE,
+    )
+    package_versions = set()
+    missing = []
+    for _, import_path in imports:
+        spec = re.split(r"[?#]", import_path, maxsplit=1)[0].strip("/")
+        package, separator, version = spec.rpartition("@")
+        if not separator or not package or not version:
+            missing.append(f"Direct esm.sh package import must pin a version: {spec}")
+            continue
+        package_versions.add((package, version))
+
+    license_text = " ".join(re.sub(r"<[^>]+>", " ", licenses_html).casefold().split())
+    for package, version in sorted(package_versions):
+        pattern = (
+            re.escape(package.casefold())
+            + r"\\s*[—–-]\\s*version\\s*"
+            + re.escape(version.casefold())
+            + r"(?![0-9a-z.-])"
+        )
+        if not re.search(pattern, license_text):
+            missing.append(f"License notice missing exact package/version: {package}@{version}")
+    return missing
+
