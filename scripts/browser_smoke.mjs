@@ -399,6 +399,27 @@ try {
   assert.match(ts, /field1: \(string \| number\)\[\]/);
   assert.doesNotMatch(ts, /"field1"/);
 
+  // Password generator: reject out-of-range 32-bit samples instead of introducing modulo bias.
+  const rejectionSampling = await page.evaluate(() => {
+    const sequence = [0xffffffff, 4294967294, 0, 1];
+    let batches = 0;
+    const output = secureRandomString(3, "abc", values => {
+      batches += 1;
+      for (let i = 0; i < values.length; i += 1) values[i] = sequence.shift();
+    });
+    return { output, batches, remaining: sequence.length };
+  });
+  assert.deepEqual(rejectionSampling, { output: "cab", batches: 2, remaining: 0 });
+
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="password"]').click();
+  await auditAccessibility("Password Generator tool");
+  await page.locator("#plen").fill("32");
+  await page.locator("#run").click();
+  const generatedPassword = await page.locator("#text").inputValue();
+  assert.equal(generatedPassword.length, 32, "Password generator must respect the selected length");
+  assert.match(generatedPassword, /^[A-Za-z0-9!@#$%^&*()\\-_=+\\[\\]{}?]+$/, "Password must use only the selected character set");
+
   // CSV viewer: parse, filter and export with spreadsheet formula-injection safeguards.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="csv-viewer"]').click();
