@@ -257,11 +257,13 @@ def missing_direct_browser_package_notices(site_html, licenses_html):
 
 def has_head_license_declaration(html):
     """Return whether the document head declares a document-level license."""
-    head = re.search(r"<head\\b[^>]*>(.*?)</head\\s*>", html, flags=re.IGNORECASE | re.DOTALL)
+    head = re.search(r"<head\b[^>]*>(.*?)</head\s*>", html, flags=re.IGNORECASE | re.DOTALL)
     if not head:
         return False
-    for tag in re.findall(r"<link\\b[^>]*>", head.group(1), flags=re.IGNORECASE):
-        rel = re.search(r"\\brel\\s*=\\s*(['\"])(.*?)\\1", tag, flags=re.IGNORECASE)
-        if rel and "license" in rel.group(2).lower().split():
-            return True
+    for tag in re.findall(r"<link\b[^>]*>", head.group(1), flags=re.IGNORECASE):
+        rel = re.search(r"""\brel\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""", tag, flags=re.IGNORECASE)
+        if rel:
+            value = next((part for part in rel.groups() if part is not None), "")
+            if "license" in value.lower().split():
+                return True
     return False
