@@ -525,6 +525,14 @@ if any(requirement.lower() not in home.lower() for requirement in qr_notice_requ
 if "buytools-theme" not in privacy_text:
     fail("Browser theme storage key is not disclosed in the privacy policy.")
 
+# Password generation must use rejection sampling for an unbiased cryptographic alphabet mapping.
+if (
+    "function secureRandomString(length,alphabet,fillRandom=" not in home
+    or "secureRandomString(n,chars)" not in home
+    or "bytes[b%chars.length]" in home
+):
+    fail("Password generator must use unbiased rejection sampling over crypto.getRandomValues().")
+
 # Large PDF jobs should warn before importing the browser-side PDF library.
 # Images-to-PDF should warn before loading jsPDF and avoid base64 data-URL expansion.
 images_pdf_start = home.find("if(id==='pdf-images'){")
