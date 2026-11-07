@@ -54,6 +54,7 @@ try {
   assert.match(await page.locator("h1").innerText(), /Open-source software notices/i);
   assert.match(await page.locator("body").innerText(), /@imgly\/background-removal/);
   assert.match(await page.locator("body").innerText(), /AGPL-3\.0/);
+  assert.match(await page.locator("body").innerText(), /https:\/\/esm\.sh\/@imgly\/background-removal@1\.5\.5/);
   const licenseBodyText = await page.locator("body").innerText();
   for (const packageDetail of [
     "pdf-lib — version 1.17.1",
