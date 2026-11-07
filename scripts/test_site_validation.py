@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures)
+from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -166,6 +166,31 @@ class JsonSchemaScopeDisclosureTests(unittest.TestCase):
         self.assertEqual(
             missing_json_schema_scope_disclosures(html),
             ["api contract"],
+        )
+
+
+class JsonMetadataScopeDisclosureTests(unittest.TestCase):
+    COMPLETE = (
+        '<meta name="description" content="Format and validate JSON syntax in your browser; '
+        'JSON Schema and API rules are not checked.">'
+        '<meta property="og:description" content="Format JSON syntax and distinguish JSON Schema validation.">'
+    )
+
+    def test_both_descriptions_explain_syntax_and_schema_scope(self):
+        self.assertEqual(missing_json_scope_metadata_disclosures(self.COMPLETE), [])
+
+    def test_missing_schema_scope_in_meta_description_is_reported(self):
+        html = self.COMPLETE.replace("JSON Schema and API rules are not checked.", "API rules are not checked.")
+        self.assertEqual(
+            missing_json_scope_metadata_disclosures(html),
+            ["meta description must distinguish JSON Schema validation"],
+        )
+
+    def test_missing_syntax_scope_in_open_graph_description_is_reported(self):
+        html = self.COMPLETE.replace("Format JSON syntax and distinguish", "Format JSON and distinguish")
+        self.assertEqual(
+            missing_json_scope_metadata_disclosures(html),
+            ["Open Graph description must describe JSON syntax validation"],
         )
 
 
