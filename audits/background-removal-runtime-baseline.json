@@ -129,7 +129,7 @@
       "license": "Apache-2.0",
       "npmUrl": "https://www.npmjs.com/package/flatbuffers/v/1.12.0",
       "lockPath": "node_modules/flatbuffers",
-      "runtimeObservation": "Not individually observed as a separate browser module; upstream lockfile evidence only."
+      "runtimeObservation": "Not individually observed as a separate esm.sh browser module; the upstream CPU ESM source map includes this package's source paths. The transformed esm.sh response has not been byte-compared."
     },
     {
       "parent": "onnxruntime-web@1.18.0",
@@ -139,7 +139,7 @@
       "license": "ISC",
       "npmUrl": "https://www.npmjs.com/package/guid-typescript/v/1.0.9",
       "lockPath": "node_modules/guid-typescript",
-      "runtimeObservation": "Not individually observed as a separate browser module; upstream lockfile evidence only."
+      "runtimeObservation": "Not individually observed as a separate esm.sh browser module; the upstream CPU ESM source map includes this package's source paths. The transformed esm.sh response has not been byte-compared."
     },
     {
       "parent": "onnxruntime-web@1.18.0",
@@ -149,7 +149,7 @@
       "license": "Apache-2.0",
       "npmUrl": "https://www.npmjs.com/package/long/v/5.2.3",
       "lockPath": "node_modules/long",
-      "runtimeObservation": "Not individually observed as a separate browser module; upstream lockfile evidence only."
+      "runtimeObservation": "Not individually observed as a separate esm.sh browser module; the upstream CPU ESM source map includes this package's source paths. The transformed esm.sh response has not been byte-compared."
     },
     {
       "parent": "onnxruntime-web@1.18.0",
@@ -159,7 +159,7 @@
       "license": "MIT",
       "npmUrl": "https://www.npmjs.com/package/onnxruntime-common/v/1.18.0",
       "lockPath": "../common",
-      "runtimeObservation": "Not individually observed as a separate browser module; upstream lockfile evidence only."
+      "runtimeObservation": "Not individually observed as a separate esm.sh browser module; the upstream CPU ESM source map includes this package's source paths. The transformed esm.sh response has not been byte-compared."
     },
     {
       "parent": "onnxruntime-web@1.18.0",
@@ -169,7 +169,7 @@
       "license": "MIT",
       "npmUrl": "https://www.npmjs.com/package/platform/v/1.3.6",
       "lockPath": "node_modules/platform",
-      "runtimeObservation": "Not individually observed as a separate browser module; upstream lockfile evidence only."
+      "runtimeObservation": "Not individually observed as a separate esm.sh browser module; no matching package source path appears in the inspected upstream CPU source map; source-lock evidence only."
     },
     {
       "parent": "onnxruntime-web@1.18.0",
@@ -179,7 +179,7 @@
       "license": "BSD-3-Clause",
       "npmUrl": "https://www.npmjs.com/package/protobufjs/v/7.2.5",
       "lockPath": "node_modules/protobufjs",
-      "runtimeObservation": "Not individually observed as a separate browser module; upstream lockfile evidence only."
+      "runtimeObservation": "Not individually observed as a separate esm.sh browser module; the upstream CPU ESM source map includes this package's source paths. The transformed esm.sh response has not been byte-compared."
     }
   ],
   "integrity": {
@@ -256,9 +256,9 @@
         "buytoolsAssessment": "The inspected application does not expose schema or descriptor upload; no direct user-controlled path was found."
       }
     ],
-    "transitiveExposureConclusion": "These source-lock versions fall within published GitHub advisory ranges. Advisory preconditions require attacker-controlled protobuf schemas or binary data; BuyTools currently passes user images as File/Blob and fetches its model from staticimgly.com. No direct exploit path was demonstrated. Because the model is an externally hosted protobuf-formatted asset and the final CDN-transformed bundle has not been fully resolved, treat this as conditional supply-chain exposure pending runtime-bundle verification and a compatibility-tested upgrade."
+    "transitiveExposureConclusion": "The upstream ONNX Runtime Web v1.18.0 CPU ESM source map includes protobufjs 7.2.5 reader/writer sources and @protobufjs/utf8 1.1.0; the inspected WebGPU source map contains no protobufjs/@protobufjs source paths. This confirms advisory-affected parser code in the upstream CPU distribution selected by the package export, but the esm.sh-transformed response has not been byte-compared. BuyTools accepts an image File/Blob rather than a user-supplied ONNX model or protobuf schema, and no direct exploit path was demonstrated. The model is fetched from staticimgly.com, so compromised or malicious upstream model assets remain a conditional supply-chain input risk."
   },
-  "nextPriority": "Verify which source-lock dependencies and advisory-affected protobuf code are actually retained in the esm.sh browser bundle; then test a compatible patched ONNX Runtime/protobuf chain against both background-removal models, browser fallbacks and real image fixtures before changing production.",
+  "nextPriority": "Byte-compare or otherwise map the exact esm.sh ONNX Runtime response to its upstream ESM export, then publish complete versioned license/copyright notices for confirmed bundled transitive packages; only after that test a patched protobuf/ONNX chain against both models, browser fallbacks and real-photo fixtures.",
   "upstreamLockEvidence": {
     "capturedAt": "2026-11-07T22:50:00Z",
     "sourceUrl": "https://raw.githubusercontent.com/microsoft/onnxruntime/v1.18.0/js/web/package-lock.json",
@@ -445,5 +445,148 @@
         "npmUrl": "https://www.npmjs.com/package/@protobufjs/utf8/v/1.1.0"
       }
     ]
+  },
+  "upstreamBundleEvidence": {
+    "capturedAt": "2026-11-07T23:47:37Z",
+    "packageManifestUrl": "https://unpkg.com/onnxruntime-web@1.18.0/package.json",
+    "cpuEsmExport": "./dist/esm/ort.min.js",
+    "cpuSourceMapUrl": "https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.min.js.map",
+    "cpuSourcePaths": [
+      "../../node_modules/guid-typescript/dist/guid.js",
+      "../../node_modules/long/index.js",
+      "../../node_modules/flatbuffers/js/flatbuffers.mjs",
+      "../../node_modules/@protobufjs/aspromise/index.js",
+      "../../node_modules/@protobufjs/base64/index.js",
+      "../../node_modules/@protobufjs/eventemitter/index.js",
+      "../../node_modules/@protobufjs/float/index.js",
+      "../../node_modules/@protobufjs/inquire/index.js",
+      "../../node_modules/@protobufjs/utf8/index.js",
+      "../../node_modules/@protobufjs/pool/index.js",
+      "../../node_modules/protobufjs/src/util/longbits.js",
+      "../../node_modules/protobufjs/src/util/minimal.js",
+      "../../node_modules/protobufjs/src/writer.js",
+      "../../node_modules/protobufjs/src/writer_buffer.js",
+      "../../node_modules/protobufjs/src/reader.js",
+      "../../node_modules/protobufjs/src/reader_buffer.js",
+      "../../node_modules/protobufjs/src/rpc/service.js",
+      "../../node_modules/protobufjs/src/rpc.js",
+      "../../node_modules/protobufjs/src/roots.js",
+      "../../node_modules/protobufjs/src/index-minimal.js",
+      "../../node_modules/protobufjs/minimal.js",
+      "../../../common/lib/backend-impl.ts",
+      "../../../common/lib/inference-session-impl.ts"
+    ],
+    "webgpuEsmExport": "./dist/esm/ort.webgpu.min.js",
+    "webgpuSourceMapUrl": "https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.webgpu.min.js.map",
+    "webgpuProtobufSourcePaths": [],
+    "confirmedBundledPackages": [
+      {
+        "name": "protobufjs",
+        "version": "7.2.5",
+        "license": "BSD-3-Clause",
+        "sourcePaths": [
+          "../../node_modules/protobufjs/src/reader.js",
+          "../../node_modules/protobufjs/src/writer.js",
+          "../../node_modules/protobufjs/src/rpc/service.js"
+        ]
+      },
+      {
+        "name": "@protobufjs/utf8",
+        "version": "1.1.0",
+        "license": "BSD-3-Clause",
+        "sourcePaths": [
+          "../../node_modules/@protobufjs/utf8/index.js"
+        ]
+      },
+      {
+        "name": "@protobufjs/aspromise",
+        "version": "1.1.2",
+        "license": "BSD-3-Clause",
+        "sourcePaths": [
+          "../../node_modules/@protobufjs/aspromise/index.js"
+        ]
+      },
+      {
+        "name": "@protobufjs/base64",
+        "version": "1.1.2",
+        "license": "BSD-3-Clause",
+        "sourcePaths": [
+          "../../node_modules/@protobufjs/base64/index.js"
+        ]
+      },
+      {
+        "name": "@protobufjs/eventemitter",
+        "version": "1.1.0",
+        "license": "BSD-3-Clause",
+        "sourcePaths": [
+          "../../node_modules/@protobufjs/eventemitter/index.js"
+        ]
+      },
+      {
+        "name": "@protobufjs/float",
+        "version": "1.0.2",
+        "license": "BSD-3-Clause",
+        "sourcePaths": [
+          "../../node_modules/@protobufjs/float/index.js"
+        ]
+      },
+      {
+        "name": "@protobufjs/inquire",
+        "version": "1.1.0",
+        "license": "BSD-3-Clause",
+        "sourcePaths": [
+          "../../node_modules/@protobufjs/inquire/index.js"
+        ]
+      },
+      {
+        "name": "@protobufjs/pool",
+        "version": "1.1.0",
+        "license": "BSD-3-Clause",
+        "sourcePaths": [
+          "../../node_modules/@protobufjs/pool/index.js"
+        ]
+      },
+      {
+        "name": "flatbuffers",
+        "version": "1.12.0",
+        "license": "Apache-2.0",
+        "sourcePaths": [
+          "../../node_modules/flatbuffers/js/flatbuffers.mjs"
+        ]
+      },
+      {
+        "name": "guid-typescript",
+        "version": "1.0.9",
+        "license": "ISC",
+        "sourcePaths": [
+          "../../node_modules/guid-typescript/dist/guid.js"
+        ]
+      },
+      {
+        "name": "long",
+        "version": "5.2.3",
+        "license": "Apache-2.0",
+        "sourcePaths": [
+          "../../node_modules/long/index.js"
+        ]
+      },
+      {
+        "name": "onnxruntime-common",
+        "version": "1.18.0",
+        "license": "MIT",
+        "sourcePaths": [
+          "../../../common/lib/backend-impl.ts",
+          "../../../common/lib/inference-session-impl.ts"
+        ]
+      }
+    ],
+    "unconfirmedLockPackages": [
+      "@protobufjs/codegen",
+      "@protobufjs/fetch",
+      "@protobufjs/path",
+      "platform"
+    ],
+    "scopeNote": "The upstream package manifest maps the browser ESM root export to ./dist/esm/ort.min.js and the /webgpu export to ./dist/esm/ort.webgpu.min.js. The CPU source map lists protobufjs reader/writer sources and @protobufjs helpers, including @protobufjs/utf8. The inspected WebGPU source map lists no node_modules/protobufjs/ or node_modules/@protobufjs/ source paths. This is upstream source-map evidence for the published package exports, not a byte-for-byte comparison of the esm.sh-transformed response observed by BuyTools CI.",
+    "runtimeHashNote": "BuyTools CI records SHA-256 hashes for observed esm.sh module response bodies. Those per-run hashes have not been compared byte-for-byte with the upstream UNPKG files or their source maps; no runtime Subresource Integrity is claimed."
   }
 }
