@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -338,6 +338,56 @@ class LicenseDiscoveryLinkTests(unittest.TestCase):
 
     def test_missing_footer_is_reported(self):
         self.assertEqual(missing_license_footer_link('<main>Content</main>'), "Page footer is missing.")
+
+
+
+class DirectBrowserPackageNoticeTests(unittest.TestCase):
+    SITE_IMPORTS = """
+    <script>
+    const pdf = await import('https://esm.sh/pdf-lib@1.17.1');
+    const zip = await import("https://esm.sh/jszip@3.10.2?target=es2022");
+    const image = await import('https://esm.sh/@imgly/background-removal@1.5.5');
+    const output = await import('https://esm.sh/jspdf@4.2.1');
+    </script>
+    """
+    LICENSE_NOTICES = """
+    <h3>pdf-lib — version 1.17.1</h3>
+    <h3>JSZip — version 3.10.2</h3>
+    <h3>@imgly/background-removal — version 1.5.5</h3>
+    <h3>jsPDF — version 4.2.1</h3>
+    """
+
+    def test_all_direct_package_versions_are_inventoried(self):
+        self.assertEqual(
+            missing_direct_browser_package_notices(self.SITE_IMPORTS, self.LICENSE_NOTICES),
+            [],
+        )
+
+    def test_scoped_package_is_matched_as_a_single_package_name(self):
+        html = "await import('https://esm.sh/@imgly/background-removal@1.5.5')"
+        notice = "<h3>@imgly/background-removal — version 1.5.5</h3>"
+        self.assertEqual(missing_direct_browser_package_notices(html, notice), [])
+
+    def test_missing_package_notice_is_reported(self):
+        notices = self.LICENSE_NOTICES.replace("<h3>JSZip — version 3.10.2</h3>", "")
+        self.assertEqual(
+            missing_direct_browser_package_notices(self.SITE_IMPORTS, notices),
+            ["License notice missing exact package/version: jszip@3.10.2"],
+        )
+
+    def test_version_mismatch_is_reported(self):
+        notices = self.LICENSE_NOTICES.replace("pdf-lib — version 1.17.1", "pdf-lib — version 1.17.0")
+        self.assertEqual(
+            missing_direct_browser_package_notices(self.SITE_IMPORTS, notices),
+            ["License notice missing exact package/version: pdf-lib@1.17.1"],
+        )
+
+    def test_unpinned_import_is_rejected(self):
+        html = "await import('https://esm.sh/example-package')"
+        self.assertEqual(
+            missing_direct_browser_package_notices(html, self.LICENSE_NOTICES),
+            ["Direct esm.sh package import must pin a version: example-package"],
+        )
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link
+from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -261,6 +261,13 @@ for file in html_files:
     if len(parser.ids) != len(set(parser.ids)):
         duplicates = sorted({item for item in parser.ids if parser.ids.count(item) > 1})
         fail(f"Duplicate HTML id(s) {duplicates}: {rel}")
+
+# Keep every direct, version-pinned browser package import represented in the license inventory.
+if licenses_page_path.is_file():
+    site_html = "\n".join(file.read_text(encoding="utf-8") for file in html_files)
+    missing_package_notices = missing_direct_browser_package_notices(site_html, licenses_page)
+    if missing_package_notices:
+        fail("Direct browser package license inventory is incomplete: " + "; ".join(missing_package_notices))
 
 # Validate static internal links and fragment targets.
 fragment_links_checked = 0
