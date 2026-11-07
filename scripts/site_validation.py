@@ -247,7 +247,7 @@ def missing_direct_browser_package_notices(site_html, licenses_html):
     for package, version in sorted(package_versions):
         pattern = (
             re.escape(package.casefold())
-            + r"\\s*[—–-]\\s*version\\s*"
+            + r"\s*[—–-]\s*version\s*"
             + re.escape(version.casefold())
             + r"(?![0-9a-z.-])"
         )
