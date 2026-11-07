@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures)
+from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -142,6 +142,30 @@ class JsonFileWorkflowDisclosureTests(unittest.TestCase):
         self.assertEqual(
             missing_json_file_workflow_disclosures(html),
             ["outdated copy-only file workflow disclosure"],
+        )
+
+
+class JsonSchemaScopeDisclosureTests(unittest.TestCase):
+    COMPLETE = (
+        "The formatter checks JSON syntax only. It does not validate JSON Schema, "
+        "required fields, expected value types or an API contract."
+    )
+
+    def test_complete_schema_scope_disclosure_is_accepted(self):
+        self.assertEqual(missing_json_schema_scope_disclosures(self.COMPLETE), [])
+
+    def test_missing_schema_validation_limit_is_reported(self):
+        html = self.COMPLETE.replace("does not validate JSON Schema, ", "")
+        self.assertEqual(
+            missing_json_schema_scope_disclosures(html),
+            ["does not validate json schema"],
+        )
+
+    def test_missing_api_contract_limit_is_reported(self):
+        html = self.COMPLETE.replace("or an API contract", "")
+        self.assertEqual(
+            missing_json_schema_scope_disclosures(html),
+            ["api contract"],
         )
 
 
