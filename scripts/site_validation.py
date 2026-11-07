@@ -15,6 +15,42 @@ def has_shared_favicon(icon_hrefs, expected="/assets/favicon.svg"):
     return expected in set(icon_hrefs)
 
 
+ANALYTICS_AND_AD_MARKERS = (
+    "googletagmanager.com",
+    "google-analytics.com",
+    "gtag(",
+    "connect.facebook.net",
+    "fbq(",
+    "clarity.ms",
+    "hotjar.com",
+    "plausible.io/js/script",
+    "umami.is/script.js",
+    "pagead2.googlesyndication.com",
+    "googlesyndication.com",
+    "doubleclick.net",
+    "adsbygoogle",
+    "adsterra.com",
+    "popads.net",
+)
+
+
+def known_analytics_or_ad_markers(html):
+    """Return known client-side analytics or advertising tags found in public HTML."""
+    normalized = html.lower()
+    return [marker for marker in ANALYTICS_AND_AD_MARKERS if marker in normalized]
+
+
+def missing_no_analytics_disclosure(html):
+    """Return explicit current-state privacy disclosures missing from the policy."""
+    visible_text = " ".join(re.sub(r"<[^>]+>", " ", html).lower().split())
+    required = (
+        "no third-party advertising or site-analytics scripts, pixels, or ad tags are currently loaded by buytools.si",
+        "hosting provider may process technical information",
+        "before activation",
+    )
+    return [phrase for phrase in required if phrase not in visible_text]
+
+
 def missing_image_compressor_disclosures(html):
     """Return required, user-facing output limitations missing from the image guide."""
     normalized = " ".join(html.lower().split())

@@ -11,7 +11,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure
+from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -461,6 +461,17 @@ if "Open comma-, semicolon- or tab-delimited CSV files" not in csv_viewer_page o
     fail("CSV Viewer metadata must describe supported field separators and local file selection accurately.")
 
 privacy_text = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
+missing_privacy_status = missing_no_analytics_disclosure(privacy_text)
+if missing_privacy_status:
+    fail("Privacy policy must state the current absence of advertising/analytics tags and distinguish hosting logs: " + ", ".join(missing_privacy_status))
+for public_page in html_files:
+    public_html = public_page.read_text(encoding="utf-8")
+    tracking_markers = known_analytics_or_ad_markers(public_html)
+    if tracking_markers:
+        fail(
+            f"Unapproved analytics/advertising marker(s) found in {public_page.relative_to(ROOT)}: "
+            + ", ".join(tracking_markers)
+        )
 if "CSV Viewer" not in privacy_text or "5 MiB" not in privacy_text or "browser File API" not in privacy_text or "not uploaded to a BuyTools.si processing endpoint" not in privacy_text:
     fail("Privacy policy must describe local CSV file reading and the 5 MiB limit.")
 if "JSON Formatter" not in privacy_text or "selected UTF-8 .json file up to 5 MiB" not in privacy_text:
