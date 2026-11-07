@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -325,3 +325,20 @@ class ImageLosslessWorkflowDisclosureTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LicenseDiscoveryLinkTests(unittest.TestCase):
+    def test_license_link_in_footer_is_accepted(self):
+        html = '<footer><a href="/privacy/">Privacy</a><a href="/licenses/">Licenses</a></footer>'
+        self.assertIsNone(missing_license_footer_link(html))
+
+    def test_missing_license_link_is_reported(self):
+        html = '<footer><a href="/privacy/">Privacy</a></footer>'
+        self.assertEqual(missing_license_footer_link(html), "Page footer must link to /licenses/.")
+
+    def test_link_outside_footer_does_not_satisfy_check(self):
+        html = '<a href="/licenses/">Licenses</a><footer><a href="/privacy/">Privacy</a></footer>'
+        self.assertEqual(missing_license_footer_link(html), "Page footer must link to /licenses/.")
+
+    def test_missing_footer_is_reported(self):
+        self.assertEqual(missing_license_footer_link('<main>Content</main>'), "Page footer is missing.")
