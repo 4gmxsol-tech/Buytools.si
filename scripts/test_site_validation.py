@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -27,6 +27,51 @@ class FragmentTargetExistsTests(unittest.TestCase):
 
     def test_percent_encoded_fragment_matches_decoded_id(self):
         self.assertTrue(fragment_target_exists("how%20it%20works", ["how it works"]))
+
+
+
+
+class PrivacyStatusDisclosureTests(unittest.TestCase):
+    COMPLETE = (
+        "<p>No third-party advertising or site-analytics scripts, pixels, or ad tags are "
+        "currently loaded by BuyTools.si. This does not mean that no technical data is "
+        "processed: the static hosting provider may process technical information for "
+        "security and delivery. Update this policy before activation if advertising or "
+        "analytics are added.</p>"
+    )
+
+    def test_explicit_current_privacy_status_is_accepted(self):
+        self.assertEqual(missing_no_analytics_disclosure(self.COMPLETE), [])
+
+    def test_missing_current_status_is_reported(self):
+        html = self.COMPLETE.replace(
+            "No third-party advertising or site-analytics scripts, pixels, or ad tags are currently loaded by BuyTools.si. ",
+            "",
+        )
+        self.assertEqual(
+            missing_no_analytics_disclosure(html),
+            ["no third-party advertising or site-analytics scripts, pixels, or ad tags are currently loaded by buytools.si"],
+        )
+
+    def test_known_analytics_tags_are_detected(self):
+        html = '<script src="https://www.googletagmanager.com/gtag/js"></script><script>gtag("config","G-TEST")</script>'
+        self.assertEqual(
+            known_analytics_or_ad_markers(html),
+            ["googletagmanager.com", "gtag("],
+        )
+
+    def test_known_advertising_tags_are_detected(self):
+        html = '<ins class="adsbygoogle"></ins><script src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>'
+        self.assertEqual(
+            known_analytics_or_ad_markers(html),
+            ["pagead2.googlesyndication.com", "googlesyndication.com", "adsbygoogle"],
+        )
+
+    def test_generic_future_policy_wording_is_not_a_tracking_marker(self):
+        self.assertEqual(
+            known_analytics_or_ad_markers("<p>Advertising and analytics may be introduced later.</p>"),
+            [],
+        )
 
 
 class ImageCompressorDisclosureTests(unittest.TestCase):
