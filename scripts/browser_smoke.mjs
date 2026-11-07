@@ -166,11 +166,27 @@ try {
   assert.ok(renderedCard.height >= 190, "A deferred tool card must recover its reserved layout size when brought into view");
   assert.match(renderedCard.text, /Open tool/i, "Deferred card content must remain in the DOM");
 
-  // Search and discoverability.
-  await page.locator("#search").fill("CSV Viewer");
-  assert.equal(await page.locator('[data-tool]').count(), 1);
+  // Search and discoverability: the semantic form must match the SearchAction q URL.
+  assert.equal(await page.locator("#toolSearch").getAttribute("role"), "search");
+  assert.equal(await page.locator("#toolSearch").getAttribute("method"), "get");
+  assert.equal(await page.locator("#search").getAttribute("type"), "search");
+  assert.equal(await page.locator("#search").getAttribute("name"), "q");
+  await page.goto("http://127.0.0.1:8000/?q=CSV%20Viewer", { waitUntil: "load" });
+  await page.addScriptTag({ content: axe.source });
+  assert.equal(await page.locator("#search").inputValue(), "CSV Viewer", "SearchAction deep links must prefill the search input");
+  assert.equal(await page.locator('[data-tool]').count(), 1, "SearchAction deep links must render filtered results");
   assert.equal(await page.locator('[data-tool="csv-viewer"]').count(), 1);
+  await page.locator("#search").fill("JSON Formatter");
+  assert.equal(await page.locator('[data-tool]').count(), 1, "Typing must filter matching tools immediately");
+  await page.locator("#searchBtn").click();
+  assert.equal(new URL(page.url()).searchParams.get("q"), "JSON Formatter", "Search button submission must create a shareable q URL");
+  assert.equal(await page.locator('[data-tool]').count(), 1);
+  await page.locator("#search").fill("CSV Viewer");
+  await page.locator("#search").press("Enter");
+  assert.equal(new URL(page.url()).searchParams.get("q"), "CSV Viewer", "Enter must submit the semantic search form");
   await page.locator("#search").fill("");
+  await page.locator("#searchBtn").click();
+  assert.equal(new URL(page.url()).searchParams.has("q"), false, "Submitting an empty search must remove the stale q parameter");
 
   // Word Counter: count visible grapheme clusters, whitespace and singular labels.
   await page.locator('[data-tool="word-counter"]').click();

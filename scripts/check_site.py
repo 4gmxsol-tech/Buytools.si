@@ -173,6 +173,20 @@ homepage_html = (ROOT / "index.html").read_text(encoding="utf-8")
 if '<nav class="footerlinks" aria-label="Legal">' not in homepage_html or '<a href="/licenses/">Licenses</a>' not in homepage_html:
     fail("Homepage legal footer must expose a crawlable link to the third-party license notice.")
 
+# Keep the homepage search form aligned with its WebSite SearchAction URL template.
+if '<form class="searchbox" id="toolSearch" role="search" action="/" method="get">' not in homepage_html:
+    fail("Homepage tool search must use a semantic GET search form with the SearchAction endpoint.")
+if '<input id="search" type="search" name="q" aria-label="Search tools"' not in homepage_html:
+    fail("Homepage search input must expose the q parameter declared by SearchAction.")
+for required_search_contract in (
+    '"target":"https://buytools.si/?q={search_term_string}"',
+    '"query-input":"required name=search_term_string"',
+    "$('#toolSearch').addEventListener('submit'",
+    "history.replaceState(null,'',url)",
+):
+    if required_search_contract not in homepage_html:
+        fail("Homepage search form and SearchAction contract are out of sync: " + required_search_contract)
+
 seen_urls = set()
 for url in sitemap_urls:
     if url in seen_urls:
