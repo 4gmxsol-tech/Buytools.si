@@ -56,13 +56,13 @@ try {
   assert.match(await page.locator("body").innerText(), /AGPL-3\.0/);
   const licenseBodyText = await page.locator("body").innerText();
   for (const packageDetail of [
-    /pdf-lib.*1\\.17\\.1/s,
-    /JSZip.*3\\.10\\.2/s,
-    /MIT or GPL-3\\.0/i,
-    /jsPDF.*4\\.2\\.1/s,
-    /MIT option for this integration/i
+    "pdf-lib — version 1.17.1",
+    "JSZip — version 3.10.2",
+    "MIT or GPL-3.0",
+    "jsPDF — version 4.2.1",
+    "MIT option for this integration"
   ]) {
-    assert.match(licenseBodyText, packageDetail, "License notice must identify each pinned direct browser package and its license");
+    assert.ok(licenseBodyText.includes(packageDetail), "License notice must identify each pinned direct browser package and its license: " + packageDetail);
   }
   for (const licenseUrl of [
     "https://github.com/Hopding/pdf-lib/blob/v1.17.1/LICENSE.md",
