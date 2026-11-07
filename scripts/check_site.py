@@ -11,7 +11,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure
+from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -204,6 +204,21 @@ html_files = sorted(
     file for file in ROOT.rglob("*.html")
     if file.name != "404.html" and not any(part.startswith(".") for part in file.relative_to(ROOT).parts)
 )
+CORE_LICENSE_LINK_PAGES = (
+    "guides/format-json-online/index.html",
+    "guides/reduce-image-size/index.html",
+    "tools/json-formatter/index.html",
+    "tools/csv-viewer/index.html",
+)
+for relative_path in CORE_LICENSE_LINK_PAGES:
+    page_path = ROOT / relative_path
+    if not page_path.is_file():
+        fail(f"Core landing page required for license discovery is missing: {relative_path}")
+        continue
+    message = missing_license_footer_link(page_path.read_text(encoding="utf-8"))
+    if message:
+        fail(f"{relative_path}: {message}")
+
 expected_sitemap = {expected_url(file) for file in html_files}
 for missing in sorted(expected_sitemap - seen_urls):
     fail(f"Public HTML page missing from sitemap: {missing}")

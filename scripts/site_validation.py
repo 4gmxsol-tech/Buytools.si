@@ -214,3 +214,14 @@ def homepage_tool_count_mismatch(html):
             f"but the catalogue contains {len(tool_ids)} entries."
         )
     return None
+
+
+
+def missing_license_footer_link(html):
+    """Return an error when a key landing page footer omits the software-notice link."""
+    footer = re.search(r"<footer\b[^>]*>(.*?)</footer\s*>", html, flags=re.IGNORECASE | re.DOTALL)
+    if not footer:
+        return "Page footer is missing."
+    if not re.search(r"""href\s*=\s*["']/licenses/["']""", footer.group(1), flags=re.IGNORECASE):
+        return "Page footer must link to /licenses/."
+    return None
