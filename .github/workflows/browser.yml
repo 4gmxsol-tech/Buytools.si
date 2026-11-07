@@ -68,10 +68,12 @@ jobs:
           run_audit live-json-guide-mobile "https://buytools.si/guides/format-json-online/" mobile
           run_audit live-image-guide-mobile "https://buytools.si/guides/reduce-image-size/" mobile
           node scripts/lighthouse_summary.mjs lighthouse-reports/*.json
-      - name: Upload Lighthouse JSON reports
+      - name: Upload browser provenance and Lighthouse reports
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: lighthouse-baseline-${{ github.run_id }}
-          path: lighthouse-reports/*.json
+          name: buytools-browser-audit-${{ github.run_id }}
+          path: |
+            lighthouse-reports/*.json
+            runtime-provenance.json
           if-no-files-found: warn
