@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <title>Open-source Software Notices | BuyTools.si</title>
-<meta name="description" content="Attribution and license information for third-party software used by BuyTools.si, including its browser-based AI background-removal component.">
+<meta name="description" content="Attribution and license information for the pinned browser libraries used by BuyTools.si, including PDF, ZIP and AI background-removal components.">
 <link rel="canonical" href="https://buytools.si/licenses/">
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <link rel="license" href="https://www.gnu.org/licenses/agpl-3.0.html">
@@ -13,7 +13,7 @@
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="BuyTools.si">
 <meta property="og:title" content="Open-source Software Notices | BuyTools.si">
-<meta property="og:description" content="Attribution and license information for third-party software used by BuyTools.si.">
+<meta property="og:description" content="Attribution and license information for pinned browser libraries used by BuyTools.si.">
 <meta property="og:url" content="https://buytools.si/licenses/">
 <meta name="twitter:card" content="summary">
 <style>
@@ -33,6 +33,7 @@ body{margin:0;background:radial-gradient(ellipse at 85% -10%,#27304b 0,transpare
 .content h2{letter-spacing:-.03em}
 .content a{overflow-wrap:anywhere}
 .content li{margin:8px 0}
+.content pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;color:#b4bbcc}
 .notice{border-left:3px solid var(--accent);padding-left:14px}
 .footer{padding:30px 0 45px;color:#929bb1;font-size:13px}
 .footer a{color:var(--accent);margin-right:14px}
@@ -46,6 +47,7 @@ a:focus-visible{outline:3px solid #c4b5fd;outline-offset:3px}
 <main class="wrap">
 <section class="hero"><div class="eyebrow">Third-party software</div><h1>Open-source software notices</h1><p>Attribution and license links for third-party components identified in BuyTools.si. Component licenses are separate from the site's own content and branding.</p></section>
 <section class="content">
+<p><strong>Last updated: November 7, 2026</strong></p>
 <h2>@imgly/background-removal — version 1.5.5</h2>
 <p>Copyright © IMG.LY GmbH. BuyTools.si loads this browser package on demand for the Background Removal feature.</p>
 <p><strong>License: GNU Affero General Public License, version 3 (AGPL-3.0).</strong> The published package metadata directs users to its <code>LICENSE.md</code>; the upstream project documentation identifies the package as AGPL. Its release history records the change from GPL to AGPL in version 1.4.0, before the 1.5.5 version used by this site.</p>
@@ -56,6 +58,100 @@ a:focus-visible{outline:3px solid #c4b5fd;outline-offset:3px}
 </ul>
 <p>The current site imports the package from <code>esm.sh</code>; its model and WebAssembly assets are fetched from IMG.LY's static asset host. The image-processing workflow is performed in the browser by the current integration. See the <a href="/privacy/">Privacy Policy</a> for the observed third-party request and data-handling details.</p>
 </section>
+
+<section class="content" id="direct-browser-packages">
+<h2>Other direct browser packages</h2>
+<p>The following pinned packages are dynamically imported by the current site code when their features are used. Each package is loaded on demand from <code>esm.sh</code>.</p>
+
+<article id="pdf-lib">
+<h3>pdf-lib — version 1.17.1</h3>
+<p><strong>Purpose:</strong> PDF merge and split in the browser. <strong>License:</strong> MIT. <strong>Copyright:</strong> (c) 2019 Andrew Dillon.</p>
+<ul>
+<li>Exact browser import: <code>https://esm.sh/pdf-lib@1.17.1</code>.</li>
+<li>Versioned source: <a href="https://github.com/Hopding/pdf-lib/tree/v1.17.1">Hopding/pdf-lib v1.17.1</a>.</li>
+<li>Versioned license: <a href="https://github.com/Hopding/pdf-lib/blob/v1.17.1/LICENSE.md">MIT license file</a>.</li>
+</ul>
+<details><summary>MIT license text</summary><pre>MIT License\n\nCopyright (c) 2019 Andrew Dillon
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre></details>
+</article>
+
+<article id="jszip">
+<h3>JSZip — version 3.10.2</h3>
+<p><strong>Purpose:</strong> package batch image outputs into a downloadable ZIP in the browser. <strong>License options:</strong> MIT or GPL-3.0; BuyTools.si uses the MIT option for this integration. <strong>Copyright:</strong> (c) 2009–2016 Stuart Knightley, David Duponchel, Franz Buchinger and António Afonso.</p>
+<ul>
+<li>Exact browser import: <code>https://esm.sh/jszip@3.10.2</code>.</li>
+<li>Versioned source: <a href="https://github.com/Stuk/jszip/tree/v3.10.2">Stuk/jszip v3.10.2</a>.</li>
+<li>Versioned dual-license file: <a href="https://github.com/Stuk/jszip/blob/v3.10.2/LICENSE.markdown">MIT and GPL-3.0 license options</a>.</li>
+</ul>
+<details><summary>MIT license text selected for this integration</summary><pre>The MIT License\n\nCopyright (c) 2009-2016 Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre></details>
+</article>
+
+<article id="jspdf">
+<h3>jsPDF — version 4.2.1</h3>
+<p><strong>Purpose:</strong> create PDF files from selected images in the browser. <strong>License:</strong> MIT. <strong>Copyright:</strong> (c) 2010–2025 James Hall; (c) 2015–2025 yWorks GmbH.</p>
+<ul>
+<li>Exact browser import: <code>https://esm.sh/jspdf@4.2.1</code>.</li>
+<li>Versioned source: <a href="https://github.com/parallax/jsPDF/tree/v4.2.1">parallax/jsPDF v4.2.1</a>.</li>
+<li>Versioned license: <a href="https://github.com/parallax/jsPDF/blob/v4.2.1/LICENSE">MIT license file</a>.</li>
+</ul>
+<details><summary>MIT license text</summary><pre>MIT License\n\nCopyright (c) 2010-2025 James Hall\nCopyright (c) 2015-2025 yWorks GmbH
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre></details>
+</article>
+
+<p class="notice">This is an inventory of the direct browser package imports pinned in the site code, not a complete software bill of materials. CDN transformations may include transitive dependencies that are not separately inventoried here. The QRServer endpoint is an external service rather than a package; its data flow is described in the <a href="/privacy/">Privacy Policy</a>.</p>
+</section>
 <section class="content">
 <h2>Commercial use and network interaction</h2>
 <p>AGPL-3.0 is not a non-commercial-only license; it permits commercial use subject to its conditions. Section 13 includes source-availability requirements for certain modified versions that users interact with over a network. The legal effect of this site's browser integration has not been determined by this notice.</p>
@@ -63,7 +159,7 @@ a:focus-visible{outline:3px solid #c4b5fd;outline-offset:3px}
 </section>
 <section class="content">
 <h2>Scope</h2>
-<p>This page documents the AGPL-licensed background-removal component currently identified in the site. It is not a complete software bill of materials for every browser API, external service or third-party library. Other components remain subject to their respective licenses and provider terms.</p>
+<p>This page documents the direct browser package imports pinned in the current site code, including the AGPL-licensed background-removal component and the PDF and ZIP libraries listed above. It is not a complete software bill of materials for transitive dependencies, browser APIs or hosted external services. Other components remain subject to their respective licenses and provider terms.</p>
 </section>
 </main>
 <footer class="wrap footer"><a href="/">Home</a><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><p>Useful tools. Less busywork. © 2026 BuyTools.si</p></footer>
