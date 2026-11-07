@@ -418,7 +418,7 @@ try {
   await page.locator("#run").click();
   const generatedPassword = await page.locator("#text").inputValue();
   assert.equal(generatedPassword.length, 32, "Password generator must respect the selected length");
-  assert.match(generatedPassword, /^[A-Za-z0-9!@#$%^&*()\\-_=+\\[\\]{}?]+$/, "Password must use only the selected character set");
+  assert.ok([...generatedPassword].every(character => "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*()-_=+[]{}?".includes(character)), "Password must use only the selected character set");
 
   // CSV viewer: parse, filter and export with spreadsheet formula-injection safeguards.
   await page.locator("#closeWork").click();
