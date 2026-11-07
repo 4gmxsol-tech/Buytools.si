@@ -292,6 +292,95 @@ def missing_runtime_dependency_notices(manifest, licenses_html):
             missing.append(f"Runtime dependency license notice missing versioned npm metadata link: {name}@{version}")
     return missing
 
+
+def missing_upstream_lock_evidence(manifest):
+    """Validate source-lock dependency versions, license evidence and advisory assessments."""
+    missing = []
+    if not isinstance(manifest, dict):
+        return ["Runtime dependency baseline must be a JSON object."]
+    evidence = manifest.get("upstreamLockEvidence")
+    if not isinstance(evidence, dict):
+        return ["Upstream ONNX Runtime lockfile evidence is missing."]
+    source_url = str(evidence.get("sourceUrl", "")).strip()
+    if source_url != "https://raw.githubusercontent.com/microsoft/onnxruntime/v1.18.0/js/web/package-lock.json":
+        missing.append("Upstream lockfile source must identify ONNX Runtime v1.18.0 js/web/package-lock.json.")
+    if evidence.get("sourceTag") != "v1.18.0" or evidence.get("lockfileVersion") != 2:
+        missing.append("Upstream lockfile tag or lockfile version is inconsistent.")
+    records = evidence.get("packages")
+    if not isinstance(records, list) or not records:
+        return missing + ["Upstream lockfile evidence has no package records."]
+    by_name = {}
+    for record in records:
+        if not isinstance(record, dict):
+            missing.append("Upstream lockfile package record must be an object.")
+            continue
+        name = str(record.get("name", "")).strip()
+        version = str(record.get("version", "")).strip()
+        license_name = str(record.get("license", "")).strip()
+        lock_path = str(record.get("lockPath", "")).strip()
+        npm_url = str(record.get("npmUrl", "")).strip()
+        if not all((name, version, license_name, lock_path, npm_url)):
+            missing.append("Upstream lockfile package record is missing name, version, license, lock path or npm URL.")
+            continue
+        if name in by_name:
+            missing.append(f"Duplicate upstream lockfile package record: {name}.")
+            continue
+        expected_npm_url = f"https://www.npmjs.com/package/{name}/v/{version}"
+        if npm_url != expected_npm_url:
+            missing.append(f"Upstream package metadata URL does not match {name}@{version}.")
+        resolved = record.get("resolved")
+        integrity = record.get("integrity")
+        if resolved:
+            if not str(resolved).startswith("https://registry.npmjs.org/"):
+                missing.append(f"Upstream package tarball URL is not an npm registry URL: {name}@{version}.")
+            if not str(integrity or "").startswith("sha512-"):
+                missing.append(f"Upstream package lock integrity is missing SHA-512 evidence: {name}@{version}.")
+        elif not (name == "onnxruntime-common" and lock_path == "../common" and record.get("resolutionType") == "source-local-file"):
+            missing.append(f"Only onnxruntime-common may use the documented source-local lock path: {name}@{version}.")
+        by_name[name] = record
+    required_names = evidence.get("requiredPackageNames")
+    if not isinstance(required_names, list) or not required_names:
+        missing.append("Upstream lockfile required package-name list is missing.")
+    else:
+        for name in required_names:
+            if name not in by_name:
+                missing.append(f"Upstream lockfile evidence is missing required package: {name}.")
+    for dependency in manifest.get("unresolvedBundledDependencies", []):
+        if not isinstance(dependency, dict):
+            missing.append("Unresolved runtime dependency record must be an object.")
+            continue
+        name = str(dependency.get("name", "")).strip()
+        record = by_name.get(name)
+        if not record:
+            missing.append(f"Unresolved runtime dependency has no upstream lockfile record: {name}.")
+            continue
+        if dependency.get("upstreamLockedVersion") != record.get("version"):
+            missing.append(f"Upstream locked version mismatch for {name}.")
+        if dependency.get("license") != record.get("license") or dependency.get("npmUrl") != record.get("npmUrl"):
+            missing.append(f"Upstream license or package metadata mismatch for {name}.")
+        if "not individually observed" not in str(dependency.get("runtimeObservation", "")).lower():
+            missing.append(f"Runtime observation limitation must remain explicit for {name}.")
+    advisories = manifest.get("securityReview", {}).get("transitiveAdvisories")
+    if not isinstance(advisories, list) or not advisories:
+        missing.append("Transitive dependency advisory review is missing.")
+    else:
+        for advisory in advisories:
+            if not isinstance(advisory, dict):
+                missing.append("Transitive advisory record must be an object.")
+                continue
+            name = str(advisory.get("package", "")).strip()
+            record = by_name.get(name)
+            if not record or advisory.get("version") != record.get("version"):
+                missing.append(f"Transitive advisory package/version is not in the upstream lock evidence: {name}.")
+            if not str(advisory.get("advisoryUrl", "")).startswith("https://github.com/advisories/"):
+                missing.append(f"Transitive advisory must link to a GitHub-reviewed advisory: {name}.")
+            for field in ("affectedRange", "patchedVersion", "preconditions", "buytoolsAssessment"):
+                if not str(advisory.get(field, "")).strip():
+                    missing.append(f"Transitive advisory record is missing {field}: {name}.")
+    if not str(manifest.get("securityReview", {}).get("transitiveExposureConclusion", "")).strip():
+        missing.append("Transitive dependency exposure conclusion is missing.")
+    return missing
+
 def has_head_license_declaration(html):
     """Return whether the document head declares a document-level license."""
     head = re.search(r"<head\b[^>]*>(.*?)</head\s*>", html, flags=re.IGNORECASE | re.DOTALL)
