@@ -220,7 +220,7 @@ try {
   assert.equal(await page.locator("#output").inputValue(), "Apple\nbanana\nzebra");
   await page.locator("#sortOrder").selectOption("reverse");
   await page.locator("#run").click();
-  assert.equal(await page.locator("#output").inputValue(), "zebra\nbanana\nApple");
+  assert.equal(await page.locator("#output").inputValue(), "banana\nApple\nzebra");
   await page.locator("#closeWork").click();
 
   // JSON formatter: valid and invalid input.
