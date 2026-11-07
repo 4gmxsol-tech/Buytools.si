@@ -68,6 +68,14 @@ page.on("requestfinished", request => {
   detail.hashQueued = true;
   responseHashPromises.push(request.response().then(response => response.body()).then(body => {
     detail.responseBodyBytes = body.length;
+    if (body.length === 0 && (detail.contentType || "").includes("application/wasm")) {
+      detail.hashError = "Playwright exposed no response body for the streamed WebAssembly response; no digest is claimed.";
+      return;
+    }
+    if (body.length === 0) {
+      detail.hashError = "Playwright exposed an empty response body.";
+      return;
+    }
     detail.sha256 = createHash("sha256").update(body).digest("hex");
   }).catch(error => {
     detail.hashError = error.message;
@@ -1579,11 +1587,18 @@ try {
     }
   }
   const allModelAssetRequests = [...defaultModelRequests, ...quantizedModelRequests];
+  const wasmAssetRequests = allModelAssetRequests.filter(detail => (detail.contentType || "").includes("application/wasm"));
   const unhashedModelAssets = allModelAssetRequests.filter(detail =>
     !new URL(detail.url).pathname.startsWith(runtimeBaseline.assetOrigin.pathPrefix) ||
     detail.status !== 200 ||
-    !/^[0-9a-f]{64}$/.test(detail.sha256 || "") ||
-    !(detail.responseBodyBytes > 0)
+    detail.requestBodyBytes !== 0 ||
+    (!(detail.contentType || "").includes("application/wasm") &&
+      (!/^[0-9a-f]{64}$/.test(detail.sha256 || "") || !(detail.responseBodyBytes > 0)))
+  );
+  assert.ok(wasmAssetRequests.length > 0, "The background-removal WASM resource should be observed");
+  assert.ok(
+    wasmAssetRequests.every(detail => detail.status === 200 && detail.requestBodyBytes === 0),
+    "Streamed WASM responses should succeed without an external request body"
   );
   if (unhashedModelAssets.length) {
     console.error("Model/WASM response hash capture failures: " + JSON.stringify(unhashedModelAssets.map(detail => ({
@@ -1611,7 +1626,8 @@ try {
     contentType: detail.contentType,
     contentLengthBytes: detail.contentLengthBytes,
     responseBodyBytes: detail.responseBodyBytes,
-    sha256: detail.sha256
+    sha256: detail.sha256,
+    hashError: detail.hashError
   });
   const runtimeProvenance = {
     schemaVersion: 1,
@@ -1652,6 +1668,8 @@ try {
     integrity: {
       algorithm: "SHA-256",
       scope: "response-body audit snapshot",
+      streamedWasmResponsesWithoutExposedBody: wasmAssetRequests.filter(detail => !detail.sha256).length,
+      wasmHashLimitation: "Playwright exposed zero response-body bytes for the streamed application/wasm response; no empty-body digest is recorded.",
       runtimeSubresourceIntegrityEnforced: false
     }
   };
