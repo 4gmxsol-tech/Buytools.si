@@ -81,6 +81,25 @@ def missing_json_schema_scope_disclosures(html):
     return [phrase for phrase in required if phrase not in visible_text]
 
 
+def missing_json_scope_metadata_disclosures(html):
+    """Return missing JSON syntax/schema scope terms from search and social descriptions."""
+    missing = []
+    descriptions = (
+        ("meta description", "name", "description"),
+        ("Open Graph description", "property", "og:description"),
+    )
+    for label, attribute, expected in descriptions:
+        value = " ".join(_meta_content(html, attribute, expected).lower().split())
+        if not value:
+            missing.append(f"{label} is missing")
+            continue
+        if "json syntax" not in value:
+            missing.append(f"{label} must describe JSON syntax validation")
+        if "json schema" not in value:
+            missing.append(f"{label} must distinguish JSON Schema validation")
+    return missing
+
+
 def _meta_content(html, attribute, expected):
     """Return the content value for a meta tag matching one attribute."""
     for tag in re.findall(r"<meta\b[^>]*>", html, flags=re.IGNORECASE):
