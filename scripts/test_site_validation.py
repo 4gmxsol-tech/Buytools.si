@@ -481,9 +481,32 @@ class UpstreamLockEvidenceTests(unittest.TestCase):
                 {"name":"@protobufjs/utf8","version":"1.1.0","license":"BSD-3-Clause","lockPath":"node_modules/@protobufjs/utf8","resolutionType":"npm-registry-tarball","resolved":"https://registry.npmjs.org/@protobufjs/utf8/-/utf8-1.1.0.tgz","integrity":"sha512-test","npmUrl":"https://www.npmjs.com/package/@protobufjs/utf8/v/1.1.0"},
             ],
         },
-        "unresolvedBundledDependencies": [
-            {"name":"protobufjs","upstreamLockedVersion":"7.2.5","license":"BSD-3-Clause","npmUrl":"https://www.npmjs.com/package/protobufjs/v/7.2.5","runtimeObservation":"Not individually observed as a separate browser module; upstream lockfile evidence only."}
+        "observedModules": [
+            {"name":"onnxruntime-web","resolvedVersion":"1.18.0","modulePaths":["/onnxruntime-web@1.18.0/es2022/onnxruntime-web.mjs","/onnxruntime-web@1.18.0/es2022/webgpu.mjs"]}
         ],
+        "unresolvedBundledDependencies": [
+            {"name":"protobufjs","upstreamLockedVersion":"7.2.5","license":"BSD-3-Clause","npmUrl":"https://www.npmjs.com/package/protobufjs/v/7.2.5","runtimeObservation":"Not individually observed as a separate esm.sh browser module; the upstream CPU ESM source map includes protobufjs reader/writer source paths. The transformed esm.sh response has not been byte-compared."}
+        ],
+        "upstreamBundleEvidence": {
+            "packageManifestUrl":"https://unpkg.com/onnxruntime-web@1.18.0/package.json",
+            "cpuEsmExport":"./dist/esm/ort.min.js",
+            "cpuSourceMapUrl":"https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.min.js.map",
+            "cpuSourcePaths":[
+                "../../node_modules/protobufjs/src/reader.js",
+                "../../node_modules/protobufjs/src/writer.js",
+                "../../node_modules/@protobufjs/utf8/index.js"
+            ],
+            "webgpuEsmExport":"./dist/esm/ort.webgpu.min.js",
+            "webgpuSourceMapUrl":"https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.webgpu.min.js.map",
+            "webgpuProtobufSourcePaths":[],
+            "confirmedBundledPackages":[
+                {"name":"protobufjs","version":"7.2.5","license":"BSD-3-Clause","sourcePaths":["../../node_modules/protobufjs/src/reader.js","../../node_modules/protobufjs/src/writer.js"]},
+                {"name":"@protobufjs/utf8","version":"1.1.0","license":"BSD-3-Clause","sourcePaths":["../../node_modules/@protobufjs/utf8/index.js"]}
+            ],
+            "unconfirmedLockPackages":[],
+            "scopeNote":"Upstream source-map evidence only; not a byte-for-byte comparison of the esm.sh transformed response observed by BuyTools CI.",
+            "runtimeHashNote":"BuyTools CI records SHA-256 hashes for observed esm.sh module response bodies; no runtime Subresource Integrity is claimed."
+        },
         "securityReview": {
             "transitiveAdvisories": [
                 {"package":"protobufjs","version":"7.2.5","advisoryUrl":"https://github.com/advisories/GHSA-xq3m-2v4x-88gg","affectedRange":"<7.5.5","patchedVersion":"7.5.5","preconditions":"Untrusted schema input.","buytoolsAssessment":"No user-supplied schema path identified."}
@@ -511,6 +534,35 @@ class UpstreamLockEvidenceTests(unittest.TestCase):
         security["transitiveAdvisories"] = [dict(self.COMPLETE["securityReview"]["transitiveAdvisories"][0], preconditions="")]
         manifest["securityReview"] = security
         self.assertIn("Transitive advisory record is missing preconditions: protobufjs.", missing_upstream_lock_evidence(manifest))
+
+    def test_cpu_source_map_requires_protobuf_reader_and_utf8_sources(self):
+        manifest = dict(self.COMPLETE)
+        bundle = dict(self.COMPLETE["upstreamBundleEvidence"])
+        bundle["cpuSourcePaths"] = [path for path in bundle["cpuSourcePaths"] if "protobufjs/src/reader.js" not in path]
+        manifest["upstreamBundleEvidence"] = bundle
+        self.assertIn("ONNX Runtime CPU source map must include protobufjs reader code.", missing_upstream_lock_evidence(manifest))
+
+    def test_webgpu_source_map_cannot_claim_protobuf_sources_without_evidence(self):
+        manifest = dict(self.COMPLETE)
+        bundle = dict(self.COMPLETE["upstreamBundleEvidence"], webgpuProtobufSourcePaths=["../../node_modules/protobufjs/src/reader.js"])
+        manifest["upstreamBundleEvidence"] = bundle
+        self.assertIn("WebGPU source-map review must not claim protobufjs/@protobufjs source paths.", missing_upstream_lock_evidence(manifest))
+
+    def test_confirmed_bundle_version_must_match_source_lock(self):
+        manifest = dict(self.COMPLETE)
+        bundle = dict(self.COMPLETE["upstreamBundleEvidence"])
+        bundle["confirmedBundledPackages"] = [
+            dict(bundle["confirmedBundledPackages"][0], version="7.2.4"),
+            bundle["confirmedBundledPackages"][1],
+        ]
+        manifest["upstreamBundleEvidence"] = bundle
+        self.assertIn("Confirmed bundled dependency version/license differs from source-lock evidence: protobufjs.", missing_upstream_lock_evidence(manifest))
+
+    def test_scope_note_must_not_overstate_esm_sh_identity(self):
+        manifest = dict(self.COMPLETE)
+        bundle = dict(self.COMPLETE["upstreamBundleEvidence"], scopeNote="The upstream map is identical to the transformed response.")
+        manifest["upstreamBundleEvidence"] = bundle
+        self.assertIn("Bundle source-map scope note must distinguish upstream evidence from the esm.sh transformed response.", missing_upstream_lock_evidence(manifest))
 
     def test_duplicate_package_records_are_rejected(self):
         manifest = dict(self.COMPLETE)
