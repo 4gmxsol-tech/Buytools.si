@@ -204,6 +204,25 @@ try {
   assert.match(await page.locator("#result").innerText(), /0 words · 0 characters \(excluding whitespace\) · 0 characters including spaces and line breaks · 0 sentences/);
   await page.locator("#closeWork").click();
 
+  // Line tools: results must contain real line breaks, not literal backslash sequences.
+  await page.locator('[data-tool="duplicate-lines"]').click();
+  await page.locator("#text").fill("beta\nalpha\nbeta");
+  await page.locator("#run").click();
+  const deduplicatedText = await page.locator("#output").inputValue();
+  assert.equal(deduplicatedText, "beta\nalpha");
+  assert.doesNotMatch(deduplicatedText, /\\n/, "Duplicate-line output must not contain literal backslash-n text");
+  assert.match(await page.locator("#lineSummary").innerText(), /Kept 2 of 3 lines/);
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="sort-lines"]').click();
+  await page.locator("#text").fill("zebra\nApple\nbanana");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#output").inputValue(), "Apple\nbanana\nzebra");
+  await page.locator("#sortOrder").selectOption("reverse");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#output").inputValue(), "banana\nApple\nzebra");
+  await page.locator("#closeWork").click();
+
   // JSON formatter: valid and invalid input.
   await page.locator('[data-tool="json"]').click();
   await auditAccessibility("JSON formatter tool");
@@ -386,6 +405,9 @@ try {
   const stream = await download.createReadStream();
   let csvOutput = "";
   for await (const chunk of stream) csvOutput += chunk.toString("utf8");
+  assert.equal(csvOutput.charCodeAt(0), 0xFEFF, "CSV Viewer export should start with a UTF-8 BOM");
+  assert.ok(csvOutput.includes("\r\n"), "CSV Viewer export should use real CRLF record separators");
+  assert.ok(!csvOutput.includes("\\r\\n"), "CSV Viewer export must not contain literal backslash-r/backslash-n text");
   assert.match(csvOutput, /USB cable/);
   assert.match(csvOutput, /Desk lamp/);
   assert.ok(csvOutput.includes("'=1+1"), "CSV Viewer must neutralize equals-prefixed formulas");
