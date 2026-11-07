@@ -176,15 +176,16 @@ try {
   assert.equal(await page.locator('[data-tool]').count(), 1, "SearchAction deep links must render filtered results");
   assert.equal(await page.locator('[data-tool="csv-viewer"]').count(), 1);
   await page.locator("#search").fill("JSON Formatter");
-  assert.equal(new URL(page.url()).searchParams.get("q"), "JSON Formatter", "Live search must keep a shareable q URL in sync");
+  assert.equal(await page.locator('[data-tool]').count(), 1, "Typing must filter matching tools immediately");
   await page.locator("#searchBtn").click();
-  assert.equal(new URL(page.url()).searchParams.get("q"), "JSON Formatter", "Search button submission must preserve the q URL");
+  assert.equal(new URL(page.url()).searchParams.get("q"), "JSON Formatter", "Search button submission must create a shareable q URL");
   assert.equal(await page.locator('[data-tool]').count(), 1);
   await page.locator("#search").fill("CSV Viewer");
   await page.locator("#search").press("Enter");
   assert.equal(new URL(page.url()).searchParams.get("q"), "CSV Viewer", "Enter must submit the semantic search form");
   await page.locator("#search").fill("");
-  assert.equal(new URL(page.url()).searchParams.has("q"), false, "Clearing search must remove the stale q parameter");
+  await page.locator("#searchBtn").click();
+  assert.equal(new URL(page.url()).searchParams.has("q"), false, "Submitting an empty search must remove the stale q parameter");
 
   // Word Counter: count visible grapheme clusters, whitespace and singular labels.
   await page.locator('[data-tool="word-counter"]').click();
