@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures)
+from site_validation import (fragment_target_exists, has_shared_favicon, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -144,6 +144,25 @@ class JsonFileWorkflowDisclosureTests(unittest.TestCase):
             ["outdated copy-only file workflow disclosure"],
         )
 
+
+class HomepageToolCountTests(unittest.TestCase):
+    def test_matching_static_count_is_accepted(self):
+        html = '<span class="pill" id="count">2 tools</span><script>const tools=[{id:\'one\'},{id:\'two\'}\n];</script>'
+        self.assertIsNone(homepage_tool_count_mismatch(html))
+
+    def test_stale_static_count_is_reported(self):
+        html = '<span class="pill" id="count">16 tools</span><script>const tools=[{id:\'one\'},{id:\'two\'}\n];</script>'
+        self.assertEqual(
+            homepage_tool_count_mismatch(html),
+            "Homepage static count says 16 tools, but the catalogue contains 2 entries.",
+        )
+
+    def test_missing_count_label_is_reported(self):
+        html = '<script>const tools=[{id:\'one\'}\n];</script>'
+        self.assertEqual(
+            homepage_tool_count_mismatch(html),
+            "Homepage static tool count label is missing or malformed.",
+        )
 
 if __name__ == "__main__":
     unittest.main()
