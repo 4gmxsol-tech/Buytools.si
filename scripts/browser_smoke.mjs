@@ -420,6 +420,19 @@ try {
   assert.equal(generatedPassword.length, 32, "Password generator must respect the selected length");
   assert.ok([...generatedPassword].every(character => "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*()-_=+[]{}?".includes(character)), "Password must use only the selected character set");
 
+  // If browser cryptographic randomness fails, the UI must clear any previous output and fail closed.
+  await page.locator("#text").evaluate(element => { element.value = "stale-password-must-not-remain"; });
+  const passwordFailureState = await page.evaluate(() => {
+    window.secureRandomString = () => { throw new Error("simulated secure randomness failure"); };
+    document.querySelector("#run").click();
+    return {
+      value: document.querySelector("#text").value,
+      message: document.querySelector("#result").textContent
+    };
+  });
+  assert.equal(passwordFailureState.value, "", "A failed secure generation must not leave stale password text visible");
+  assert.match(passwordFailureState.message, /Could not generate a secure password in this browser/i);
+
   // CSV viewer: parse, filter and export with spreadsheet formula-injection safeguards.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="csv-viewer"]').click();
