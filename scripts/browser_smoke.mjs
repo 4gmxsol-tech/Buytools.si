@@ -421,7 +421,7 @@ try {
   assert.ok([...generatedPassword].every(character => "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*()-_=+[]{}?".includes(character)), "Password must use only the selected character set");
 
   // If browser cryptographic randomness fails, the UI must clear any previous output and fail closed.
-  await page.locator("#text").fill("stale-password-must-not-remain");
+  await page.locator("#text").evaluate(element => { element.value = "stale-password-must-not-remain"; });
   const passwordFailureState = await page.evaluate(() => {
     window.secureRandomString = () => { throw new Error("simulated secure randomness failure"); };
     document.querySelector("#run").click();
