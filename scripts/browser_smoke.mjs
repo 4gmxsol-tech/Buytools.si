@@ -54,6 +54,23 @@ try {
   assert.match(await page.locator("h1").innerText(), /Open-source software notices/i);
   assert.match(await page.locator("body").innerText(), /@imgly\/background-removal/);
   assert.match(await page.locator("body").innerText(), /AGPL-3\.0/);
+  const licenseBodyText = await page.locator("body").innerText();
+  for (const packageDetail of [
+    /pdf-lib.*1\\.17\\.1/s,
+    /JSZip.*3\\.10\\.2/s,
+    /MIT or GPL-3\\.0/i,
+    /jsPDF.*4\\.2\\.1/s,
+    /MIT option for this integration/i
+  ]) {
+    assert.match(licenseBodyText, packageDetail, "License notice must identify each pinned direct browser package and its license");
+  }
+  for (const licenseUrl of [
+    "https://github.com/Hopding/pdf-lib/blob/v1.17.1/LICENSE.md",
+    "https://github.com/Stuk/jszip/blob/v3.10.2/LICENSE.markdown",
+    "https://github.com/parallax/jsPDF/blob/v4.2.1/LICENSE"
+  ]) {
+    assert.equal(await page.locator('a[href="' + licenseUrl + '"]').count(), 1, "Versioned upstream license link must be present: " + licenseUrl);
+  }
   assert.equal(await page.locator('a[href="https://github.com/imgly/background-removal-js"]').count(), 1);
   assert.equal(await page.locator('a[href="https://www.gnu.org/licenses/agpl-3.0.html"]').count(), 1);
   await page.addScriptTag({ content: axe.source });
