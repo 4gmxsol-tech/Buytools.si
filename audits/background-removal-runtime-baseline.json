@@ -153,10 +153,11 @@
     }
   ],
   "integrity": {
-    "ciArtifactRecordsSha256ForObservedModuleAndAssetResponses": true,
+    "ciArtifactRecordsSha256ForObservedModuleAndNonStreamingAssetBodies": true,
+    "streamedWasmBodyMayNotBeExposedToPlaywright": true,
     "runtimeSubresourceIntegrityEnforced": false,
     "assetPathNamesTreatedAsCryptographicDigests": false,
-    "note": "The CI response hashes are an audit snapshot, not runtime SRI enforcement or a complete reproducible build."
+    "note": "The CI artifact records SHA-256 for module and non-streaming asset response bodies. The streamed application/wasm response may expose zero body bytes through Playwright; it is recorded by URL and status without a digest. This is an audit snapshot, not runtime SRI or a complete reproducible build."
   },
   "securityReview": {
     "package": "zod@3.25.76",
