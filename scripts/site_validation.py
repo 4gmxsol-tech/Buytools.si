@@ -255,6 +255,43 @@ def missing_direct_browser_package_notices(site_html, licenses_html):
             missing.append(f"License notice missing exact package/version: {package}@{version}")
     return missing
 
+def missing_runtime_dependency_notices(manifest, licenses_html):
+    """Return missing notices for packages observed in the background-removal runtime graph."""
+    missing = []
+    if not isinstance(manifest, dict) or manifest.get("schemaVersion") != 1:
+        return ["Runtime dependency baseline is missing or has an unsupported schema version."]
+
+    packages = manifest.get("observedModules")
+    if not isinstance(packages, list) or not packages:
+        return ["Runtime dependency baseline has no observed modules."]
+
+    if not re.search(r"""id\\s*=\\s*["']background-removal-runtime["']""", licenses_html, flags=re.IGNORECASE):
+        missing.append("License page is missing the background-removal runtime inventory section.")
+
+    license_text = " ".join(re.sub(r"<[^>]+>", " ", licenses_html).casefold().split())
+    for package in packages:
+        name = str(package.get("name", "")).strip()
+        version = str(package.get("resolvedVersion", "")).strip()
+        license_name = str(package.get("license", "")).strip()
+        npm_url = str(package.get("npmUrl", "")).strip()
+        if not name or not version or not license_name:
+            missing.append("Runtime dependency baseline contains an incomplete package record.")
+            continue
+
+        pattern = (
+            re.escape(name.casefold())
+            + r"\\s*[—–-]\\s*version\\s*"
+            + re.escape(version.casefold())
+            + r"(?![0-9a-z.-])"
+        )
+        if not re.search(pattern, license_text):
+            missing.append(f"Runtime dependency license notice missing exact package/version: {name}@{version}")
+        if f"license: {license_name}".casefold() not in license_text:
+            missing.append(f"Runtime dependency license notice missing license identifier: {name}@{version} ({license_name})")
+        if npm_url and npm_url not in licenses_html:
+            missing.append(f"Runtime dependency license notice missing versioned npm metadata link: {name}@{version}")
+    return missing
+
 def has_head_license_declaration(html):
     """Return whether the document head declares a document-level license."""
     head = re.search(r"<head\b[^>]*>(.*?)</head\s*>", html, flags=re.IGNORECASE | re.DOTALL)
