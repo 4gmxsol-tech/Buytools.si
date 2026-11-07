@@ -93,9 +93,9 @@ def missing_batch_image_resizer_disclosures(html):
 
 def homepage_tool_count_mismatch(html):
     """Return a message when the static homepage count disagrees with the tool catalogue."""
-    catalogue_match = re.search(r"const tools\\s*=\\s*\\[(.*?)\\n\\];", html, flags=re.DOTALL)
+    catalogue_match = re.search(r"const tools\s*=\s*\[(.*?)\n\];", html, flags=re.DOTALL)
     count_match = re.search(
-        r'<[^>]*\\bid=["\\']count["\\'][^>]*>\\s*(\\d+)\\s+tools\\s*</',
+        r'<[^>]*\bid=["\']count["\'][^>]*>\s*(\d+)\s+tools\s*</',
         html,
         flags=re.IGNORECASE,
     )
@@ -103,7 +103,7 @@ def homepage_tool_count_mismatch(html):
         return "Could not locate the homepage tool catalogue."
     if not count_match:
         return "Homepage static tool count label is missing or malformed."
-    tool_ids = re.findall(r"\\{id:'([^']+)'", catalogue_match.group(1))
+    tool_ids = re.findall(r"\{id:'([^']+)'", catalogue_match.group(1))
     if not tool_ids:
         return "Homepage tool catalogue contains no identifiable tool IDs."
     displayed_count = int(count_match.group(1))
