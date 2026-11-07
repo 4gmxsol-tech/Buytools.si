@@ -430,7 +430,7 @@ if (
     fail("CSV Viewer must expose and use an explicit comma, semicolon or tab field-separator control.")
 if "comma-, semicolon- and tab-separated values" not in csv_viewer_page or "normalized to comma-separated CSV" not in csv_viewer_page:
     fail("CSV Viewer landing page must disclose supported import separators and comma-normalized exports.")
-if "CRLF, LF or CR line endings" not in csv_viewer_page or "else if(ch==='\\r'||ch==='\\n')" not in home:
+if "CRLF, LF or CR line endings" not in csv_viewer_page or "if(ch==='\\r'||ch==='\\n')" not in home:
     fail("CSV Viewer must parse and document CRLF, LF and CR record separators.")
 if "Unexpected character after a closing quote" not in home or "Unexpected quote in an unquoted CSV field" not in home or "Invalid quote placement" not in csv_viewer_page:
     fail("CSV Viewer must reject malformed quote placement rather than silently altering values.")
