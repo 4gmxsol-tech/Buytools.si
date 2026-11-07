@@ -463,6 +463,31 @@ try {
   const crOnlyNote = await page.locator("#csvTable tbody tr").first().locator("td").nth(1).textContent();
   assert.ok(crOnlyNote.includes("line one") && crOnlyNote.includes("line two"), "CR-only line breaks inside quoted fields must remain cell content");
   assert.equal(await page.locator("#csvTable tbody tr").nth(1).locator("td").nth(2).textContent(), "Helsinki");
+
+  // Reject malformed quote placement instead of silently dropping or merging cell text.
+  const emptyQuotedFixture = 'name,note\nAda,""\nLinus,Engineering';
+  await page.locator("#text").fill(emptyQuotedFixture);
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#csvTable tbody tr").count(), 2, "An empty quoted field must remain a valid cell");
+  assert.equal(await page.locator("#csvTable tbody tr").first().locator("td").nth(1).textContent(), "", "An empty quoted cell must not disappear");
+
+  const emptyQuotedHeaderFixture = '""\nvalue';
+  await page.locator("#text").fill(emptyQuotedHeaderFixture);
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#csvTable tbody tr").count(), 1, "A leading empty quoted header must remain a field");
+  assert.match(await page.locator("#csvTable thead button").first().innerText(), /^Column 1/, "An empty quoted header should receive the documented fallback label");
+  assert.equal(await page.locator("#csvTable tbody tr").first().locator("td").first().textContent(), "value");
+
+  const malformedCsvFixtures = [
+    { csv: 'name,note\nAda,"quoted"suffix', error: "Unexpected character after a closing quote" },
+    { csv: 'name,note\nAda,un"escaped', error: "Unexpected quote in an unquoted CSV field" }
+  ];
+  for (const fixture of malformedCsvFixtures) {
+    await page.locator("#text").fill(fixture.csv);
+    await page.locator("#run").click();
+    assert.ok((await page.locator("#result").innerText()).includes(fixture.error), "Malformed CSV must show a clear quote-syntax error");
+    assert.equal(await page.locator("#csvTools").evaluate(el => el.classList.contains("hidden")), true, "Malformed CSV must not leave a stale preview visible");
+  }
   await page.locator("#csvDelimiter").selectOption(",");
 
   // CSV Viewer: load a local file in-browser, then enforce the documented size limit.
