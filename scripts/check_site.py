@@ -430,6 +430,8 @@ if (
     fail("CSV Viewer must expose and use an explicit comma, semicolon or tab field-separator control.")
 if "comma-, semicolon- and tab-separated values" not in csv_viewer_page or "normalized to comma-separated CSV" not in csv_viewer_page:
     fail("CSV Viewer landing page must disclose supported import separators and comma-normalized exports.")
+if "CRLF, LF or CR line endings" not in csv_viewer_page or "else if(ch==='\\r'||ch==='\\n')" not in home:
+    fail("CSV Viewer must parse and document CRLF, LF and CR record separators.")
 if "Choose a .csv file up to 5 MiB" not in csv_viewer_page or "not uploaded to a processing server" not in csv_viewer_page:
     fail("CSV Viewer landing page must accurately disclose local file selection and its size limit.")
 if "Open comma-, semicolon- or tab-delimited CSV files" not in csv_viewer_page or "Open local CSV files up to 5 MiB with the browser File API" not in csv_viewer_page:
