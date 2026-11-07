@@ -264,7 +264,7 @@ for file in html_files:
 
 # Keep every direct, version-pinned browser package import represented in the license inventory.
 if licenses_page_path.is_file():
-    site_html = "\\n".join(file.read_text(encoding="utf-8") for file in html_files)
+    site_html = "\n".join(file.read_text(encoding="utf-8") for file in html_files)
     missing_package_notices = missing_direct_browser_package_notices(site_html, licenses_page)
     if missing_package_notices:
         fail("Direct browser package license inventory is incomplete: " + "; ".join(missing_package_notices))
