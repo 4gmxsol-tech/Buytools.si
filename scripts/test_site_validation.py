@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, has_head_license_declaration)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, has_head_license_declaration)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -467,6 +467,57 @@ class RuntimeDependencyNoticeTests(unittest.TestCase):
             missing_runtime_dependency_notices(manifest, self.COMPLETE),
             ["Runtime dependency baseline is missing or has an unsupported schema version."],
         )
+
+
+class UpstreamLockEvidenceTests(unittest.TestCase):
+    COMPLETE = {
+        "upstreamLockEvidence": {
+            "sourceUrl": "https://raw.githubusercontent.com/microsoft/onnxruntime/v1.18.0/js/web/package-lock.json",
+            "sourceTag": "v1.18.0",
+            "lockfileVersion": 2,
+            "requiredPackageNames": ["protobufjs", "@protobufjs/utf8"],
+            "packages": [
+                {"name":"protobufjs","version":"7.2.5","license":"BSD-3-Clause","lockPath":"node_modules/protobufjs","resolutionType":"npm-registry-tarball","resolved":"https://registry.npmjs.org/protobufjs/-/protobufjs-7.2.5.tgz","integrity":"sha512-test","npmUrl":"https://www.npmjs.com/package/protobufjs/v/7.2.5"},
+                {"name":"@protobufjs/utf8","version":"1.1.0","license":"BSD-3-Clause","lockPath":"node_modules/@protobufjs/utf8","resolutionType":"npm-registry-tarball","resolved":"https://registry.npmjs.org/@protobufjs/utf8/-/utf8-1.1.0.tgz","integrity":"sha512-test","npmUrl":"https://www.npmjs.com/package/@protobufjs/utf8/v/1.1.0"},
+            ],
+        },
+        "unresolvedBundledDependencies": [
+            {"name":"protobufjs","upstreamLockedVersion":"7.2.5","license":"BSD-3-Clause","npmUrl":"https://www.npmjs.com/package/protobufjs/v/7.2.5","runtimeObservation":"Not individually observed as a separate browser module; upstream lockfile evidence only."}
+        ],
+        "securityReview": {
+            "transitiveAdvisories": [
+                {"package":"protobufjs","version":"7.2.5","advisoryUrl":"https://github.com/advisories/GHSA-xq3m-2v4x-88gg","affectedRange":"<7.5.5","patchedVersion":"7.5.5","preconditions":"Untrusted schema input.","buytoolsAssessment":"No user-supplied schema path identified."}
+            ],
+            "transitiveExposureConclusion":"Conditional exposure; no exploit demonstrated.",
+        },
+    }
+
+    def test_complete_upstream_lock_evidence_is_accepted(self):
+        self.assertEqual(missing_upstream_lock_evidence(self.COMPLETE), [])
+
+    def test_missing_upstream_lockfile_source_is_reported(self):
+        manifest = dict(self.COMPLETE)
+        manifest["upstreamLockEvidence"] = dict(self.COMPLETE["upstreamLockEvidence"], sourceUrl="")
+        self.assertIn("Upstream lockfile source must identify ONNX Runtime v1.18.0 js/web/package-lock.json.", missing_upstream_lock_evidence(manifest))
+
+    def test_unresolved_version_must_match_source_lock(self):
+        manifest = dict(self.COMPLETE)
+        manifest["unresolvedBundledDependencies"] = [dict(self.COMPLETE["unresolvedBundledDependencies"][0], upstreamLockedVersion="7.2.4")]
+        self.assertIn("Upstream locked version mismatch for protobufjs.", missing_upstream_lock_evidence(manifest))
+
+    def test_advisory_requires_exploit_preconditions_and_assessment(self):
+        manifest = dict(self.COMPLETE)
+        security = dict(self.COMPLETE["securityReview"])
+        security["transitiveAdvisories"] = [dict(self.COMPLETE["securityReview"]["transitiveAdvisories"][0], preconditions="")]
+        manifest["securityReview"] = security
+        self.assertIn("Transitive advisory record is missing preconditions: protobufjs.", missing_upstream_lock_evidence(manifest))
+
+    def test_duplicate_package_records_are_rejected(self):
+        manifest = dict(self.COMPLETE)
+        evidence = dict(self.COMPLETE["upstreamLockEvidence"])
+        evidence["packages"] = evidence["packages"] + [dict(evidence["packages"][0])]
+        manifest["upstreamLockEvidence"] = evidence
+        self.assertIn("Duplicate upstream lockfile package record: protobufjs.", missing_upstream_lock_evidence(manifest))
 
 
 if __name__ == "__main__":
