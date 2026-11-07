@@ -11,7 +11,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices
+from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, has_head_license_declaration
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -163,6 +163,8 @@ if not licenses_page_path.is_file():
     fail("Third-party license notice page is missing: licenses/index.html")
 else:
     licenses_page = licenses_page_path.read_text(encoding="utf-8")
+    if has_head_license_declaration(licenses_page):
+        fail("Aggregate third-party license inventory must not declare one document-level license in the HTML head.")
     for required_notice in ("@imgly/background-removal", "1.5.5", "AGPL-3.0", "https://github.com/imgly/background-removal-js", "https://www.gnu.org/licenses/agpl-3.0.html", "pdf-lib", "1.17.1", "https://esm.sh/pdf-lib@1.17.1", "https://github.com/Hopding/pdf-lib/blob/v1.17.1/LICENSE.md", "JSZip", "3.10.2", "MIT or GPL-3.0", "https://esm.sh/jszip@3.10.2", "https://github.com/Stuk/jszip/blob/v3.10.2/LICENSE.markdown", "jsPDF", "4.2.1", "https://esm.sh/jspdf@4.2.1", "https://github.com/parallax/jsPDF/blob/v4.2.1/LICENSE"):
         if required_notice not in licenses_page:
             fail("Third-party license notice is missing required attribution: " + required_notice)
