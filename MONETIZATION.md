@@ -23,3 +23,13 @@ The Background Removal feature loads `@imgly/background-removal@1.5.5`. The upst
 
 ## Measure before scaling
 Track impressions, viewability, page RPM, revenue per session, tool completion, search clicks, Core Web Vitals and bounce/engagement indicators where legally permitted. Compare pages and devices before adding another placement. Revenue and traffic are not guaranteed; ad networks may reject sites that lack sufficient original content, clear policies, or quality traffic.
+
+## Background-removal transitive dependency review
+
+The upstream [ONNX Runtime Web v1.18.0 package lockfile](https://raw.githubusercontent.com/microsoft/onnxruntime/v1.18.0/js/web/package-lock.json) resolves the remaining source dependency records, including protobufjs@7.2.5 and @protobufjs/utf8@1.1.0. The audit manifest records their exact versions, npm tarball integrity values and package license identifiers. guid-typescript@1.0.9 is ISC; FlatBuffers and long.js are Apache-2.0; ONNX Runtime Common and platform.js are MIT; protobufjs and its @protobufjs/* helpers are BSD-3-Clause.
+
+These are upstream lockfile records, not proof that every package is separately requested or retained in the final esm.sh browser bundle. The runtime capture did not observe separate module requests for these entries, so the public license inventory must not present them as independently confirmed browser modules until the transformed bundle is verified.
+
+The resolved protobuf dependency versions fall within several published GitHub advisory ranges, including [GHSA-xq3m-2v4x-88gg](https://github.com/advisories/GHSA-xq3m-2v4x-88gg), [GHSA-685m-2w69-288q](https://github.com/advisories/GHSA-685m-2w69-288q), [GHSA-wcpc-wj8m-hjx6](https://github.com/advisories/GHSA-wcpc-wj8m-hjx6), [GHSA-2pr8-phx7-x9h3](https://github.com/advisories/GHSA-2pr8-phx7-x9h3) and [GHSA-q6x5-8v7m-xcrf](https://github.com/advisories/GHSA-q6x5-8v7m-xcrf). Their exploit preconditions involve attacker-controlled protobuf schemas, descriptors or binary data. The reviewed BuyTools interface supplies an image File/Blob, not a protobuf schema or model upload; no direct user-controlled protobuf path was identified. The model itself is fetched from the third-party staticimgly.com host, so this does not eliminate supply-chain risk or prove that affected parser paths are unreachable.
+
+No production dependency was overridden in this change. Keep the feature and package versions unchanged until the final CDN bundle is mapped and a compatible patched dependency chain passes both background-removal model profiles, browser fallbacks and real-image regression tests. This review is not a legal clearance or a claim that the feature is vulnerability-free.
