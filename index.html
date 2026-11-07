@@ -304,7 +304,30 @@ function spreadsheetSafeCsvCell(value){
  return controlPrefix||(formulaLike&&!safeNegativeNumber)?"'"+raw:raw;
 }
 async function readCsvFileText(file){const bytes=new Uint8Array(await file.arrayBuffer());if(bytes.length>=2&&bytes[0]===0xff&&bytes[1]===0xfe)return new TextDecoder('utf-16le',{fatal:true}).decode(bytes.subarray(2));if(bytes.length>=2&&bytes[0]===0xfe&&bytes[1]===0xff)return new TextDecoder('utf-16be',{fatal:true}).decode(bytes.subarray(2));return new TextDecoder('utf-8',{fatal:true}).decode(bytes)}
-function parseCSV(input,delimiter=','){if(![',',';','\t'].includes(delimiter))throw Error('Choose comma, semicolon or tab as the field separator.');input=String(input).replace(/^\uFEFF/,'');const rows=[];let row=[],field='',quoted=false;for(let i=0;i<input.length;i++){const ch=input[i];if(quoted){if(ch==='"'&&input[i+1]==='"'){field+='"';i++}else if(ch==='"')quoted=false;else field+=ch}else if(ch==='"'&&field==='')quoted=true;else if(ch===delimiter){row.push(field);field=''}else if(ch==='\n'){row.push(field);rows.push(row);row=[];field=''}else if(ch!=='\r')field+=ch}if(quoted)throw Error('Unclosed quoted CSV field.');if(field!==''||row.length){row.push(field);rows.push(row)}if(!rows.length)return [];const width=rows[0].length;if(rows.some(r=>r.length!==width))throw Error('CSV rows have different numbers of columns.');return rows}
+function parseCSV(input,delimiter=','){
+ if(![',',';','\t'].includes(delimiter))throw Error('Choose comma, semicolon or tab as the field separator.');
+ input=String(input).replace(/^\uFEFF/,'');
+ const rows=[];let row=[],field='',quoted=false;
+ for(let i=0;i<input.length;i++){
+  const ch=input[i];
+  if(quoted){
+   if(ch==='"'&&input[i+1]==='"'){field+='"';i++}
+   else if(ch==='"')quoted=false;
+   else field+=ch;
+  }else if(ch==='"'&&field==='')quoted=true;
+  else if(ch===delimiter){row.push(field);field=''}
+  else if(ch==='\r'||ch==='\n'){
+   if(ch==='\r'&&input[i+1]==='\n')i++;
+   row.push(field);rows.push(row);row=[];field='';
+  }else field+=ch;
+ }
+ if(quoted)throw Error('Unclosed quoted CSV field.');
+ if(field!==''||row.length){row.push(field);rows.push(row)}
+ if(!rows.length)return [];
+ const width=rows[0].length;
+ if(rows.some(r=>r.length!==width))throw Error('CSV rows have different numbers of columns.');
+ return rows
+}
 function clearImagePreview(){const preview=$('#preview');if(activePreviewUrl){const previousUrl=activePreviewUrl;activePreviewUrl=null;URL.revokeObjectURL(previousUrl)}if(preview){preview.removeAttribute('src');preview.classList.add('hidden')}}
 function clearResultDownloadUrl(){if(activeResultUrl){const previousUrl=activeResultUrl;activeResultUrl=null;URL.revokeObjectURL(previousUrl)}}
 function clearToolObjectUrls(){clearImagePreview();clearResultDownloadUrl()}
