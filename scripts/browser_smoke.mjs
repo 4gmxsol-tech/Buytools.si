@@ -172,6 +172,7 @@ try {
   assert.equal(await page.locator("#search").getAttribute("type"), "search");
   assert.equal(await page.locator("#search").getAttribute("name"), "q");
   await page.goto("http://127.0.0.1:8000/?q=CSV%20Viewer", { waitUntil: "load" });
+  await page.addScriptTag({ content: axe.source });
   assert.equal(await page.locator("#search").inputValue(), "CSV Viewer", "SearchAction deep links must prefill the search input");
   assert.equal(await page.locator('[data-tool]').count(), 1, "SearchAction deep links must render filtered results");
   assert.equal(await page.locator('[data-tool="csv-viewer"]').count(), 1);
