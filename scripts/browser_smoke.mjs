@@ -37,7 +37,8 @@ page.on("request", request => {
       contentLengthBytes: null,
       responseBodyBytes: null,
       sha256: null,
-      hashError: null
+      hashError: null,
+      hashQueued: false
     });
   }
 });
@@ -51,20 +52,26 @@ page.on("response", response => {
   detail.contentLengthBytes = contentLength !== undefined && Number.isFinite(Number(contentLength))
     ? Number(contentLength)
     : null;
-  const responseUrl = new URL(response.url());
-  const isObservedModule = responseUrl.hostname === "esm.sh" &&
+});
+page.on("requestfinished", request => {
+  const detail = [...thirdPartyRequestDetails].reverse().find(item =>
+    item.url === request.url() && item.status !== null && !item.hashQueued
+  );
+  if (!detail || detail.status !== 200) return;
+  const requestUrl = new URL(request.url());
+  const isObservedModule = requestUrl.hostname === "esm.sh" &&
     runtimeBaseline.observedModules.some(module =>
-      module.pathPrefix && responseUrl.pathname.startsWith(module.pathPrefix)
+      module.pathPrefix && requestUrl.pathname.startsWith(module.pathPrefix)
     );
-  const isModelAsset = responseUrl.hostname === runtimeBaseline.assetOrigin.host;
-  if (detail.status === 200 && (isObservedModule || isModelAsset)) {
-    responseHashPromises.push(response.body().then(body => {
-      detail.responseBodyBytes = body.length;
-      detail.sha256 = createHash("sha256").update(body).digest("hex");
-    }).catch(error => {
-      detail.hashError = error.message;
-    }));
-  }
+  const isModelAsset = requestUrl.hostname === runtimeBaseline.assetOrigin.host;
+  if (!isObservedModule && !isModelAsset) return;
+  detail.hashQueued = true;
+  responseHashPromises.push(request.response().then(response => response.body()).then(body => {
+    detail.responseBodyBytes = body.length;
+    detail.sha256 = createHash("sha256").update(body).digest("hex");
+  }).catch(error => {
+    detail.hashError = error.message;
+  }));
 });
 
 try {
@@ -1572,13 +1579,24 @@ try {
     }
   }
   const allModelAssetRequests = [...defaultModelRequests, ...quantizedModelRequests];
-  assert.ok(
-    allModelAssetRequests.every(detail =>
-      new URL(detail.url).pathname.startsWith(runtimeBaseline.assetOrigin.pathPrefix) &&
-      detail.status === 200 &&
-      /^[0-9a-f]{64}$/.test(detail.sha256 || "") &&
-      detail.responseBodyBytes > 0
-    ),
+  const unhashedModelAssets = allModelAssetRequests.filter(detail =>
+    !new URL(detail.url).pathname.startsWith(runtimeBaseline.assetOrigin.pathPrefix) ||
+    detail.status !== 200 ||
+    !/^[0-9a-f]{64}$/.test(detail.sha256 || "") ||
+    !(detail.responseBodyBytes > 0)
+  );
+  if (unhashedModelAssets.length) {
+    console.error("Model/WASM response hash capture failures: " + JSON.stringify(unhashedModelAssets.map(detail => ({
+      url: detail.url,
+      status: detail.status,
+      responseBodyBytes: detail.responseBodyBytes,
+      sha256: detail.sha256,
+      hashError: detail.hashError
+    })), null, 2));
+  }
+  assert.deepEqual(
+    unhashedModelAssets.map(detail => detail.url),
+    [],
     "Every observed model/WASM response must have a successful status, the versioned origin path and a SHA-256 response hash"
   );
   assert.ok(
