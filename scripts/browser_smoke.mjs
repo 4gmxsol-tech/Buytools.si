@@ -61,6 +61,14 @@ try {
   assert.equal(licenseAxe.violations.filter(v => ["serious", "critical"].includes(v.impact)).length, 0, "License notice must have no serious or critical accessibility violations");
   assert.equal(thirdPartyRequests.length, 0, "Reading license notices must not contact third-party hosts");
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+  const homepageLicenseLink = page.locator('footer .footerlinks a[href="/licenses/"]');
+  assert.equal(await homepageLicenseLink.count(), 1, "Homepage legal footer should expose one crawlable license-notice link");
+  assert.ok(await homepageLicenseLink.isVisible(), "Homepage license-notice link should be visible");
+  await homepageLicenseLink.click();
+  await page.waitForURL("**/licenses/");
+  assert.match(await page.locator("h1").innerText(), /Open-source software notices/i);
+  assert.equal(thirdPartyRequests.length, 0, "Following the homepage license link must remain first-party only");
+  await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
   await page.addScriptTag({ content: axe.source });
 
   // Crawlable homepage directory and reciprocal CSV tool-page navigation.
