@@ -163,7 +163,7 @@ if not licenses_page_path.is_file():
     fail("Third-party license notice page is missing: licenses/index.html")
 else:
     licenses_page = licenses_page_path.read_text(encoding="utf-8")
-    for required_notice in ("@imgly/background-removal", "1.5.5", "AGPL-3.0", "https://github.com/imgly/background-removal-js", "https://www.gnu.org/licenses/agpl-3.0.html"):
+    for required_notice in ("@imgly/background-removal", "1.5.5", "AGPL-3.0", "https://github.com/imgly/background-removal-js", "https://www.gnu.org/licenses/agpl-3.0.html", "pdf-lib", "1.17.1", "https://esm.sh/pdf-lib@1.17.1", "https://github.com/Hopding/pdf-lib/blob/v1.17.1/LICENSE.md", "JSZip", "3.10.2", "MIT or GPL-3.0", "https://esm.sh/jszip@3.10.2", "https://github.com/Stuk/jszip/blob/v3.10.2/LICENSE.markdown", "jsPDF", "4.2.1", "https://esm.sh/jspdf@4.2.1", "https://github.com/parallax/jsPDF/blob/v4.2.1/LICENSE"):
         if required_notice not in licenses_page:
             fail("Third-party license notice is missing required attribution: " + required_notice)
 for linked_page in (ROOT / "privacy" / "index.html", ROOT / "tools" / "remove-background" / "index.html"):
@@ -432,6 +432,8 @@ dynamic_import_urls = re.findall(r"""import\(['"](https?://[^'"]+)['"]\)""", hom
 for dependency_url in dynamic_import_urls:
     if dependency_url not in privacy_text:
         fail(f"Third-party library import missing from privacy policy: {dependency_url}")
+    if dependency_url not in licenses_page:
+        fail(f"Direct browser package import missing from third-party license notice: {dependency_url}")
 for host in ("api.qrserver.com", "staticimgly.com"):
     if host not in privacy_text:
         fail(f"Third-party processing or asset host missing from privacy policy: {host}")
