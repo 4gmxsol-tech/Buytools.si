@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins, missing_csv_troubleshooting_guidance, faq_schema_mismatches)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_image_reduction_workflow_steps, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, missing_article_date_modified_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins, missing_csv_troubleshooting_guidance, faq_schema_mismatches)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -385,6 +385,66 @@ class ImageLosslessWorkflowDisclosureTests(unittest.TestCase):
         self.assertEqual(
             missing_image_lossless_workflow_disclosures(html),
             ["can remove exif, orientation or color-profile information"],
+        )
+
+
+class ImageReductionWorkflowStepTests(unittest.TestCase):
+    COMPLETE = (
+        "<ol><li>Record the original format, pixel dimensions and file size.</li>"
+        "<li>Run lossless optimization before resizing or lossy compression.</li>"
+        "<li>Resize only to the largest dimensions needed for the final display.</li>"
+        "<li>Compare the exported image at 100% zoom and at its intended display size.</li>"
+        "<li>Check transparency, orientation and color before replacing the original.</li></ol>"
+    )
+
+    def test_complete_actionable_workflow_is_accepted(self):
+        self.assertEqual(missing_image_reduction_workflow_steps(self.COMPLETE), [])
+
+    def test_each_missing_step_is_reported(self):
+        required = (
+            "record the original format, pixel dimensions and file size",
+            "run lossless optimization before resizing or lossy compression",
+            "resize only to the largest dimensions needed for the final display",
+            "compare the exported image at 100% zoom and at its intended display size",
+            "check transparency, orientation and color before replacing the original",
+        )
+        for phrase in required:
+            with self.subTest(missing=phrase):
+                html = self.COMPLETE.replace(phrase[0].upper() + phrase[1:], "")
+                self.assertIn(phrase, missing_image_reduction_workflow_steps(html))
+
+class ArticleDateModifiedSyncTests(unittest.TestCase):
+    COMPLETE = '<p>Last updated: November 8, 2026</p><script type="application/ld+json">{"@type":"Article","dateModified":"2026-11-08"}</script>'
+
+    def test_matching_visible_and_structured_dates_are_accepted(self):
+        self.assertEqual(missing_article_date_modified_sync(self.COMPLETE), [])
+
+    def test_mismatched_schema_date_is_reported(self):
+        html = self.COMPLETE.replace("2026-11-08", "2026-11-07", 1)
+        self.assertEqual(
+            missing_article_date_modified_sync(html),
+            ["Article dateModified 2026-11-07 does not match visible page date 2026-11-08"],
+        )
+
+    def test_missing_visible_date_is_reported(self):
+        html = self.COMPLETE.replace("Last updated: November 8, 2026", "Updated recently")
+        self.assertEqual(
+            missing_article_date_modified_sync(html),
+            ["page is missing a visible 'Last updated: Month D, YYYY' date"],
+        )
+
+    def test_duplicate_schema_dates_are_reported(self):
+        html = self.COMPLETE.replace("</script>", ',"dateModified":"2026-11-08"}</script>')
+        self.assertEqual(
+            missing_article_date_modified_sync(html),
+            ["Article JSON-LD must contain exactly one dateModified value"],
+        )
+
+    def test_invalid_visible_date_is_reported(self):
+        html = self.COMPLETE.replace("November 8, 2026", "February 30, 2026")
+        self.assertEqual(
+            missing_article_date_modified_sync(html),
+            ["page has an invalid visible last-updated date"],
         )
 
 
