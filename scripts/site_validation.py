@@ -761,6 +761,30 @@ def missing_sitemap_lastmod_sync(sitemap_content, page_url, page_html):
     return []
 
 
+
+def missing_article_date_modified_sync(html):
+    """Return errors when Article JSON-LD dateModified differs from the visible update date."""
+    visible_text = " ".join(re.sub(r"<[^>]+>", " ", html).lower().split())
+    visible_match = re.search(r"last updated:\\s*([a-z]+\\s+\\d{1,2},\\s+\\d{4})", visible_text, re.IGNORECASE)
+    if not visible_match:
+        return ["page is missing a visible 'Last updated: Month D, YYYY' date"]
+
+    try:
+        visible_date = datetime.strptime(visible_match.group(1), "%B %d, %Y").date().isoformat()
+    except ValueError:
+        return ["page has an invalid visible last-updated date"]
+
+    schema_dates = re.findall(r'"dateModified"\\s*:\\s*"([^"]+)"', html)
+    if len(schema_dates) != 1:
+        return ["Article JSON-LD must contain exactly one dateModified value"]
+    if schema_dates[0] != visible_date:
+        return [
+            "Article dateModified " + schema_dates[0]
+            + " does not match visible page date " + visible_date
+        ]
+    return []
+
+
 def missing_pages_workflow_least_privilege(workflow_text):
     """Return errors when Pages write/OIDC permissions are not isolated to deploy."""
     errors = []
