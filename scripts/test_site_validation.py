@@ -824,7 +824,7 @@ jobs:
     def test_workflow_level_write_permissions_are_rejected(self):
         unsafe = self.WORKFLOW.replace(
             "permissions: {}",
-            "permissions:\\n  pages: write\\n  id-token: write",
+            "permissions:\n  pages: write\n  id-token: write",
         )
         self.assertIn(
             "workflow-level permissions must be empty so job permissions are explicit",
@@ -841,7 +841,7 @@ jobs:
     def test_build_job_oidc_write_is_rejected(self):
         unsafe = self.WORKFLOW.replace(
             "      pages: read",
-            "      pages: read\\n      id-token: write",
+            "      pages: read\n      id-token: write",
         )
         self.assertIn(
             "build job must have only contents:read and pages:read permissions",
@@ -849,14 +849,14 @@ jobs:
         )
 
     def test_build_job_requires_pages_read(self):
-        unsafe = self.WORKFLOW.replace("      pages: read\\n", "")
+        unsafe = self.WORKFLOW.replace("      pages: read\n", "")
         self.assertIn(
             "build job must have only contents:read and pages:read permissions",
             missing_pages_workflow_least_privilege(unsafe),
         )
 
     def test_deploy_job_requires_pages_write(self):
-        unsafe = self.WORKFLOW.replace("      pages: write\\n", "      pages: read\\n")
+        unsafe = self.WORKFLOW.replace("      pages: write\n", "      pages: read\n")
         self.assertIn(
             "deploy job must have contents:read, pages:write and id-token:write permissions",
             missing_pages_workflow_least_privilege(unsafe),
@@ -871,8 +871,8 @@ jobs:
 
     def test_extra_deploy_permission_is_rejected(self):
         unsafe = self.WORKFLOW.replace(
-            "      contents: read\\n      pages: write",
-            "      contents: read\\n      actions: write\\n      pages: write",
+            "      contents: read\n      pages: write",
+            "      contents: read\n      actions: write\n      pages: write",
         )
         self.assertIn(
             "deploy job must have contents:read, pages:write and id-token:write permissions",
