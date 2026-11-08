@@ -664,17 +664,17 @@ def missing_sitemap_lastmod_sync(sitemap_content, page_url, page_html):
 def missing_pages_workflow_least_privilege(workflow_text):
     """Return errors when Pages write/OIDC permissions are not isolated to deploy."""
     errors = []
-    top_permissions = re.search(r"(?m)^permissions:\\s*(.*?)\\s*$", workflow_text)
+    top_permissions = re.search(r"(?m)^permissions:\s*(.*?)\s*$", workflow_text)
     if not top_permissions or top_permissions.group(1) != "{}":
         errors.append("workflow-level permissions must be empty so job permissions are explicit")
 
-    jobs_match = re.search(r"(?ms)^jobs:\\s*\\n(.*)\\Z", workflow_text)
+    jobs_match = re.search(r"(?ms)^jobs:\s*\n(.*)\Z", workflow_text)
     if not jobs_match:
         return errors + ["Pages workflow is missing its jobs section."]
 
     jobs_text = jobs_match.group(1)
-    build_match = re.search(r"(?m)^  build:\\s*$", jobs_text)
-    deploy_match = re.search(r"(?m)^  deploy:\\s*$", jobs_text)
+    build_match = re.search(r"(?m)^  build:\s*$", jobs_text)
+    deploy_match = re.search(r"(?m)^  deploy:\s*$", jobs_text)
     if not build_match or not deploy_match or deploy_match.start() <= build_match.start():
         return errors + ["Pages workflow must define build and deploy jobs in order."]
 
