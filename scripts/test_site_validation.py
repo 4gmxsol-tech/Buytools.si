@@ -979,7 +979,7 @@ class CsvViewerContentQualityTests(unittest.TestCase):
         )
         self.assertEqual(
             faq_schema_mismatches(html),
-            ["FAQPage JSON-LD questions must exactly match visible FAQ questions."],
+            ["FAQPage JSON-LD questions and answers must exactly match visible FAQ content."],
         )
 
     def test_missing_faq_schema_is_reported(self):
