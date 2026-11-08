@@ -576,7 +576,7 @@
       "@protobufjs/path",
       "platform"
     ],
-    "scopeNote": "The exact esm.sh ONNX Runtime module response URLs observed by Chromium were refetched in the same CI run and their response-body SHA-256 hashes matched. Each response declared a source map that returned HTTP 200. The CDN and corresponding upstream CPU/WebGPU maps have matching source counts and selected package-path signals. This is source-path-level mapping, not byte-for-byte source/code equivalence to upstream or a guarantee about future CDN responses.",
+    "scopeNote": "The exact esm.sh ONNX Runtime module response URLs observed by Chromium were refetched in the same CI run and their response-body SHA-256 hashes matched. Each response declared a source map that returned HTTP 200. The CDN and corresponding upstream CPU/WebGPU maps have matching source counts and selected package-path signals. This is source-path-level mapping, not a byte-for-byte comparison of every source or generated code, and not a guarantee about future CDN responses.",
     "runtimeHashNote": "BuyTools CI records SHA-256 hashes for the Chromium response bodies and independently refetches the same esm.sh URLs; the same-run hashes matched. These hashes are audit evidence only, are not pinned across future runs, and do not enforce runtime Subresource Integrity.",
     "cpuSourcePathsScope": "Selected source paths for every confirmed transitive package group; the full 146-path CPU source map is retained in CI artifact 13597798538."
   },
