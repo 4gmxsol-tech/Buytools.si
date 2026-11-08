@@ -27,6 +27,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Test Lighthouse report summarizer
         run: node --test scripts/test_lighthouse_summary.mjs
+      - name: Test ESM bundle audit helpers
+        run: node --test scripts/test_esm_bundle_audit.mjs
       - name: Start local static server
         run: |
           python3 -m http.server 8000 --bind 127.0.0.1 >/tmp/buytools-http.log 2>&1 &
@@ -38,6 +40,8 @@ jobs:
           exit 1
       - name: Exercise critical browser workflows
         run: node scripts/browser_smoke.mjs
+      - name: Map exact esm.sh ONNX Runtime responses
+        run: node scripts/esm_bundle_audit.mjs
       - name: Run Lighthouse branch and production baselines
         run: |
           set -euo pipefail
@@ -76,4 +80,5 @@ jobs:
           path: |
             lighthouse-reports/*.json
             runtime-provenance.json
+            esm-bundle-audit.json
           if-no-files-found: warn
