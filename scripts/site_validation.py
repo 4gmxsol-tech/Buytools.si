@@ -604,7 +604,7 @@ def has_head_license_declaration(html):
 def missing_sitemap_lastmod_sync(sitemap_content, page_url, page_html):
     """Return errors when a page's visible update date and sitemap lastmod disagree."""
     visible_text = " ".join(re.sub(r"<[^>]+>", " ", page_html).lower().split())
-    match = re.search(r"last updated:\\s*([a-z]+\\s+\\d{1,2},\\s+\\d{4})", visible_text, re.IGNORECASE)
+    match = re.search(r"last updated:\s*([a-z]+\s+\d{1,2},\s+\d{4})", visible_text, re.IGNORECASE)
     if not match:
         return ["page is missing a visible 'Last updated: Month D, YYYY' date"]
 
