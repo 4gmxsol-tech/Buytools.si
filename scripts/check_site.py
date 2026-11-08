@@ -12,7 +12,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links
+from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -659,6 +659,14 @@ if node:
                 fail(f"Inline JavaScript syntax error in {file.relative_to(ROOT)} (script {index}): {detail[-1] if detail else 'unknown error'}")
 else:
     WARNINGS.append("Node.js unavailable; inline JavaScript syntax checks skipped.")
+
+# Keep GitHub Pages write/OIDC permissions confined to the deploy job.
+pages_workflow = ROOT / ".github" / "workflows" / "pages.yml"
+if not pages_workflow.is_file():
+    fail("GitHub Pages workflow is missing: .github/workflows/pages.yml")
+else:
+    for message in missing_pages_workflow_least_privilege(pages_workflow.read_text(encoding="utf-8")):
+        fail("GitHub Pages workflow permissions are not least-privilege: " + message)
 
 # robots.txt must point to the sitemap that is actually shipped.
 robots = ROOT / "robots.txt"
