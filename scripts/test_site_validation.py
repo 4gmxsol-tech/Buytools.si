@@ -881,43 +881,44 @@ jobs:
 
 
 
+
 class ImmutableGitHubActionPinTests(unittest.TestCase):
     def test_full_commit_sha_with_version_annotation_is_accepted(self):
-        workflow = "steps:\\n  - uses: actions/checkout@" + ("a" * 40) + " # v5\\n"
+        workflow = "steps:\n  - uses: actions/checkout@" + ("a" * 40) + " # v5\n"
         self.assertEqual(missing_immutable_action_pins(workflow), [])
 
     def test_major_version_tag_is_rejected(self):
-        errors = missing_immutable_action_pins("steps:\\n  - uses: actions/checkout@v5\\n")
+        errors = missing_immutable_action_pins("steps:\n  - uses: actions/checkout@v5\n")
         self.assertEqual(len(errors), 1)
         self.assertIn("must use a full 40-character commit SHA", errors[0])
 
     def test_short_commit_sha_is_rejected(self):
-        errors = missing_immutable_action_pins("steps:\\n  - uses: actions/checkout@abc1234 # v5\\n")
+        errors = missing_immutable_action_pins("steps:\n  - uses: actions/checkout@abc1234 # v5\n")
         self.assertEqual(len(errors), 1)
         self.assertIn("must use a full 40-character commit SHA", errors[0])
 
     def test_missing_upstream_version_annotation_is_rejected(self):
         errors = missing_immutable_action_pins(
-            "steps:\\n  - uses: actions/checkout@" + ("a" * 40) + "\\n"
+            "steps:\n  - uses: actions/checkout@" + ("a" * 40) + "\n"
         )
         self.assertEqual(len(errors), 1)
         self.assertIn("must include an upstream version annotation", errors[0])
 
     def test_local_composite_action_is_accepted(self):
         self.assertEqual(
-            missing_immutable_action_pins("steps:\\n  - uses: ./.github/actions/test\\n"),
+            missing_immutable_action_pins("steps:\n  - uses: ./.github/actions/test\n"),
             [],
         )
 
     def test_docker_action_requires_sha256_digest(self):
-        errors = missing_immutable_action_pins("steps:\\n  - uses: docker://alpine:3.20\\n")
+        errors = missing_immutable_action_pins("steps:\n  - uses: docker://alpine:3.20\n")
         self.assertEqual(len(errors), 1)
         self.assertIn("immutable sha256 digest", errors[0])
 
     def test_docker_action_with_sha256_digest_is_accepted(self):
         digest = "a" * 64
         self.assertEqual(
-            missing_immutable_action_pins("steps:\\n  - uses: docker://alpine:3.20@sha256:" + digest + "\\n"),
+            missing_immutable_action_pins("steps:\n  - uses: docker://alpine:3.20@sha256:" + digest + "\n"),
             [],
         )
 
