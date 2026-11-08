@@ -41,16 +41,19 @@ test("maps the exact esm.sh response hash and source-map paths", async () => {
   const mapUrl = "https://esm.sh/onnxruntime-web@1.18.0/es2022/onnxruntime-web.mjs.map";
   const moduleBody = 'import "./runtime-common.mjs";\n//# sourceMappingURL=onnxruntime-web.mjs.map';
   const moduleBytes = Buffer.from(moduleBody);
-  const esmMap = JSON.stringify({
-    file: "onnxruntime-web.mjs",
-    sources: [
-      "../../node_modules/protobufjs/src/reader.js",
-      "../../node_modules/protobufjs/src/writer.js",
-      "../../node_modules/@protobufjs/utf8/index.js"
-    ]
-  });
-  const cpuMap = JSON.stringify({ sources: ["../../node_modules/protobufjs/src/reader.js"] });
-  const webgpuMap = JSON.stringify({ sources: [] });
+  const cpuSources = [
+    "../../node_modules/protobufjs/src/reader.js",
+    "../../node_modules/protobufjs/src/writer.js",
+    "../../node_modules/@protobufjs/utf8/index.js",
+    "../../node_modules/flatbuffers/js/flatbuffers.mjs",
+    "../../node_modules/long/index.js",
+    "../../node_modules/guid-typescript/dist/guid.js",
+    "../../../common/lib/index.ts"
+  ];
+  const webgpuSources = ["../../../common/lib/index.ts"];
+  const esmMap = JSON.stringify({ file: "onnxruntime-web.mjs", sources: cpuSources });
+  const cpuMap = JSON.stringify({ sources: cpuSources });
+  const webgpuMap = JSON.stringify({ sources: webgpuSources });
   const responses = new Map([
     [moduleUrl, new Response(moduleBytes, { status: 200, headers: { "content-type": "application/javascript" } })],
     [mapUrl, new Response(esmMap, { status: 200, headers: { "content-type": "application/json" } })],
@@ -87,4 +90,6 @@ test("maps the exact esm.sh response hash and source-map paths", async () => {
   assert.equal(report.modules[0].sourceMap.sourcePathSignals.protobufUtf8, true);
   assert.deepEqual(report.modules[0].staticModuleSpecifiers, ["./runtime-common.mjs"]);
   assert.equal(report.upstreamSourceMaps.find(item => item.name === "cpu").sourcePathSignals.protobufReader, true);
+  assert.equal(report.sourceMapComparisons[0].sourceCountMatchesUpstream, true);
+  assert.equal(report.sourceMapComparisons[0].packagePathSignalParity, true);
 });

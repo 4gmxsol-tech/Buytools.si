@@ -217,6 +217,43 @@ export async function auditEsmBundle({ runtimeProvenance, baseline, fetchImpl = 
   }
 
   const hashMismatches = modules.filter(module => !module.browserResponseHashMatchesRefetch).map(module => module.url);
+  const sourceMapComparisons = modules.map(module => {
+    const kind = new URL(module.url).pathname.endsWith("/webgpu.mjs") ? "webgpu" : "cpu";
+    const upstreamMap = upstream.find(item => item.name === kind);
+    const cdnMap = module.sourceMap;
+    const sourcePathSignals = cdnMap?.sourcePathSignals || null;
+    const upstreamSourcePathSignals = upstreamMap?.sourcePathSignals || null;
+    const signalKeys = Object.keys(sourcePathSignals || {});
+    const packagePathSignalParity = Boolean(
+      signalKeys.length &&
+      upstreamSourcePathSignals &&
+      signalKeys.length === Object.keys(upstreamSourcePathSignals).length &&
+      signalKeys.every(key => sourcePathSignals[key] === upstreamSourcePathSignals[key])
+    );
+    return {
+      moduleUrl: module.url,
+      kind,
+      sourceMapAssociation: module.sourceMapAssociation,
+      sourceMapUrl: cdnMap?.responseUrl || null,
+      sourceMapStatus: cdnMap?.status ?? null,
+      sourceMapSha256: cdnMap?.sha256 || null,
+      sourceCount: cdnMap?.sourceCount ?? null,
+      upstreamSourceMapUrl: upstreamMap?.url || null,
+      upstreamSourceMapStatus: upstreamMap?.status ?? null,
+      upstreamSourceMapSha256: upstreamMap?.sha256 || null,
+      upstreamSourceCount: upstreamMap?.sourceCount ?? null,
+      sourceCountMatchesUpstream: Boolean(cdnMap && upstreamMap && cdnMap.sourceCount === upstreamMap.sourceCount),
+      packagePathSignalParity,
+      sourcePathSignals,
+      upstreamSourcePathSignals
+    };
+  });
+  const completeMapParity = sourceMapComparisons.length === 2 && sourceMapComparisons.every(item =>
+    item.sourceMapStatus === 200 &&
+    item.upstreamSourceMapStatus === 200 &&
+    item.sourceCountMatchesUpstream &&
+    item.packagePathSignalParity
+  );
   const associatedMapsWithProtobuf = modules.filter(module =>
     ["declared-by-response-header", "declared-by-response-comment", "conventional-sidecar-file-match"].includes(module.sourceMapAssociation) &&
     module.sourceMap?.status === 200 &&
@@ -232,17 +269,20 @@ export async function auditEsmBundle({ runtimeProvenance, baseline, fetchImpl = 
     scope: "Refetches the exact esm.sh module URLs observed by Chromium, compares response-body SHA-256 values with the browser trace, inspects response-declared or conventional source maps, and compares their source paths with the pinned upstream ONNX Runtime maps. This is audit evidence, not runtime SRI.",
     modules,
     upstreamSourceMaps: upstream,
+    sourceMapComparisons,
     summary: {
       observedOnnxRuntimeModuleResponses: modules.length,
       browserHashMatches: modules.length - hashMismatches.length,
       browserHashMismatches: hashMismatches.length,
       sourceMapsDeclaredByResponse: modules.filter(module => module.sourceMapAssociation.startsWith("declared-")).length,
       sourceMapsWithProtobufSources: associatedMapsWithProtobuf.length,
+      sourceMapComparisonsWithPackageSignalParity: sourceMapComparisons.filter(item => item.packagePathSignalParity).length,
+      sourceMapComparisonsWithMatchingSourceCounts: sourceMapComparisons.filter(item => item.sourceCountMatchesUpstream).length,
       upstreamCpuMapStatus: upstream.find(item => item.name === "cpu")?.status ?? null,
       upstreamWebgpuMapStatus: upstream.find(item => item.name === "webgpu")?.status ?? null,
-      exactTransformedBundleMapping: associatedMapsWithProtobuf.length > 0
-        ? "A response-associated esm.sh source map exposes protobuf-related source paths; compare the recorded paths with upstream evidence before treating package attribution as confirmed."
-        : "Unresolved: no response-associated esm.sh source map exposed protobuf-related source paths in this run."
+      exactTransformedBundleMapping: completeMapParity
+        ? "Both response-associated esm.sh maps match their corresponding pinned upstream CPU/WebGPU maps by source count and selected package-path signals. This is source-path-level mapping, not byte-for-byte source or code equivalence."
+        : "Partially unresolved: one or more observed esm.sh maps could not be matched to the corresponding upstream map by source count and selected package-path signals."
     },
     hashMismatches
   };

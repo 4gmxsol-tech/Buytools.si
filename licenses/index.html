@@ -46,7 +46,7 @@ a:focus-visible{outline:3px solid #c4b5fd;outline-offset:3px}
 <main class="wrap">
 <section class="hero"><div class="eyebrow">Third-party software</div><h1>Open-source software notices</h1><p>Attribution and license links for third-party components identified in BuyTools.si. Component licenses are separate from the site's own content and branding.</p><p class="notice">The AGPL-3.0 notice below applies only to the <code>@imgly/background-removal</code> component. This page is an aggregate inventory of components with different licenses; it does not declare a single license for this page or for the entire site.</p></section>
 <section class="content">
-<p><strong>Last updated: November 7, 2026</strong></p>
+<p><strong>Last updated: November 8, 2026</strong></p>
 <h2>@imgly/background-removal — version 1.5.5</h2>
 <p>Copyright © IMG.LY GmbH. BuyTools.si loads this browser package on demand for the Background Removal feature.</p>
 <p><strong>License: GNU Affero General Public License, version 3 (AGPL-3.0).</strong> The published package metadata directs users to its <code>LICENSE.md</code>; the upstream project documentation identifies the package as AGPL. Its release history records the change from GPL to AGPL in version 1.4.0, before the 1.5.5 version used by this site.</p>
@@ -177,6 +177,47 @@ SOFTWARE.</pre></details>
 <p class="notice">This is a runtime-observed inventory, not a complete SBOM. The ONNX Runtime package declares additional dependencies (flatbuffers, guid-typescript, long, onnxruntime-common, platform and protobufjs) that are bundled into its delivered module and are not separately resolved by the browser request trace. Their exact bundled versions and license evidence remain open. CI hashes are audit evidence only: the current browser imports do not enforce Subresource Integrity or verify hashes at runtime. Chromium's Playwright trace also exposed no response-body bytes for the streamed application/wasm response, so that WASM asset is recorded by its successful versioned request path without a claimed digest.</p>
 <h3>Security advisory context: Zod 3.25.76</h3>
 <p>GitHub's <a href="https://github.com/advisories/GHSA-mrhx-c7xc-m3w5">GHSA-mrhx-c7xc-m3w5 advisory</a> currently lists Zod versions below 4.6.6 as affected. The associated <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-54404">CVE record was rejected by its CNA on October 28, 2026</a>; its rejection rationale says the described memory growth scales with input already allocated by JSON parsing and depends on missing request-size limits. In this integration, Zod validates the fixed configuration object built by the site, while the selected image is passed separately as a Blob. No attacker-controlled array-validation path was identified. Treat this as a monitored, disputed advisory—not a confirmed exploitable BuyTools vulnerability—and do not force Zod 4 into the upstream package without a compatibility migration.</p>
+</section>
+
+<section class="content" id="onnxruntime-transitive-notices">
+<h2>ONNX Runtime CPU bundle: confirmed transitive notices</h2>
+<p>A cold Chromium workflow on <strong>November 8, 2026</strong> observed the exact <code>esm.sh</code> CPU and WebGPU ESM URLs used by the background-removal integration. The browser-captured response hashes matched independent same-run refetches. Both responses declared source maps that returned HTTP 200; their source counts and selected package-path signals matched the corresponding ONNX Runtime Web v1.18.0 upstream CPU/WebGPU maps. This is source-path evidence, not a byte-for-byte comparison of every source or a runtime integrity guarantee. See the <a href="https://github.com/4gmxsol-tech/Buytools.si/actions/runs/42432134958">CI audit run and downloadable evidence</a>.</p>
+
+<h3>BSD-3-Clause — protobuf.js and helper packages</h3>
+<p><strong>Copyright (c) 2016, Daniel Wirtz. All rights reserved.</strong> The CPU ESM source map contains these package source paths:</p>
+<ul>
+<li><strong>protobufjs — version 7.2.5</strong> — BSD-3-Clause. <a href="https://www.npmjs.com/package/protobufjs/v/7.2.5">Versioned package metadata</a>.</li>
+<li><strong>@protobufjs/aspromise — version 1.1.2</strong> — BSD-3-Clause. <a href="https://www.npmjs.com/package/@protobufjs/aspromise/v/1.1.2">Versioned package metadata</a>.</li>
+<li><strong>@protobufjs/base64 — version 1.1.2</strong> — BSD-3-Clause. <a href="https://www.npmjs.com/package/@protobufjs/base64/v/1.1.2">Versioned package metadata</a>.</li>
+<li><strong>@protobufjs/eventemitter — version 1.1.0</strong> — BSD-3-Clause. <a href="https://www.npmjs.com/package/@protobufjs/eventemitter/v/1.1.0">Versioned package metadata</a>.</li>
+<li><strong>@protobufjs/float — version 1.0.2</strong> — BSD-3-Clause. <a href="https://www.npmjs.com/package/@protobufjs/float/v/1.0.2">Versioned package metadata</a>.</li>
+<li><strong>@protobufjs/inquire — version 1.1.0</strong> — BSD-3-Clause. <a href="https://www.npmjs.com/package/@protobufjs/inquire/v/1.1.0">Versioned package metadata</a>.</li>
+<li><strong>@protobufjs/pool — version 1.1.0</strong> — BSD-3-Clause. <a href="https://www.npmjs.com/package/@protobufjs/pool/v/1.1.0">Versioned package metadata</a>.</li>
+<li><strong>@protobufjs/utf8 — version 1.1.0</strong> — BSD-3-Clause. <a href="https://www.npmjs.com/package/@protobufjs/utf8/v/1.1.0">Versioned package metadata</a>.</li>
+</ul>
+<p>The protobuf.js package license also states that command-line generated code is owned by the owner of the input file and requires the protobuf.js support library when distributed as generated code. The support library remains covered by the BSD-3-Clause notice above.</p>
+<p><strong>Canonical full license text:</strong> <a href="https://spdx.org/licenses/BSD-3-Clause.html">BSD 3-Clause license</a>. Upstream project: <a href="https://github.com/dcodeIO/protobuf.js">dcodeIO/protobuf.js</a>.</p>
+
+<h3>Apache-2.0 — FlatBuffers and long.js</h3>
+<ul>
+<li><strong>flatbuffers — version 1.12.0</strong> — Apache-2.0. Copyright notice: Google Inc. and contributors. <a href="https://www.npmjs.com/package/flatbuffers/v/1.12.0">Versioned package metadata</a>.</li>
+<li><strong>long — version 5.2.3</strong> — Apache-2.0. Copyright 2013 Daniel Wirtz; Copyright 2009 The Closure Library Authors. <a href="https://www.npmjs.com/package/long/v/5.2.3">Versioned package metadata</a>.</li>
+</ul>
+<p><strong>Canonical full license text:</strong> <a href="https://spdx.org/licenses/Apache-2.0.html">Apache License, Version 2.0</a>. The long.js versioned license file is also available in the <a href="https://github.com/dcodeIO/long.js/tree/v5.2.3">upstream v5.2.3 source</a>.</p>
+
+<h3>ISC — GUID TypeScript</h3>
+<ul>
+<li><strong>guid-typescript — version 1.0.9</strong> — ISC. Copyright (c) Nicolas Silva dos Santos. <a href="https://www.npmjs.com/package/guid-typescript/v/1.0.9">Versioned package metadata</a> · <a href="https://github.com/NicolasDeveloper/guid-typescript">upstream source repository</a>.</li>
+</ul>
+<p><strong>Canonical full license text:</strong> <a href="https://spdx.org/licenses/ISC.html">ISC license</a>.</p>
+
+<h3>MIT — ONNX Runtime Common</h3>
+<ul>
+<li><strong>onnxruntime-common — version 1.18.0</strong> — MIT. Copyright (c) Microsoft Corporation. <a href="https://www.npmjs.com/package/onnxruntime-common/v/1.18.0">Versioned package metadata</a> · <a href="https://github.com/microsoft/onnxruntime/blob/v1.18.0/LICENSE">upstream v1.18.0 license</a>.</li>
+</ul>
+<p><strong>Canonical full license text:</strong> <a href="https://spdx.org/licenses/MIT.html">MIT license</a>.</p>
+
+<p class="notice">The corresponding WebGPU source map contains ONNX Runtime Common source paths but no protobufjs, @protobufjs, FlatBuffers, long.js or guid-typescript source paths. The upstream lockfile also contains <code>@protobufjs/codegen</code>, <code>@protobufjs/fetch</code>, <code>@protobufjs/path</code> and <code>platform</code>; this audit did not find their source paths in the observed CPU ESM map, so they are not described here as confirmed bundled code. The complete upstream lock inventory remains in the <a href="https://github.com/4gmxsol-tech/Buytools.si/blob/main/audits/background-removal-runtime-baseline.json">runtime baseline</a>.</p>
 </section>
 
 <section class="content">

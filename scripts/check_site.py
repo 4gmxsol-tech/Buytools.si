@@ -12,7 +12,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, has_head_license_declaration
+from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -184,6 +184,9 @@ else:
             missing_upstream_evidence = missing_upstream_lock_evidence(runtime_manifest)
             if missing_upstream_evidence:
                 fail("Background-removal upstream dependency evidence is incomplete: " + "; ".join(missing_upstream_evidence))
+            missing_transitive_notices = missing_confirmed_bundled_license_notices(runtime_manifest, licenses_page)
+            if missing_transitive_notices:
+                fail("Background-removal transitive license notices are incomplete: " + "; ".join(missing_transitive_notices))
 for linked_page in (ROOT / "privacy" / "index.html", ROOT / "tools" / "remove-background" / "index.html"):
     if 'href="/licenses/"' not in linked_page.read_text(encoding="utf-8"):
         fail("Relevant page must link to the third-party license notice: " + str(linked_page.relative_to(ROOT)))

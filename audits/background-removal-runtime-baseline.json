@@ -179,7 +179,7 @@
       "license": "BSD-3-Clause",
       "npmUrl": "https://www.npmjs.com/package/protobufjs/v/7.2.5",
       "lockPath": "node_modules/protobufjs",
-      "runtimeObservation": "Not individually observed as a separate esm.sh browser module; the upstream CPU ESM source map includes this package's source paths. The transformed esm.sh response has not been byte-compared."
+      "runtimeObservation": "Not individually observed as a separate esm.sh browser module. The exact observed CPU ESM response map and upstream CPU map both contain protobufjs reader/writer source paths; the WebGPU maps do not. The BuyTools UI does not accept user-supplied ONNX models or protobuf schemas."
     }
   ],
   "integrity": {
@@ -452,9 +452,9 @@
     "cpuEsmExport": "./dist/esm/ort.min.js",
     "cpuSourceMapUrl": "https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.min.js.map",
     "cpuSourcePaths": [
-      "../../node_modules/guid-typescript/dist/guid.js",
-      "../../node_modules/long/index.js",
-      "../../node_modules/flatbuffers/js/flatbuffers.mjs",
+      "../../node_modules/protobufjs/src/reader.js",
+      "../../node_modules/protobufjs/src/writer.js",
+      "../../node_modules/protobufjs/src/util/longbits.js",
       "../../node_modules/@protobufjs/aspromise/index.js",
       "../../node_modules/@protobufjs/base64/index.js",
       "../../node_modules/@protobufjs/eventemitter/index.js",
@@ -462,19 +462,10 @@
       "../../node_modules/@protobufjs/inquire/index.js",
       "../../node_modules/@protobufjs/utf8/index.js",
       "../../node_modules/@protobufjs/pool/index.js",
-      "../../node_modules/protobufjs/src/util/longbits.js",
-      "../../node_modules/protobufjs/src/util/minimal.js",
-      "../../node_modules/protobufjs/src/writer.js",
-      "../../node_modules/protobufjs/src/writer_buffer.js",
-      "../../node_modules/protobufjs/src/reader.js",
-      "../../node_modules/protobufjs/src/reader_buffer.js",
-      "../../node_modules/protobufjs/src/rpc/service.js",
-      "../../node_modules/protobufjs/src/rpc.js",
-      "../../node_modules/protobufjs/src/roots.js",
-      "../../node_modules/protobufjs/src/index-minimal.js",
-      "../../node_modules/protobufjs/minimal.js",
-      "../../../common/lib/backend-impl.ts",
-      "../../../common/lib/inference-session-impl.ts"
+      "../../node_modules/flatbuffers/js/flatbuffers.mjs",
+      "../../node_modules/long/index.js",
+      "../../node_modules/guid-typescript/dist/guid.js",
+      "../../../common/lib/index.ts"
     ],
     "webgpuEsmExport": "./dist/esm/ort.webgpu.min.js",
     "webgpuSourceMapUrl": "https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.webgpu.min.js.map",
@@ -487,15 +478,7 @@
         "sourcePaths": [
           "../../node_modules/protobufjs/src/reader.js",
           "../../node_modules/protobufjs/src/writer.js",
-          "../../node_modules/protobufjs/src/rpc/service.js"
-        ]
-      },
-      {
-        "name": "@protobufjs/utf8",
-        "version": "1.1.0",
-        "license": "BSD-3-Clause",
-        "sourcePaths": [
-          "../../node_modules/@protobufjs/utf8/index.js"
+          "../../node_modules/protobufjs/src/util/longbits.js"
         ]
       },
       {
@@ -539,6 +522,14 @@
         ]
       },
       {
+        "name": "@protobufjs/utf8",
+        "version": "1.1.0",
+        "license": "BSD-3-Clause",
+        "sourcePaths": [
+          "../../node_modules/@protobufjs/utf8/index.js"
+        ]
+      },
+      {
         "name": "@protobufjs/pool",
         "version": "1.1.0",
         "license": "BSD-3-Clause",
@@ -555,14 +546,6 @@
         ]
       },
       {
-        "name": "guid-typescript",
-        "version": "1.0.9",
-        "license": "ISC",
-        "sourcePaths": [
-          "../../node_modules/guid-typescript/dist/guid.js"
-        ]
-      },
-      {
         "name": "long",
         "version": "5.2.3",
         "license": "Apache-2.0",
@@ -571,12 +554,19 @@
         ]
       },
       {
+        "name": "guid-typescript",
+        "version": "1.0.9",
+        "license": "ISC",
+        "sourcePaths": [
+          "../../node_modules/guid-typescript/dist/guid.js"
+        ]
+      },
+      {
         "name": "onnxruntime-common",
         "version": "1.18.0",
         "license": "MIT",
         "sourcePaths": [
-          "../../../common/lib/backend-impl.ts",
-          "../../../common/lib/inference-session-impl.ts"
+          "../../../common/lib/index.ts"
         ]
       }
     ],
@@ -586,7 +576,89 @@
       "@protobufjs/path",
       "platform"
     ],
-    "scopeNote": "The upstream package manifest maps the browser ESM root export to ./dist/esm/ort.min.js and the /webgpu export to ./dist/esm/ort.webgpu.min.js. The CPU source map lists protobufjs reader/writer sources and @protobufjs helpers, including @protobufjs/utf8. The inspected WebGPU source map lists no node_modules/protobufjs/ or node_modules/@protobufjs/ source paths. This is upstream source-map evidence for the published package exports, not a byte-for-byte comparison of the esm.sh-transformed response observed by BuyTools CI.",
-    "runtimeHashNote": "BuyTools CI records SHA-256 hashes for observed esm.sh module response bodies. Those per-run hashes have not been compared byte-for-byte with the upstream UNPKG files or their source maps; no runtime Subresource Integrity is claimed."
+    "scopeNote": "The exact esm.sh ONNX Runtime module response URLs observed by Chromium were refetched in the same CI run and their response-body SHA-256 hashes matched. Each response declared a source map that returned HTTP 200. The CDN and corresponding upstream CPU/WebGPU maps have matching source counts and selected package-path signals. This is source-path-level mapping, not a byte-for-byte comparison of every source or generated code, and not a guarantee about future CDN responses.",
+    "runtimeHashNote": "BuyTools CI records SHA-256 hashes for the Chromium response bodies and independently refetches the same esm.sh URLs; the same-run hashes matched. These hashes are audit evidence only, are not pinned across future runs, and do not enforce runtime Subresource Integrity.",
+    "cpuSourcePathsScope": "Selected source paths for every confirmed transitive package group; the full 146-path CPU source map is retained in CI artifact 13597798538."
+  },
+  "observedEsmShResponseEvidence": {
+    "capturedAt": "2026-11-08T01:00:47.153Z",
+    "workflowRunId": 42432134958,
+    "workflowRunUrl": "https://github.com/4gmxsol-tech/Buytools.si/actions/runs/42432134958",
+    "workflowMergeRef": "446c2dd33d828061d11f1049ce9f288c68bdf1b9",
+    "pullRequestHeadCommit": "2c2307f729e13a3fd7d59a5532ce987053c73b15",
+    "baseCommit": "31deb43a4cf0578c386ca6769ce6065de49ff89d",
+    "method": "Chromium captured the response body SHA-256; a Node fetch in the same workflow refetched each exact URL and compared the digest. The response-declared source map was then fetched and compared by source count and selected package-path signals with the pinned upstream map.",
+    "modules": [
+      {
+        "kind": "CPU ESM",
+        "url": "https://esm.sh/onnxruntime-web@1.18.0/es2022/onnxruntime-web.mjs",
+        "responseBodyBytes": 539980,
+        "browserResponseSha256": "a4c4728aa8e47ed0ed72193cd201eb99f5bc087c1d41efc9264b2ef3adf3d5d1",
+        "refetchedResponseSha256": "a4c4728aa8e47ed0ed72193cd201eb99f5bc087c1d41efc9264b2ef3adf3d5d1",
+        "responseHashMatch": true,
+        "staticModuleSpecifiers": [
+          "/node/buffer.mjs",
+          "/node/process.mjs"
+        ],
+        "sourceMapReferenceKind": "response-comment",
+        "sourceMapUrl": "https://esm.sh/onnxruntime-web@1.18.0/es2022/onnxruntime-web.mjs.map",
+        "sourceMapHttpStatus": 200,
+        "sourceMapSha256": "1a6d35ed99c3f0be91a7ab55d12dc82cd1a3e15eb1def356dbff33c90bfda1d9",
+        "sourceMapSourceCount": 146,
+        "upstreamSourceMapUrl": "https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.min.js.map",
+        "upstreamSourceMapHttpStatus": 200,
+        "upstreamSourceMapSha256": "9982454a1de92658fd55793c5b6c8de406305e0a070b6bd06f184e01a3ca9c2b",
+        "upstreamSourceMapSourceCount": 146,
+        "sourceCountMatchesUpstream": true,
+        "packagePathSignalParity": true,
+        "sourcePathSignals": {
+          "protobufReader": true,
+          "protobufWriter": true,
+          "protobufUtf8": true,
+          "flatbuffers": true,
+          "long": true,
+          "guidTypescript": true,
+          "onnxruntimeCommon": true
+        }
+      },
+      {
+        "kind": "WebGPU ESM",
+        "url": "https://esm.sh/onnxruntime-web@1.18.0/es2022/webgpu.mjs",
+        "responseBodyBytes": 724224,
+        "browserResponseSha256": "6cc1ad10ea49029f7ed43fa5b87f08214610eca6f95bca1ca7ee1d768bcf7367",
+        "refetchedResponseSha256": "6cc1ad10ea49029f7ed43fa5b87f08214610eca6f95bca1ca7ee1d768bcf7367",
+        "responseHashMatch": true,
+        "staticModuleSpecifiers": [
+          "/node/buffer.mjs",
+          "/node/process.mjs"
+        ],
+        "sourceMapReferenceKind": "response-comment",
+        "sourceMapUrl": "https://esm.sh/onnxruntime-web@1.18.0/es2022/webgpu.mjs.map",
+        "sourceMapHttpStatus": 200,
+        "sourceMapSha256": "e52c5abb45380b257a7352723bd881d7de26515f98f07cf38f51bbe42aa188c9",
+        "sourceMapSourceCount": 99,
+        "upstreamSourceMapUrl": "https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.webgpu.min.js.map",
+        "upstreamSourceMapHttpStatus": 200,
+        "upstreamSourceMapSha256": "0ad460bbcdbd2ecaa61cd820082bdc8cb1bdca4b5655d8dec6d1e74cf9c3f281",
+        "upstreamSourceMapSourceCount": 99,
+        "sourceCountMatchesUpstream": true,
+        "packagePathSignalParity": true,
+        "sourcePathSignals": {
+          "protobufReader": false,
+          "protobufWriter": false,
+          "protobufUtf8": false,
+          "flatbuffers": false,
+          "long": false,
+          "guidTypescript": false,
+          "onnxruntimeCommon": true
+        }
+      }
+    ],
+    "limitations": [
+      "The source-map comparison uses source counts and selected package-path signals, not exact equality of every source path or source-code contents.",
+      "The response hashes are same-run observations, not a pinned integrity policy for future CDN responses.",
+      "No runtime Subresource Integrity check is enforced.",
+      "The browser request graph does not expose separately requested protobufjs package URLs; the package paths are bundled inside the CPU ESM module."
+    ]
   }
 }
