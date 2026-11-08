@@ -16,7 +16,7 @@ test("finds source maps declared by response headers", () => {
 });
 
 test("finds source maps declared by JavaScript comments", () => {
-  const reference = findSourceMapReference("export {};\\n//# sourceMappingURL=ort.mjs.map", {}, "https://esm.sh/ort.mjs");
+  const reference = findSourceMapReference("export {};\n//# sourceMappingURL=ort.mjs.map", {}, "https://esm.sh/ort.mjs");
   assert.deepEqual(reference, {
     kind: "response-comment",
     reference: "https://esm.sh/ort.mjs.map"
@@ -28,18 +28,18 @@ test("does not invent a declared source map when none is exposed", () => {
 });
 
 test("extracts static and dynamic module specifiers", () => {
-  const source = `
-    import runtime from "./runtime.mjs";
-    export { helper } from "../shared/helper.mjs";
-    const lazy = await import("./lazy.mjs");
-  `;
+  const source = [
+    'import runtime from "./runtime.mjs";',
+    'export { helper } from "../shared/helper.mjs";',
+    'const lazy = await import("./lazy.mjs");'
+  ].join("\n");
   assert.deepEqual(extractModuleSpecifiers(source), ["../shared/helper.mjs", "./lazy.mjs", "./runtime.mjs"]);
 });
 
 test("maps the exact esm.sh response hash and source-map paths", async () => {
   const moduleUrl = "https://esm.sh/onnxruntime-web@1.18.0/es2022/onnxruntime-web.mjs";
   const mapUrl = "https://esm.sh/onnxruntime-web@1.18.0/es2022/onnxruntime-web.mjs.map";
-  const moduleBody = 'import "./runtime-common.mjs";\\n//# sourceMappingURL=onnxruntime-web.mjs.map';
+  const moduleBody = 'import "./runtime-common.mjs";\n//# sourceMappingURL=onnxruntime-web.mjs.map';
   const moduleBytes = Buffer.from(moduleBody);
   const esmMap = JSON.stringify({
     file: "onnxruntime-web.mjs",
