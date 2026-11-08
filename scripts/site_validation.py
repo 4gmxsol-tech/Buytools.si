@@ -136,8 +136,15 @@ def missing_json_schema_scope_disclosures(html):
 
 
 def missing_json_scope_metadata_disclosures(html):
-    """Return missing JSON syntax/schema scope terms from search and social descriptions."""
+    """Return missing JSON formatter/syntax-checker title and syntax/schema scope terms."""
     missing = []
+    title_match = re.search(r"<title\\b[^>]*>(.*?)</title\\s*>", html, flags=re.IGNORECASE | re.DOTALL)
+    title = " ".join(re.sub(r"<[^>]+>", " ", title_match.group(1)).lower().split()) if title_match else ""
+    if not title:
+        missing.append("title is missing")
+    elif "json formatter" not in title or "syntax checker" not in title:
+        missing.append("title must identify a JSON formatter and syntax checker")
+
     descriptions = (
         ("meta description", "name", "description"),
         ("Open Graph description", "property", "og:description"),
@@ -152,7 +159,6 @@ def missing_json_scope_metadata_disclosures(html):
         if "json schema" not in value:
             missing.append(f"{label} must distinguish JSON Schema validation")
     return missing
-
 
 def missing_homepage_json_syntax_disclosure(html):
     """Return missing JSON syntax wording from the homepage tool card and search tags."""
