@@ -304,7 +304,6 @@ class JsonMetadataScopeDisclosureTests(unittest.TestCase):
             missing_json_scope_metadata_disclosures(html),
             ["Open Graph description must describe JSON syntax validation"],
         )
-
 class HomepageJsonSyntaxDisclosureTests(unittest.TestCase):
     COMPLETE = (
         "<script>const tools=[{id:'json',name:'JSON Formatter',cat:'Developer',"
