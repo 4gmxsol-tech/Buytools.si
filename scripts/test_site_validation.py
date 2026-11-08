@@ -685,10 +685,6 @@ class ConfirmedBundledLicenseNoticeTests(unittest.TestCase):
 
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class SitemapLastmodSyncTests(unittest.TestCase):
     SITEMAP = """<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -730,3 +726,7 @@ class SitemapLastmodSyncTests(unittest.TestCase):
             missing_sitemap_lastmod_sync("<urlset>", "https://buytools.si/licenses/", self.PAGE),
             ["sitemap XML cannot be parsed"],
         )
+
+
+if __name__ == "__main__":
+    unittest.main()
