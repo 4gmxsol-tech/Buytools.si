@@ -187,7 +187,8 @@
     "streamedWasmBodyMayNotBeExposedToPlaywright": true,
     "runtimeSubresourceIntegrityEnforced": false,
     "assetPathNamesTreatedAsCryptographicDigests": false,
-    "note": "The CI artifact records SHA-256 for module and non-streaming asset response bodies. The streamed application/wasm response may expose zero body bytes through Playwright; it is recorded by URL and status without a digest. This is an audit snapshot, not runtime SRI or a complete reproducible build."
+    "note": "CI pins the reviewed SHA-256 values for the exact observed esm.sh ONNX Runtime CPU and WebGPU ESM URLs and reports response drift in the browser workflow. This is a CI audit guard only: it does not enforce runtime Subresource Integrity, pin streamed WASM/model responses, or guarantee what a visitor receives if the CDN changes after CI.",
+    "ciApprovedEsmResponseHashesPinned": true
   },
   "securityReview": {
     "package": "zod@3.25.76",
@@ -258,7 +259,7 @@
     ],
     "transitiveExposureConclusion": "The upstream ONNX Runtime Web v1.18.0 CPU ESM source map includes protobufjs 7.2.5 reader/writer sources and @protobufjs/utf8 1.1.0; the inspected WebGPU source map contains no protobufjs/@protobufjs source paths. This confirms advisory-affected parser code in the upstream CPU distribution selected by the package export, but the esm.sh-transformed response has not been byte-compared. BuyTools accepts an image File/Blob rather than a user-supplied ONNX model or protobuf schema, and no direct exploit path was demonstrated. The model is fetched from staticimgly.com, so compromised or malicious upstream model assets remain a conditional supply-chain input risk."
   },
-  "nextPriority": "Byte-compare or otherwise map the exact esm.sh ONNX Runtime response to its upstream ESM export, then publish complete versioned license/copyright notices for confirmed bundled transitive packages; only after that test a patched protobuf/ONNX chain against both models, browser fallbacks and real-photo fixtures.",
+  "nextPriority": "Evaluate a compatible patched protobuf/ONNX Runtime candidate against both background-removal models, browser fallbacks and real-photo fixtures; obtain qualified AGPL-3.0 Section 13 review before monetizing the feature.",
   "upstreamLockEvidence": {
     "capturedAt": "2026-11-07T22:50:00Z",
     "sourceUrl": "https://raw.githubusercontent.com/microsoft/onnxruntime/v1.18.0/js/web/package-lock.json",
@@ -619,7 +620,8 @@
           "long": true,
           "guidTypescript": true,
           "onnxruntimeCommon": true
-        }
+        },
+        "approvedResponseSha256": "a4c4728aa8e47ed0ed72193cd201eb99f5bc087c1d41efc9264b2ef3adf3d5d1"
       },
       {
         "kind": "WebGPU ESM",
@@ -651,7 +653,8 @@
           "long": false,
           "guidTypescript": false,
           "onnxruntimeCommon": true
-        }
+        },
+        "approvedResponseSha256": "6cc1ad10ea49029f7ed43fa5b87f08214610eca6f95bca1ca7ee1d768bcf7367"
       }
     ],
     "limitations": [
