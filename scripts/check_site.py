@@ -12,7 +12,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins, missing_csv_troubleshooting_guidance, faq_schema_mismatches
+from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_image_reduction_workflow_steps, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins, missing_csv_troubleshooting_guidance, faq_schema_mismatches
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -442,6 +442,16 @@ if missing_image_disclosures:
 missing_lossless_workflow = missing_image_lossless_workflow_disclosures(image_guide)
 if missing_lossless_workflow:
     fail("Image guide is missing accurate lossless-workflow guidance: " + ", ".join(missing_lossless_workflow))
+missing_reduction_steps = missing_image_reduction_workflow_steps(image_guide)
+if missing_reduction_steps:
+    fail("Image guide is missing actionable image-reduction workflow steps: " + ", ".join(missing_reduction_steps))
+image_guide_lastmod_errors = missing_sitemap_lastmod_sync(
+    (ROOT / "sitemap.xml").read_text(encoding="utf-8"),
+    DOMAIN + "/guides/reduce-image-size/",
+    image_guide,
+)
+for message in image_guide_lastmod_errors:
+    fail("Image guide sitemap lastmod is out of sync: " + message)
 
 # Keep the batch image resizer metadata and output explanation aligned with its PNG implementation.
 batch_image_resizer_page = (ROOT / "tools/batch-image-resizer/index.html").read_text(encoding="utf-8")
