@@ -525,6 +525,12 @@ def missing_confirmed_bundled_license_notices(manifest, licenses_html):
     """Ensure every source-map-confirmed transitive package has a versioned public notice."""
     bundle = manifest.get("upstreamBundleEvidence", {}) if isinstance(manifest, dict) else {}
     packages = bundle.get("confirmedBundledPackages", []) if isinstance(bundle, dict) else []
+    lock_evidence = manifest.get("upstreamLockEvidence", {}) if isinstance(manifest, dict) else {}
+    lock_records = {
+        record.get("name"): record
+        for record in lock_evidence.get("packages", [])
+        if isinstance(record, dict)
+    } if isinstance(lock_evidence, dict) else {}
     section = re.search(
         r'<section\b[^>]*id=["\']onnxruntime-transitive-notices["\'][^>]*>(.*?)</section\s*>',
         str(licenses_html),
@@ -534,6 +540,7 @@ def missing_confirmed_bundled_license_notices(manifest, licenses_html):
         return ["License page is missing the confirmed ONNX Runtime transitive-notices section."]
     html = section.group(1)
     missing = []
+    licenses_present = set()
     for package in packages:
         if not isinstance(package, dict):
             missing.append("Confirmed bundled license notice record must be an object.")
@@ -541,26 +548,41 @@ def missing_confirmed_bundled_license_notices(manifest, licenses_html):
         name = str(package.get("name", "")).strip()
         version = str(package.get("version", "")).strip()
         license_name = str(package.get("license", "")).strip()
-        npm_url = str(package.get("npmUrl", "")).strip()
+        record = lock_records.get(name, {})
+        npm_url = str(package.get("npmUrl") or record.get("npmUrl", "")).strip()
         if not name or not version or not license_name or not npm_url:
             missing.append("Confirmed bundled license notice record is missing name, version, license or npm URL.")
             continue
+        licenses_present.add(license_name)
         if name + " — version " + version not in html:
             missing.append("Public transitive license notice missing exact package/version: " + name + "@" + version)
         if license_name not in html:
             missing.append("Public transitive license notice missing license identifier: " + name + "@" + version)
         if npm_url not in html:
             missing.append("Public transitive license notice missing versioned npm metadata link: " + name + "@" + version)
+
+    copyright_requirements = {
+        "BSD-3-Clause": ("Copyright (c) 2016, Daniel Wirtz",),
+        "Apache-2.0": ("Google Inc.", "Daniel Wirtz", "Closure Library Authors"),
+        "ISC": ("Nicolas Silva dos Santos",),
+        "MIT": ("Microsoft Corporation",),
+    }
+    for license_name in licenses_present:
+        if license_name not in copyright_requirements:
+            continue
+        for notice in copyright_requirements[license_name]:
+            if notice not in html:
+                missing.append("Public transitive license notice is missing copyright attribution for " + license_name + ": " + notice)
+
     for license_name, url in (
         ("BSD-3-Clause", "https://spdx.org/licenses/BSD-3-Clause.html"),
         ("Apache-2.0", "https://spdx.org/licenses/Apache-2.0.html"),
         ("ISC", "https://spdx.org/licenses/ISC.html"),
         ("MIT", "https://spdx.org/licenses/MIT.html"),
     ):
-        if any(package.get("license") == license_name for package in packages if isinstance(package, dict)) and url not in html:
+        if license_name in licenses_present and url not in html:
             missing.append("Public transitive license notice is missing the canonical full-text link for " + license_name + ".")
     return missing
-
 
 def has_head_license_declaration(html):
     """Return whether the document head declares a document-level license."""
