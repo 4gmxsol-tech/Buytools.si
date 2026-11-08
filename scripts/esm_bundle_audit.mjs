@@ -134,7 +134,20 @@ export async function auditEsmBundle({ runtimeProvenance, baseline, fetchImpl = 
   assert.ok(requests.length >= expectedModule.modulePaths.length, "Expected CPU and WebGPU ONNX Runtime responses.");
 
   const modules = [];
+  const approvedResponses = baseline.observedEsmShResponseEvidence?.modules || [];
+
   for (const request of requests) {
+    const approvedResponse = approvedResponses.find(item => item.url === request.url);
+    assert.ok(
+      approvedResponse?.approvedResponseSha256,
+      "Baseline must pin an approved SHA-256 for the exact observed ONNX Runtime URL: " + request.url
+    );
+    assert.match(
+      approvedResponse.approvedResponseSha256,
+      /^[a-f0-9]{64}$/i,
+      "Approved ONNX Runtime response hash must be a 64-character SHA-256 digest: " + request.url
+    );
+
     const response = await fetchImpl(request.url, { headers: { accept: "*/*" } });
     if (!response.ok) throw new Error("Could not refetch observed esm.sh module (" + response.status + "): " + request.url);
     const bytes = Buffer.from(await response.arrayBuffer());
@@ -176,7 +189,9 @@ export async function auditEsmBundle({ runtimeProvenance, baseline, fetchImpl = 
       responseBodyBytes: bytes.length,
       browserSha256: browserHash,
       refetchedSha256: fetchedHash,
+      approvedResponseSha256: approvedResponse.approvedResponseSha256,
       browserResponseHashMatchesRefetch: Boolean(browserHash && browserHash === fetchedHash),
+      approvedResponseHashMatches: fetchedHash === approvedResponse.approvedResponseSha256,
       responseHeaders: headers,
       staticModuleSpecifiers: extractModuleSpecifiers(body),
       sourceMapReference: reference,
@@ -217,6 +232,13 @@ export async function auditEsmBundle({ runtimeProvenance, baseline, fetchImpl = 
   }
 
   const hashMismatches = modules.filter(module => !module.browserResponseHashMatchesRefetch).map(module => module.url);
+  const approvedHashMismatches = modules
+    .filter(module => !module.approvedResponseHashMatches)
+    .map(module => ({
+      url: module.url,
+      expectedSha256: module.approvedResponseSha256,
+      actualSha256: module.refetchedSha256
+    }));
   const sourceMapComparisons = modules.map(module => {
     const kind = new URL(module.url).pathname.endsWith("/webgpu.mjs") ? "webgpu" : "cpu";
     const upstreamMap = upstream.find(item => item.name === kind);
@@ -274,6 +296,8 @@ export async function auditEsmBundle({ runtimeProvenance, baseline, fetchImpl = 
       observedOnnxRuntimeModuleResponses: modules.length,
       browserHashMatches: modules.length - hashMismatches.length,
       browserHashMismatches: hashMismatches.length,
+      approvedResponseHashMatches: modules.filter(module => module.approvedResponseHashMatches).length,
+      approvedResponseHashMismatches: approvedHashMismatches.length,
       sourceMapsDeclaredByResponse: modules.filter(module => module.sourceMapAssociation.startsWith("declared-")).length,
       sourceMapsWithProtobufSources: associatedMapsWithProtobuf.length,
       sourceMapComparisonsWithPackageSignalParity: sourceMapComparisons.filter(item => item.packagePathSignalParity).length,
@@ -284,7 +308,8 @@ export async function auditEsmBundle({ runtimeProvenance, baseline, fetchImpl = 
         ? "Both response-associated esm.sh maps match their corresponding pinned upstream CPU/WebGPU maps by source count and selected package-path signals. This is source-path-level mapping, not byte-for-byte source or code equivalence."
         : "Partially unresolved: one or more observed esm.sh maps could not be matched to the corresponding upstream map by source count and selected package-path signals."
     },
-    hashMismatches
+    hashMismatches,
+    approvedHashMismatches
   };
   return report;
 }
@@ -297,6 +322,9 @@ async function main() {
   console.log("Exact esm.sh ONNX Runtime audit: " + JSON.stringify(report.summary, null, 2));
   if (report.hashMismatches.length) {
     throw new Error("The esm.sh module response differed from the Chromium-captured response hash; exact response identity is unresolved.");
+  }
+  if (report.approvedHashMismatches.length) {
+    throw new Error("An esm.sh ONNX Runtime response differs from the reviewed SHA-256 baseline; inspect the new response and update the approved hash only after review.");
   }
 }
 
