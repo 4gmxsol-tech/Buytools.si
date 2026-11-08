@@ -704,11 +704,13 @@ def missing_pages_workflow_least_privilege(workflow_text):
 
 
 
+
+
 def missing_immutable_action_pins(workflow_text):
     """Return errors for external Actions that are not pinned to immutable commits."""
     errors = []
     for line_number, line in enumerate(workflow_text.splitlines(), start=1):
-        match = re.match(r"^\\s*(?:-\\s*)?uses:\\s*([^\\s#]+)(?:\\s+#\\s*(.*))?\\s*$", line)
+        match = re.match(r"^\s*(?:-\s*)?uses:\s*([^\s#]+)(?:\s+#\s*(.*))?\s*$", line)
         if not match:
             continue
 
@@ -724,6 +726,6 @@ def missing_immutable_action_pins(workflow_text):
         if not separator or not action_name or not re.fullmatch(r"[0-9a-f]{40}", revision):
             errors.append(f"line {line_number}: {reference} must use a full 40-character commit SHA")
             continue
-        if not annotation or not re.search(r"\\bv\\d+(?:\\.\\d+){0,2}\\b", annotation, re.IGNORECASE):
+        if not annotation or not re.search(r"\bv\d+(?:\.\d+){0,2}\b", annotation, re.IGNORECASE):
             errors.append(f"line {line_number}: {action_name} must include an upstream version annotation such as '# v5'")
     return errors
