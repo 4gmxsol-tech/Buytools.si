@@ -96,6 +96,20 @@ def missing_image_lossless_workflow_disclosures(html):
     return [phrase for phrase in required if phrase not in visible_text]
 
 
+
+def missing_image_reduction_workflow_steps(html):
+    """Return missing actionable steps for preserving image quality while reducing file size."""
+    visible_text = " ".join(re.sub(r"<[^>]+>", " ", html).lower().split())
+    required = (
+        "record the original format, pixel dimensions and file size",
+        "run lossless optimization before resizing or lossy compression",
+        "resize only to the largest dimensions needed for the final display",
+        "compare the exported image at 100% zoom and at its intended display size",
+        "check transparency, orientation and color before replacing the original",
+    )
+    return [phrase for phrase in required if phrase not in visible_text]
+
+
 def missing_csv_export_safety_disclosures(html):
     """Return required user-facing CSV formula-safety disclosures missing from a page."""
     normalized = " ".join(html.lower().split())
