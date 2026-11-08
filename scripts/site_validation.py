@@ -1,5 +1,7 @@
 """Small, independently tested helpers for static site validation."""
 import re
+import json
+from html import unescape
 from datetime import datetime
 from urllib.parse import unquote, urljoin, urlparse
 import xml.etree.ElementTree as ET
@@ -105,6 +107,84 @@ def missing_csv_export_safety_disclosures(html):
     )
     return [phrase for phrase in required if phrase not in normalized]
 
+
+def missing_csv_troubleshooting_guidance(html_content):
+    """Return missing practical diagnostics for common CSV import failures."""
+    raw = str(html_content).lower()
+    visible_text = " ".join(re.sub(r"<[^>]+>", " ", raw).split())
+    required = (
+        "every value appears in one column",
+        "save the file as utf-8",
+        "same number of fields as the header row",
+        "line breaks inside quoted fields",
+        "normalized to comma-separated csv",
+    )
+    missing = [phrase for phrase in required if phrase not in visible_text]
+    if 'id="csv-troubleshooting"' not in raw and "id='csv-troubleshooting'" not in raw:
+        missing.append('troubleshooting section must have id="csv-troubleshooting"')
+    return missing
+
+
+def faq_schema_mismatches(html_content):
+    """Require FAQPage JSON-LD questions and answers to mirror visible FAQ content."""
+    content = str(html_content)
+    visible_section = re.search(
+        r"<section[^>]*>\s*<h2>\s*Frequently asked questions\s*</h2>(.*?)</section\s*>",
+        content,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if not visible_section:
+        return ["Visible FAQ section is missing."]
+
+    def normalize(value):
+        text = unescape(re.sub(r"<[^>]+>", " ", str(value)))
+        return " ".join(text.split()).casefold()
+
+    visible_questions = [
+        normalize(question)
+        for question in re.findall(r"<h3[^>]*>(.*?)</h3\s*>", visible_section.group(1), flags=re.IGNORECASE | re.DOTALL)
+    ]
+    visible_answers = [
+        normalize(answer)
+        for answer in re.findall(r"<p[^>]*>(.*?)</p\s*>", visible_section.group(1), flags=re.IGNORECASE | re.DOTALL)
+    ]
+    if not visible_questions:
+        return ["Visible FAQ section has no questions."]
+    if len(visible_questions) != len(visible_answers):
+        return ["Visible FAQ questions and answers are not paired."]
+    visible_items = list(zip(visible_questions, visible_answers))
+
+    for tag, script in re.findall(
+        r"(<script[^>]*>)(.*?)</script\s*>",
+        content,
+        flags=re.IGNORECASE | re.DOTALL,
+    ):
+        if "application/ld+json" not in tag.lower():
+            continue
+        try:
+            data = json.loads(script)
+        except (TypeError, json.JSONDecodeError):
+            continue
+        nodes = data.get("@graph", []) if isinstance(data, dict) else data if isinstance(data, list) else []
+        if isinstance(data, dict) and data.get("@type") == "FAQPage":
+            nodes = [data] + list(nodes)
+        for node in nodes:
+            if not isinstance(node, dict):
+                continue
+            node_type = node.get("@type", [])
+            if node_type != "FAQPage" and not (isinstance(node_type, list) and "FAQPage" in node_type):
+                continue
+            schema_items = []
+            for item in node.get("mainEntity", []):
+                if not isinstance(item, dict) or item.get("@type") != "Question":
+                    continue
+                answer = item.get("acceptedAnswer", {})
+                answer_text = answer.get("text", "") if isinstance(answer, dict) else ""
+                schema_items.append((normalize(item.get("name", "")), normalize(answer_text)))
+            if schema_items != visible_items:
+                return ["FAQPage JSON-LD questions and answers must exactly match visible FAQ content."]
+            return []
+    return ["FAQPage JSON-LD node is missing."]
 
 def missing_json_file_workflow_disclosures(html):
     """Return practical local JSON file workflow details missing from a page."""
