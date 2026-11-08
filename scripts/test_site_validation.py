@@ -986,6 +986,20 @@ class CsvViewerContentQualityTests(unittest.TestCase):
         html = self.COMPLETE_FAQ.replace('type="application/ld+json"', 'type="application/json"')
         self.assertEqual(faq_schema_mismatches(html), ["FAQPage JSON-LD node is missing."])
 
+    def test_stale_faq_answer_is_reported(self):
+        html = self.COMPLETE_FAQ.replace('"text":"No."}', '"text":"The file is uploaded."}')
+        self.assertEqual(
+            faq_schema_mismatches(html),
+            ["FAQPage JSON-LD questions and answers must exactly match visible FAQ content."],
+        )
+
+    def test_missing_visible_faq_answer_is_reported(self):
+        html = self.COMPLETE_FAQ.replace("<p>No.</p>", "<p> </p>")
+        self.assertEqual(
+            faq_schema_mismatches(html),
+            ["FAQPage JSON-LD questions and answers must exactly match visible FAQ content."],
+        )
+
 
 
 if __name__ == "__main__":
