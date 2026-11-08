@@ -140,16 +140,19 @@ def faq_schema_mismatches(html_content):
         text = unescape(re.sub(r"<[^>]+>", " ", str(value)))
         return " ".join(text.split()).casefold()
 
-    visible_items = [
-        (normalize(question), normalize(answer))
-        for question, answer in re.findall(
-            r'<div class="faq"[^>]*>\s*<h3[^>]*>(.*?)</h3\s*><p[^>]*>(.*?)</p\s*</div\s*>',
-            visible_section.group(1),
-            flags=re.IGNORECASE | re.DOTALL,
-        )
+    visible_questions = [
+        normalize(question)
+        for question in re.findall(r"<h3[^>]*>(.*?)</h3\\s*>", visible_section.group(1), flags=re.IGNORECASE | re.DOTALL)
     ]
-    if not visible_items:
-        return ["Visible FAQ section has no question-and-answer pairs."]
+    visible_answers = [
+        normalize(answer)
+        for answer in re.findall(r"<p[^>]*>(.*?)</p\\s*>", visible_section.group(1), flags=re.IGNORECASE | re.DOTALL)
+    ]
+    if not visible_questions:
+        return ["Visible FAQ section has no questions."]
+    if len(visible_questions) != len(visible_answers):
+        return ["Visible FAQ questions and answers are not paired."]
+    visible_items = list(zip(visible_questions, visible_answers))
 
     for tag, script in re.findall(
         r"(<script[^>]*>)(.*?)</script\s*>",
