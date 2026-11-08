@@ -12,7 +12,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins
+from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins, missing_csv_troubleshooting_guidance, faq_schema_mismatches
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -143,7 +143,7 @@ if sitemap_root is not None:
                 if lastmod_date > date.today():
                     fail(f"Sitemap lastmod must not be in the future: {loc}")
 
-for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-compressor/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/tools/word-counter/", DOMAIN + "/tools/images-to-pdf/", DOMAIN + "/guides/convert-images-to-pdf/", DOMAIN + "/guides/reduce-image-size/", DOMAIN + "/guides/format-json-online/", DOMAIN + "/privacy/"):
+for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-compressor/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/tools/word-counter/", DOMAIN + "/tools/images-to-pdf/", DOMAIN + "/guides/convert-images-to-pdf/", DOMAIN + "/guides/reduce-image-size/", DOMAIN + "/guides/format-json-online/", DOMAIN + "/privacy/", DOMAIN + "/tools/csv-viewer/"):
     entry = sitemap_entries.get(required_lastmod_url)
     if entry is None or not entry.findtext("{*}lastmod"):
         fail(f"Recently updated page is missing sitemap lastmod: {required_lastmod_url}")
@@ -201,6 +201,23 @@ for linked_page in (ROOT / "privacy" / "index.html", ROOT / "tools" / "remove-ba
 homepage_html = (ROOT / "index.html").read_text(encoding="utf-8")
 if '<nav class="footerlinks" aria-label="Legal">' not in homepage_html or '<a href="/licenses/">Licenses</a>' not in homepage_html:
     fail("Homepage legal footer must expose a crawlable link to the third-party license notice.")
+
+
+csv_viewer_page_path = ROOT / "tools" / "csv-viewer" / "index.html"
+if not csv_viewer_page_path.is_file():
+    fail("CSV Viewer landing page is missing: tools/csv-viewer/index.html")
+else:
+    csv_viewer_html = csv_viewer_page_path.read_text(encoding="utf-8")
+    for message in missing_csv_troubleshooting_guidance(csv_viewer_html):
+        fail("CSV Viewer troubleshooting content is incomplete: " + message)
+    for message in faq_schema_mismatches(csv_viewer_html):
+        fail("CSV Viewer FAQ structured data is out of sync: " + message)
+    for message in missing_sitemap_lastmod_sync(
+        sitemap_path.read_text(encoding="utf-8"),
+        DOMAIN + "/tools/csv-viewer/",
+        csv_viewer_html,
+    ):
+        fail("CSV Viewer sitemap lastmod is out of sync: " + message)
 
 # Keep the homepage search form aligned with its WebSite SearchAction URL template.
 if '<form class="searchbox" id="toolSearch" role="search" action="/" method="get">' not in homepage_html:
