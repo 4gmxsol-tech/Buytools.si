@@ -126,10 +126,10 @@ def missing_csv_troubleshooting_guidance(html_content):
 
 
 def faq_schema_mismatches(html_content):
-    """Return errors when FAQPage JSON-LD does not mirror visible FAQ questions."""
+    """Require FAQPage JSON-LD questions and answers to mirror visible FAQ content."""
     content = str(html_content)
     visible_section = re.search(
-        r"<section[^>]*>\s*<h2>\s*Frequently asked questions\s*</h2>(.*?)</section\s*>",
+        r"<section[^>]*>\\s*<h2>\\s*Frequently asked questions\\s*</h2>(.*?)</section\\s*>",
         content,
         flags=re.IGNORECASE | re.DOTALL,
     )
@@ -140,15 +140,19 @@ def faq_schema_mismatches(html_content):
         text = unescape(re.sub(r"<[^>]+>", " ", str(value)))
         return " ".join(text.split()).casefold()
 
-    visible_questions = [
-        normalize(question)
-        for question in re.findall(r"<h3[^>]*>(.*?)</h3\s*>", visible_section.group(1), flags=re.IGNORECASE | re.DOTALL)
+    visible_items = [
+        (normalize(question), normalize(answer))
+        for question, answer in re.findall(
+            r'<div class="faq"[^>]*>\\s*<h3[^>]*>(.*?)</h3\\s*><p[^>]*>(.*?)</p\\s*</div\\s*>',
+            visible_section.group(1),
+            flags=re.IGNORECASE | re.DOTALL,
+        )
     ]
-    if not visible_questions:
-        return ["Visible FAQ section has no questions."]
+    if not visible_items:
+        return ["Visible FAQ section has no question-and-answer pairs."]
 
     for tag, script in re.findall(
-        r"(<script[^>]*>)(.*?)</script\s*>",
+        r"(<script[^>]*>)(.*?)</script\\s*>",
         content,
         flags=re.IGNORECASE | re.DOTALL,
     ):
@@ -167,16 +171,17 @@ def faq_schema_mismatches(html_content):
             node_type = node.get("@type", [])
             if node_type != "FAQPage" and not (isinstance(node_type, list) and "FAQPage" in node_type):
                 continue
-            schema_questions = [
-                normalize(item.get("name", ""))
-                for item in node.get("mainEntity", [])
-                if isinstance(item, dict) and item.get("@type") == "Question"
-            ]
-            if schema_questions != visible_questions:
-                return ["FAQPage JSON-LD questions must exactly match visible FAQ questions."]
+            schema_items = []
+            for item in node.get("mainEntity", []):
+                if not isinstance(item, dict) or item.get("@type") != "Question":
+                    continue
+                answer = item.get("acceptedAnswer", {})
+                answer_text = answer.get("text", "") if isinstance(answer, dict) else ""
+                schema_items.append((normalize(item.get("name", "")), normalize(answer_text)))
+            if schema_items != visible_items:
+                return ["FAQPage JSON-LD questions and answers must exactly match visible FAQ content."]
             return []
     return ["FAQPage JSON-LD node is missing."]
-
 
 def missing_json_file_workflow_disclosures(html):
     """Return practical local JSON file workflow details missing from a page."""
