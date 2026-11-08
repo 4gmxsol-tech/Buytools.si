@@ -142,11 +142,11 @@ def faq_schema_mismatches(html_content):
 
     visible_questions = [
         normalize(question)
-        for question in re.findall(r"<h3[^>]*>(.*?)</h3\\s*>", visible_section.group(1), flags=re.IGNORECASE | re.DOTALL)
+        for question in re.findall(r"<h3[^>]*>(.*?)</h3\s*>", visible_section.group(1), flags=re.IGNORECASE | re.DOTALL)
     ]
     visible_answers = [
         normalize(answer)
-        for answer in re.findall(r"<p[^>]*>(.*?)</p\\s*>", visible_section.group(1), flags=re.IGNORECASE | re.DOTALL)
+        for answer in re.findall(r"<p[^>]*>(.*?)</p\s*>", visible_section.group(1), flags=re.IGNORECASE | re.DOTALL)
     ]
     if not visible_questions:
         return ["Visible FAQ section has no questions."]
