@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins, missing_csv_troubleshooting_guidance, faq_schema_mismatches)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -930,6 +930,62 @@ class ImmutableGitHubActionPinTests(unittest.TestCase):
             missing_immutable_action_pins("steps:\n  - uses: docker://alpine:3.20@sha256:" + digest + "\n"),
             [],
         )
+
+
+
+class CsvViewerContentQualityTests(unittest.TestCase):
+    COMPLETE_TROUBLESHOOTING = (
+        '<section id="csv-troubleshooting"><h2>Troubleshoot common CSV import problems</h2>'
+        '<h3>Every value appears in one column</h3>'
+        '<p>Choose a field separator. Save the file as UTF-8. Each record must contain the same number of fields as the header row. '
+        'Line breaks inside quoted fields remain part of the cell. Filtered exports are normalized to comma-separated CSV.</p></section>'
+    )
+
+    def test_complete_csv_troubleshooting_guidance_is_accepted(self):
+        self.assertEqual(missing_csv_troubleshooting_guidance(self.COMPLETE_TROUBLESHOOTING), [])
+
+    def test_missing_delimiter_diagnosis_is_reported(self):
+        html = self.COMPLETE_TROUBLESHOOTING.replace("Every value appears in one column", "Column preview")
+        self.assertIn("every value appears in one column", missing_csv_troubleshooting_guidance(html))
+
+    def test_missing_encoding_diagnosis_is_reported(self):
+        html = self.COMPLETE_TROUBLESHOOTING.replace("Save the file as UTF-8. ", "")
+        self.assertIn("save the file as utf-8", missing_csv_troubleshooting_guidance(html))
+
+    def test_missing_row_width_diagnosis_is_reported(self):
+        html = self.COMPLETE_TROUBLESHOOTING.replace("same number of fields as the header row", "matching rows")
+        self.assertIn("same number of fields as the header row", missing_csv_troubleshooting_guidance(html))
+
+    def test_missing_troubleshooting_anchor_is_reported(self):
+        html = self.COMPLETE_TROUBLESHOOTING.replace(' id="csv-troubleshooting"', "")
+        self.assertIn('troubleshooting section must have id="csv-troubleshooting"', missing_csv_troubleshooting_guidance(html))
+
+    COMPLETE_FAQ = (
+        '<section class="panel"><h2>Frequently asked questions</h2>'
+        '<div><h3>Is this CSV viewer free?</h3><p>Yes.</p></div>'
+        '<div><h3>Does it upload my CSV?</h3><p>No.</p></div></section>'
+        '<script type="application/ld+json">{"@graph":[{"@type":"FAQPage","mainEntity":['
+        '{"@type":"Question","name":"Is this CSV viewer free?","acceptedAnswer":{"@type":"Answer","text":"Yes."}},'
+        '{"@type":"Question","name":"Does it upload my CSV?","acceptedAnswer":{"@type":"Answer","text":"No."}}]}]}</script>'
+    )
+
+    def test_faq_schema_matches_visible_questions(self):
+        self.assertEqual(faq_schema_mismatches(self.COMPLETE_FAQ), [])
+
+    def test_stale_faq_schema_is_reported(self):
+        html = self.COMPLETE_FAQ.replace(
+            '<h3>Does it upload my CSV?</h3>',
+            '<h3>Does it modify my file?</h3>',
+        )
+        self.assertEqual(
+            faq_schema_mismatches(html),
+            ["FAQPage JSON-LD questions must exactly match visible FAQ questions."],
+        )
+
+    def test_missing_faq_schema_is_reported(self):
+        html = self.COMPLETE_FAQ.replace('type="application/ld+json"', 'type="application/json"')
+        self.assertEqual(faq_schema_mismatches(html), ["FAQPage JSON-LD node is missing."])
+
 
 
 if __name__ == "__main__":
