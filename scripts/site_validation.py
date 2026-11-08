@@ -1,6 +1,8 @@
 """Small, independently tested helpers for static site validation."""
 import re
+from datetime import datetime
 from urllib.parse import unquote
+import xml.etree.ElementTree as ET
 
 
 def fragment_target_exists(fragment, target_ids):
@@ -596,3 +598,48 @@ def has_head_license_declaration(html):
             if "license" in value.lower().split():
                 return True
     return False
+
+
+
+def missing_sitemap_lastmod_sync(sitemap_content, page_url, page_html):
+    """Return errors when a page's visible update date and sitemap lastmod disagree."""
+    visible_text = " ".join(re.sub(r"<[^>]+>", " ", page_html).lower().split())
+    match = re.search(r"last updated:\\s*([a-z]+\\s+\\d{1,2},\\s+\\d{4})", visible_text, re.IGNORECASE)
+    if not match:
+        return ["page is missing a visible 'Last updated: Month D, YYYY' date"]
+
+    try:
+        page_date = datetime.strptime(match.group(1), "%B %d, %Y").date()
+    except ValueError:
+        return ["page has an invalid visible last-updated date"]
+
+    try:
+        root = ET.fromstring(sitemap_content)
+    except ET.ParseError:
+        return ["sitemap XML cannot be parsed"]
+
+    entry = next(
+        (
+            item for item in root.findall(".//{*}url")
+            if (item.findtext("{*}loc") or "").strip() == page_url
+        ),
+        None,
+    )
+    if entry is None:
+        return ["page URL is missing from sitemap"]
+
+    lastmod = (entry.findtext("{*}lastmod") or "").strip()
+    if not lastmod:
+        return ["page URL is missing sitemap lastmod"]
+
+    try:
+        sitemap_date = datetime.strptime(lastmod, "%Y-%m-%d").date()
+    except ValueError:
+        return ["page URL has an invalid sitemap lastmod date"]
+
+    if sitemap_date != page_date:
+        return [
+            "sitemap lastmod " + sitemap_date.isoformat()
+            + " does not match visible page date " + page_date.isoformat()
+        ]
+    return []
