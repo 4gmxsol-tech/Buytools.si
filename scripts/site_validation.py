@@ -463,7 +463,104 @@ def missing_upstream_lock_evidence(manifest):
         runtime_hash_note = str(bundle.get("runtimeHashNote", "")).casefold()
         if "sha-256" not in runtime_hash_note or "subresource integrity" not in runtime_hash_note:
             missing.append("Bundle runtime hash limitation must distinguish CI hashes from runtime Subresource Integrity.")
+
+    response_evidence = manifest.get("observedEsmShResponseEvidence")
+    if not isinstance(response_evidence, dict):
+        missing.append("Exact esm.sh ONNX Runtime response evidence is missing.")
+    else:
+        if not isinstance(response_evidence.get("workflowRunId"), int):
+            missing.append("esm.sh response evidence must identify its GitHub Actions run.")
+        if not str(response_evidence.get("workflowRunUrl", "")).startswith("https://github.com/4gmxsol-tech/Buytools.si/actions/runs/"):
+            missing.append("esm.sh response evidence must link to the BuyTools browser audit run.")
+        modules = response_evidence.get("modules")
+        if not isinstance(modules, list) or len(modules) != 2:
+            missing.append("esm.sh response evidence must include CPU and WebGPU module records.")
+            modules = []
+        by_kind = {item.get("kind"): item for item in modules if isinstance(item, dict)}
+        for kind, expected_path in (
+            ("CPU ESM", "/onnxruntime-web@1.18.0/es2022/onnxruntime-web.mjs"),
+            ("WebGPU ESM", "/onnxruntime-web@1.18.0/es2022/webgpu.mjs"),
+        ):
+            item = by_kind.get(kind)
+            if not item:
+                missing.append("esm.sh response evidence is missing " + kind + ".")
+                continue
+            if not str(item.get("url", "")).startswith("https://esm.sh" + expected_path):
+                missing.append("esm.sh response URL is inconsistent for " + kind + ".")
+            browser_hash = str(item.get("browserResponseSha256", ""))
+            refetched_hash = str(item.get("refetchedResponseSha256", ""))
+            if item.get("responseHashMatch") is not True or not re.fullmatch(r"[0-9a-f]{64}", browser_hash) or browser_hash != refetched_hash:
+                missing.append("Same-run Chromium/refetch SHA-256 evidence does not match for " + kind + ".")
+            if item.get("sourceMapReferenceKind") not in ("response-comment", "response-header"):
+                missing.append("esm.sh source map must be declared by the response for " + kind + ".")
+            if not str(item.get("sourceMapUrl", "")).startswith("https://esm.sh/") or item.get("sourceMapHttpStatus") != 200:
+                missing.append("esm.sh source map must be retrievable for " + kind + ".")
+            if not re.fullmatch(r"[0-9a-f]{64}", str(item.get("sourceMapSha256", ""))) or not isinstance(item.get("sourceMapSourceCount"), int) or item.get("sourceMapSourceCount", 0) < 1:
+                missing.append("esm.sh source map hash or source count is missing for " + kind + ".")
+            if not str(item.get("upstreamSourceMapUrl", "")).startswith("https://unpkg.com/onnxruntime-web@1.18.0/") or item.get("upstreamSourceMapHttpStatus") != 200:
+                missing.append("Corresponding upstream ONNX Runtime source map is missing for " + kind + ".")
+            if not re.fullmatch(r"[0-9a-f]{64}", str(item.get("upstreamSourceMapSha256", ""))) or not isinstance(item.get("upstreamSourceMapSourceCount"), int):
+                missing.append("Upstream source map hash or source count is missing for " + kind + ".")
+            if item.get("sourceCountMatchesUpstream") is not True or item.get("packagePathSignalParity") is not True:
+                missing.append("esm.sh source-map package-path signals do not match the upstream map for " + kind + ".")
+            signals = item.get("sourcePathSignals")
+            if not isinstance(signals, dict):
+                missing.append("esm.sh source-path signals are missing for " + kind + ".")
+                signals = {}
+            if kind == "CPU ESM":
+                for name in ("protobufReader", "protobufWriter", "protobufUtf8", "flatbuffers", "long", "guidTypescript", "onnxruntimeCommon"):
+                    if signals.get(name) is not True:
+                        missing.append("CPU esm.sh source map must confirm " + name + ".")
+            else:
+                for name in ("protobufReader", "protobufWriter", "protobufUtf8", "flatbuffers", "long", "guidTypescript"):
+                    if signals.get(name) is not False:
+                        missing.append("WebGPU esm.sh source map must not claim " + name + ".")
+                if signals.get("onnxruntimeCommon") is not True:
+                    missing.append("WebGPU esm.sh source map must confirm ONNX Runtime Common source paths.")
+
     return missing
+
+
+def missing_confirmed_bundled_license_notices(manifest, licenses_html):
+    """Ensure every source-map-confirmed transitive package has a versioned public notice."""
+    bundle = manifest.get("upstreamBundleEvidence", {}) if isinstance(manifest, dict) else {}
+    packages = bundle.get("confirmedBundledPackages", []) if isinstance(bundle, dict) else []
+    section = re.search(
+        r'<section\\b[^>]*id=["\\']onnxruntime-transitive-notices["\\'][^>]*>(.*?)</section\\s*>',
+        str(licenses_html),
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if not section:
+        return ["License page is missing the confirmed ONNX Runtime transitive-notices section."]
+    html = section.group(1)
+    missing = []
+    for package in packages:
+        if not isinstance(package, dict):
+            missing.append("Confirmed bundled license notice record must be an object.")
+            continue
+        name = str(package.get("name", "")).strip()
+        version = str(package.get("version", "")).strip()
+        license_name = str(package.get("license", "")).strip()
+        npm_url = str(package.get("npmUrl", "")).strip()
+        if not name or not version or not license_name or not npm_url:
+            missing.append("Confirmed bundled license notice record is missing name, version, license or npm URL.")
+            continue
+        if name + " — version " + version not in html:
+            missing.append("Public transitive license notice missing exact package/version: " + name + "@" + version)
+        if license_name not in html:
+            missing.append("Public transitive license notice missing license identifier: " + name + "@" + version)
+        if npm_url not in html:
+            missing.append("Public transitive license notice missing versioned npm metadata link: " + name + "@" + version)
+    for license_name, url in (
+        ("BSD-3-Clause", "https://spdx.org/licenses/BSD-3-Clause.html"),
+        ("Apache-2.0", "https://spdx.org/licenses/Apache-2.0.html"),
+        ("ISC", "https://spdx.org/licenses/ISC.html"),
+        ("MIT", "https://spdx.org/licenses/MIT.html"),
+    ):
+        if any(package.get("license") == license_name for package in packages if isinstance(package, dict)) and url not in html:
+            missing.append("Public transitive license notice is missing the canonical full-text link for " + license_name + ".")
+    return missing
+
 
 def has_head_license_declaration(html):
     """Return whether the document head declares a document-level license."""
