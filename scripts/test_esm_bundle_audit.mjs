@@ -80,10 +80,19 @@ test("maps the exact esm.sh response hash and source-map paths", async () => {
     upstreamBundleEvidence: {
       cpuSourceMapUrl: "https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.min.js.map",
       webgpuSourceMapUrl: "https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.webgpu.min.js.map"
+    },
+    observedEsmShResponseEvidence: {
+      modules: [{
+        url: moduleUrl,
+        approvedResponseSha256: sha256(moduleBytes)
+      }]
     }
   };
   const report = await auditEsmBundle({ runtimeProvenance, baseline, fetchImpl });
   assert.equal(report.summary.browserHashMatches, 1);
+  assert.equal(report.summary.approvedResponseHashMatches, 1);
+  assert.equal(report.summary.approvedResponseHashMismatches, 0);
+  assert.equal(report.modules[0].approvedResponseHashMatches, true);
   assert.equal(report.modules[0].sourceMapAssociation, "declared-by-response-comment");
   assert.equal(report.modules[0].sourceMap.sourcePathSignals.protobufReader, true);
   assert.equal(report.modules[0].sourceMap.sourcePathSignals.protobufWriter, true);
@@ -92,4 +101,30 @@ test("maps the exact esm.sh response hash and source-map paths", async () => {
   assert.equal(report.upstreamSourceMaps.find(item => item.name === "cpu").sourcePathSignals.protobufReader, true);
   assert.equal(report.sourceMapComparisons[0].sourceCountMatchesUpstream, true);
   assert.equal(report.sourceMapComparisons[0].packagePathSignalParity, true);
+
+  const driftBaseline = {
+    ...baseline,
+    observedEsmShResponseEvidence: {
+      modules: [{
+        url: moduleUrl,
+        approvedResponseSha256: sha256(Buffer.from("previously approved response"))
+      }]
+    }
+  };
+  const driftReport = await auditEsmBundle({ runtimeProvenance, baseline: driftBaseline, fetchImpl });
+  assert.equal(driftReport.summary.approvedResponseHashMismatches, 1);
+  assert.deepEqual(driftReport.approvedHashMismatches, [{
+    url: moduleUrl,
+    expectedSha256: sha256(Buffer.from("previously approved response")),
+    actualSha256: sha256(moduleBytes)
+  }]);
+
+  await assert.rejects(
+    auditEsmBundle({
+      runtimeProvenance,
+      baseline: { ...baseline, observedEsmShResponseEvidence: { modules: [] } },
+      fetchImpl
+    }),
+    /Baseline must pin an approved SHA-256/
+  );
 });
