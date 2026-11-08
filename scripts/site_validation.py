@@ -1,7 +1,7 @@
 """Small, independently tested helpers for static site validation."""
 import re
 from datetime import datetime
-from urllib.parse import unquote
+from urllib.parse import unquote, urljoin, urlparse
 import xml.etree.ElementTree as ET
 
 
@@ -15,6 +15,22 @@ def fragment_target_exists(fragment, target_ids):
 def has_shared_favicon(icon_hrefs, expected="/assets/favicon.svg"):
     """Return whether a page declares the site's shared SVG favicon."""
     return expected in set(icon_hrefs)
+
+
+def noncanonical_internal_index_links(hrefs, page_url, site_origin="https://buytools.si"):
+    """Return same-site links that point at an index.html alias instead of a canonical directory URL."""
+    origin = urlparse(site_origin).netloc.lower()
+    aliases = []
+    for href in hrefs:
+        resolved = urljoin(page_url, href)
+        parsed = urlparse(resolved)
+        if (
+            parsed.scheme in ("http", "https")
+            and parsed.netloc.lower() == origin
+            and parsed.path.lower().endswith("/index.html")
+        ):
+            aliases.append(href)
+    return aliases
 
 
 ANALYTICS_AND_AD_MARKERS = (
