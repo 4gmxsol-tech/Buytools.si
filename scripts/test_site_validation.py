@@ -272,13 +272,24 @@ class JsonSchemaScopeDisclosureTests(unittest.TestCase):
 
 class JsonMetadataScopeDisclosureTests(unittest.TestCase):
     COMPLETE = (
+        '<title>JSON Formatter &amp; Syntax Checker Online | BuyTools.si</title>'
         '<meta name="description" content="Format and validate JSON syntax in your browser; '
         'JSON Schema and API rules are not checked.">'
         '<meta property="og:description" content="Format JSON syntax and distinguish JSON Schema validation.">'
     )
 
-    def test_both_descriptions_explain_syntax_and_schema_scope(self):
+    def test_title_and_both_descriptions_explain_json_scope(self):
         self.assertEqual(missing_json_scope_metadata_disclosures(self.COMPLETE), [])
+
+    def test_title_must_identify_formatter_and_syntax_checker(self):
+        html = self.COMPLETE.replace(
+            "JSON Formatter &amp; Syntax Checker Online",
+            "How to Format a JSON File Online",
+        )
+        self.assertEqual(
+            missing_json_scope_metadata_disclosures(html),
+            ["title must identify a JSON formatter and syntax checker"],
+        )
 
     def test_missing_schema_scope_in_meta_description_is_reported(self):
         html = self.COMPLETE.replace("JSON Schema and API rules are not checked.", "API rules are not checked.")
@@ -293,8 +304,6 @@ class JsonMetadataScopeDisclosureTests(unittest.TestCase):
             missing_json_scope_metadata_disclosures(html),
             ["Open Graph description must describe JSON syntax validation"],
         )
-
-
 class HomepageJsonSyntaxDisclosureTests(unittest.TestCase):
     COMPLETE = (
         "<script>const tools=[{id:'json',name:'JSON Formatter',cat:'Developer',"

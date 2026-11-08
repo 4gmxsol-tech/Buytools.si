@@ -143,7 +143,7 @@ if sitemap_root is not None:
                 if lastmod_date > date.today():
                     fail(f"Sitemap lastmod must not be in the future: {loc}")
 
-for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-compressor/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/tools/word-counter/", DOMAIN + "/tools/images-to-pdf/", DOMAIN + "/guides/convert-images-to-pdf/", DOMAIN + "/guides/reduce-image-size/", DOMAIN + "/privacy/"):
+for required_lastmod_url in (DOMAIN + "/", DOMAIN + "/tools/batch-image-compressor/", DOMAIN + "/tools/batch-image-resizer/", DOMAIN + "/tools/json-formatter/", DOMAIN + "/tools/word-counter/", DOMAIN + "/tools/images-to-pdf/", DOMAIN + "/guides/convert-images-to-pdf/", DOMAIN + "/guides/reduce-image-size/", DOMAIN + "/guides/format-json-online/", DOMAIN + "/privacy/"):
     entry = sitemap_entries.get(required_lastmod_url)
     if entry is None or not entry.findtext("{*}lastmod"):
         fail(f"Recently updated page is missing sitemap lastmod: {required_lastmod_url}")
