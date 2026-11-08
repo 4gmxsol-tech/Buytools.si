@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -683,6 +683,49 @@ class ConfirmedBundledLicenseNoticeTests(unittest.TestCase):
         self.assertTrue(any("missing copyright attribution" in item for item in missing_confirmed_bundled_license_notices(self.MANIFEST, html)))
 
 
+
+
+class SitemapLastmodSyncTests(unittest.TestCase):
+    SITEMAP = """<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url><loc>https://buytools.si/licenses/</loc><lastmod>2026-11-08</lastmod></url>
+    </urlset>"""
+    PAGE = "<p><strong>Last updated: November 8, 2026</strong></p>"
+
+    def test_matching_visible_date_and_sitemap_lastmod_are_accepted(self):
+        self.assertEqual(
+            missing_sitemap_lastmod_sync(self.SITEMAP, "https://buytools.si/licenses/", self.PAGE),
+            [],
+        )
+
+    def test_stale_sitemap_lastmod_is_reported(self):
+        stale = self.SITEMAP.replace("2026-11-08", "2026-11-07")
+        self.assertEqual(
+            missing_sitemap_lastmod_sync(stale, "https://buytools.si/licenses/", self.PAGE),
+            ["sitemap lastmod 2026-11-07 does not match visible page date 2026-11-08"],
+        )
+
+    def test_missing_sitemap_entry_is_reported(self):
+        self.assertEqual(
+            missing_sitemap_lastmod_sync(
+                self.SITEMAP,
+                "https://buytools.si/privacy/",
+                self.PAGE,
+            ),
+            ["page URL is missing from sitemap"],
+        )
+
+    def test_missing_visible_date_is_reported(self):
+        self.assertEqual(
+            missing_sitemap_lastmod_sync(self.SITEMAP, "https://buytools.si/licenses/", "<p>No date.</p>"),
+            ["page is missing a visible 'Last updated: Month D, YYYY' date"],
+        )
+
+    def test_invalid_sitemap_xml_is_reported(self):
+        self.assertEqual(
+            missing_sitemap_lastmod_sync("<urlset>", "https://buytools.si/licenses/", self.PAGE),
+            ["sitemap XML cannot be parsed"],
+        )
 
 
 if __name__ == "__main__":
