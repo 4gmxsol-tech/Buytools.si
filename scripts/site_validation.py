@@ -701,3 +701,29 @@ def missing_pages_workflow_least_privilege(workflow_text):
     if parse_permissions(deploy_block) != {"contents": "read", "pages": "write", "id-token": "write"}:
         errors.append("deploy job must have contents:read, pages:write and id-token:write permissions")
     return errors
+
+
+
+def missing_immutable_action_pins(workflow_text):
+    """Return errors for external Actions that are not pinned to immutable commits."""
+    errors = []
+    for line_number, line in enumerate(workflow_text.splitlines(), start=1):
+        match = re.match(r"^\\s*(?:-\\s*)?uses:\\s*([^\\s#]+)(?:\\s+#\\s*(.*))?\\s*$", line)
+        if not match:
+            continue
+
+        reference, annotation = match.groups()
+        if reference.startswith("./"):
+            continue
+        if reference.startswith("docker://"):
+            if not re.search(r"@sha256:[0-9a-f]{64}$", reference):
+                errors.append(f"line {line_number}: Docker action must use an immutable sha256 digest")
+            continue
+
+        action_name, separator, revision = reference.rpartition("@")
+        if not separator or not action_name or not re.fullmatch(r"[0-9a-f]{40}", revision):
+            errors.append(f"line {line_number}: {reference} must use a full 40-character commit SHA")
+            continue
+        if not annotation or not re.search(r"\\bv\\d+(?:\\.\\d+){0,2}\\b", annotation, re.IGNORECASE):
+            errors.append(f"line {line_number}: {action_name} must include an upstream version annotation such as '# v5'")
+    return errors
