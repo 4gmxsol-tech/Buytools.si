@@ -60,7 +60,10 @@ test("maps the exact esm.sh response hash and source-map paths", async () => {
     ["https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.min.js.map", new Response(cpuMap, { status: 200 })],
     ["https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.webgpu.min.js.map", new Response(webgpuMap, { status: 200 })]
   ]);
-  const fetchImpl = async url => responses.get(String(url)) || new Response("not found", { status: 404 });
+  const fetchImpl = async url => {
+    const response = responses.get(String(url));
+    return response ? response.clone() : new Response("not found", { status: 404 });
+  };
   const runtimeProvenance = {
     sourceCommit: "test",
     modules: [{
