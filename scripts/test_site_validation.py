@@ -410,7 +410,7 @@ class ImageReductionWorkflowStepTests(unittest.TestCase):
         )
         for phrase in required:
             with self.subTest(missing=phrase):
-                html = self.COMPLETE.replace(phrase, "")
+                html = self.COMPLETE.replace(phrase[0].upper() + phrase[1:], "")
                 self.assertIn(phrase, missing_image_reduction_workflow_steps(html))
 
 class LicenseDiscoveryLinkTests(unittest.TestCase):
