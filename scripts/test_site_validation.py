@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -13,6 +13,62 @@ class SharedFaviconTests(unittest.TestCase):
 
     def test_unrelated_icon_path_is_rejected(self):
         self.assertFalse(has_shared_favicon(["/favicon.ico"]))
+
+
+class CanonicalInternalIndexLinkTests(unittest.TestCase):
+    def test_canonical_trailing_slash_link_is_accepted(self):
+        self.assertEqual(
+            noncanonical_internal_index_links(
+                ["/tools/csv-viewer/"],
+                "https://buytools.si/tools/json-formatter/",
+            ),
+            [],
+        )
+
+    def test_absolute_same_site_index_alias_is_reported(self):
+        self.assertEqual(
+            noncanonical_internal_index_links(
+                ["https://buytools.si/tools/remove-background/index.html"],
+                "https://buytools.si/",
+            ),
+            ["https://buytools.si/tools/remove-background/index.html"],
+        )
+
+    def test_relative_same_site_index_alias_is_reported(self):
+        self.assertEqual(
+            noncanonical_internal_index_links(
+                ["../remove-background/index.html"],
+                "https://buytools.si/tools/images-to-pdf/",
+            ),
+            ["../remove-background/index.html"],
+        )
+
+    def test_root_index_alias_is_reported(self):
+        self.assertEqual(
+            noncanonical_internal_index_links(
+                ["/index.html?source=nav#top"],
+                "https://buytools.si/tools/csv-viewer/",
+            ),
+            ["/index.html?source=nav#top"],
+        )
+
+    def test_external_index_html_link_is_not_reported(self):
+        self.assertEqual(
+            noncanonical_internal_index_links(
+                ["https://cdn.example.test/docs/index.html"],
+                "https://buytools.si/",
+            ),
+            [],
+        )
+
+    def test_non_http_links_are_not_reported(self):
+        self.assertEqual(
+            noncanonical_internal_index_links(
+                ["mailto:help@buytools.si", "tel:+10000000000", "#faq"],
+                "https://buytools.si/tools/csv-viewer/",
+            ),
+            [],
+        )
 
 
 class FragmentTargetExistsTests(unittest.TestCase):
