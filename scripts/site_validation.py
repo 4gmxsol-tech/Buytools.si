@@ -526,7 +526,7 @@ def missing_confirmed_bundled_license_notices(manifest, licenses_html):
     bundle = manifest.get("upstreamBundleEvidence", {}) if isinstance(manifest, dict) else {}
     packages = bundle.get("confirmedBundledPackages", []) if isinstance(bundle, dict) else []
     section = re.search(
-        r'<section\\b[^>]*id=["\\']onnxruntime-transitive-notices["\\'][^>]*>(.*?)</section\\s*>',
+        r'<section\b[^>]*id=["\']onnxruntime-transitive-notices["\'][^>]*>(.*?)</section\s*>',
         str(licenses_html),
         flags=re.IGNORECASE | re.DOTALL,
     )
