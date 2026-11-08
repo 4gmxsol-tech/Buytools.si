@@ -129,7 +129,7 @@ def faq_schema_mismatches(html_content):
     """Require FAQPage JSON-LD questions and answers to mirror visible FAQ content."""
     content = str(html_content)
     visible_section = re.search(
-        r"<section[^>]*>\\s*<h2>\\s*Frequently asked questions\\s*</h2>(.*?)</section\\s*>",
+        r"<section[^>]*>\s*<h2>\s*Frequently asked questions\s*</h2>(.*?)</section\s*>",
         content,
         flags=re.IGNORECASE | re.DOTALL,
     )
@@ -143,7 +143,7 @@ def faq_schema_mismatches(html_content):
     visible_items = [
         (normalize(question), normalize(answer))
         for question, answer in re.findall(
-            r'<div class="faq"[^>]*>\\s*<h3[^>]*>(.*?)</h3\\s*><p[^>]*>(.*?)</p\\s*</div\\s*>',
+            r'<div class="faq"[^>]*>\s*<h3[^>]*>(.*?)</h3\s*><p[^>]*>(.*?)</p\s*</div\s*>',
             visible_section.group(1),
             flags=re.IGNORECASE | re.DOTALL,
         )
@@ -152,7 +152,7 @@ def faq_schema_mismatches(html_content):
         return ["Visible FAQ section has no question-and-answer pairs."]
 
     for tag, script in re.findall(
-        r"(<script[^>]*>)(.*?)</script\\s*>",
+        r"(<script[^>]*>)(.*?)</script\s*>",
         content,
         flags=re.IGNORECASE | re.DOTALL,
     ):
