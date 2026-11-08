@@ -12,7 +12,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege
+from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -667,6 +667,25 @@ if not pages_workflow.is_file():
 else:
     for message in missing_pages_workflow_least_privilege(pages_workflow.read_text(encoding="utf-8")):
         fail("GitHub Pages workflow permissions are not least-privilege: " + message)
+
+# Pin every external GitHub Action to a reviewed immutable commit.
+workflow_dir = ROOT / ".github" / "workflows"
+if not workflow_dir.is_dir():
+    fail("GitHub Actions workflow directory is missing: .github/workflows")
+else:
+    workflow_files = sorted(
+        list(workflow_dir.glob("*.yml")) + list(workflow_dir.glob("*.yaml"))
+    )
+    if not workflow_files:
+        fail("No GitHub Actions workflow files were found.")
+    for workflow_file in workflow_files:
+        for message in missing_immutable_action_pins(workflow_file.read_text(encoding="utf-8")):
+            fail(
+                "GitHub Actions references are not immutable in "
+                + workflow_file.relative_to(ROOT).as_posix()
+                + ": "
+                + message
+            )
 
 # robots.txt must point to the sitemap that is actually shipped.
 robots = ROOT / "robots.txt"
