@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, has_head_license_declaration)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -484,6 +484,51 @@ class UpstreamLockEvidenceTests(unittest.TestCase):
         "observedModules": [
             {"name":"onnxruntime-web","resolvedVersion":"1.18.0","modulePaths":["/onnxruntime-web@1.18.0/es2022/onnxruntime-web.mjs","/onnxruntime-web@1.18.0/es2022/webgpu.mjs"]}
         ],
+        "observedEsmShResponseEvidence": {
+            "workflowRunId": 123,
+            "workflowRunUrl": "https://github.com/4gmxsol-tech/Buytools.si/actions/runs/123",
+            "capturedAt": "2026-11-08T00:00:00Z",
+            "modules": [
+                {
+                    "kind": "CPU ESM",
+                    "url": "https://esm.sh/onnxruntime-web@1.18.0/es2022/onnxruntime-web.mjs",
+                    "browserResponseSha256": "a" * 64,
+                    "refetchedResponseSha256": "a" * 64,
+                    "responseHashMatch": True,
+                    "sourceMapReferenceKind": "response-comment",
+                    "sourceMapUrl": "https://esm.sh/onnxruntime-web@1.18.0/es2022/onnxruntime-web.mjs.map",
+                    "sourceMapHttpStatus": 200,
+                    "sourceMapSha256": "b" * 64,
+                    "sourceMapSourceCount": 146,
+                    "upstreamSourceMapUrl": "https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.min.js.map",
+                    "upstreamSourceMapHttpStatus": 200,
+                    "upstreamSourceMapSha256": "c" * 64,
+                    "upstreamSourceMapSourceCount": 146,
+                    "sourceCountMatchesUpstream": True,
+                    "packagePathSignalParity": True,
+                    "sourcePathSignals": {"protobufReader": True, "protobufWriter": True, "protobufUtf8": True, "flatbuffers": True, "long": True, "guidTypescript": True, "onnxruntimeCommon": True}
+                },
+                {
+                    "kind": "WebGPU ESM",
+                    "url": "https://esm.sh/onnxruntime-web@1.18.0/es2022/webgpu.mjs",
+                    "browserResponseSha256": "d" * 64,
+                    "refetchedResponseSha256": "d" * 64,
+                    "responseHashMatch": True,
+                    "sourceMapReferenceKind": "response-comment",
+                    "sourceMapUrl": "https://esm.sh/onnxruntime-web@1.18.0/es2022/webgpu.mjs.map",
+                    "sourceMapHttpStatus": 200,
+                    "sourceMapSha256": "e" * 64,
+                    "sourceMapSourceCount": 99,
+                    "upstreamSourceMapUrl": "https://unpkg.com/onnxruntime-web@1.18.0/dist/esm/ort.webgpu.min.js.map",
+                    "upstreamSourceMapHttpStatus": 200,
+                    "upstreamSourceMapSha256": "f" * 64,
+                    "upstreamSourceMapSourceCount": 99,
+                    "sourceCountMatchesUpstream": True,
+                    "packagePathSignalParity": True,
+                    "sourcePathSignals": {"protobufReader": False, "protobufWriter": False, "protobufUtf8": False, "flatbuffers": False, "long": False, "guidTypescript": False, "onnxruntimeCommon": True}
+                }
+            ]
+        },
         "unresolvedBundledDependencies": [
             {"name":"protobufjs","upstreamLockedVersion":"7.2.5","license":"BSD-3-Clause","npmUrl":"https://www.npmjs.com/package/protobufjs/v/7.2.5","runtimeObservation":"Not individually observed as a separate esm.sh browser module; the upstream CPU ESM source map includes protobufjs reader/writer source paths. The transformed esm.sh response has not been byte-compared."}
         ],
@@ -517,6 +562,29 @@ class UpstreamLockEvidenceTests(unittest.TestCase):
 
     def test_complete_upstream_lock_evidence_is_accepted(self):
         self.assertEqual(missing_upstream_lock_evidence(self.COMPLETE), [])
+
+    def test_missing_esm_sh_response_evidence_is_reported(self):
+        manifest = dict(self.COMPLETE)
+        manifest.pop("observedEsmShResponseEvidence")
+        self.assertIn("Exact esm.sh ONNX Runtime response evidence is missing.", missing_upstream_lock_evidence(manifest))
+
+    def test_same_run_response_hashes_must_match(self):
+        manifest = dict(self.COMPLETE)
+        evidence = dict(self.COMPLETE["observedEsmShResponseEvidence"])
+        modules = [dict(item) for item in evidence["modules"]]
+        modules[0]["refetchedResponseSha256"] = "0" * 64
+        evidence["modules"] = modules
+        manifest["observedEsmShResponseEvidence"] = evidence
+        self.assertIn("Same-run Chromium/refetch SHA-256 evidence does not match for CPU ESM.", missing_upstream_lock_evidence(manifest))
+
+    def test_webgpu_map_must_not_claim_protobuf_sources(self):
+        manifest = dict(self.COMPLETE)
+        evidence = dict(self.COMPLETE["observedEsmShResponseEvidence"])
+        modules = [dict(item) for item in evidence["modules"]]
+        modules[1]["sourcePathSignals"] = dict(modules[1]["sourcePathSignals"], protobufReader=True)
+        evidence["modules"] = modules
+        manifest["observedEsmShResponseEvidence"] = evidence
+        self.assertIn("WebGPU esm.sh source map must not claim protobufReader.", missing_upstream_lock_evidence(manifest))
 
     def test_missing_upstream_lockfile_source_is_reported(self):
         manifest = dict(self.COMPLETE)
@@ -570,6 +638,51 @@ class UpstreamLockEvidenceTests(unittest.TestCase):
         evidence["packages"] = evidence["packages"] + [dict(evidence["packages"][0])]
         manifest["upstreamLockEvidence"] = evidence
         self.assertIn("Duplicate upstream lockfile package record: protobufjs.", missing_upstream_lock_evidence(manifest))
+
+
+class ConfirmedBundledLicenseNoticeTests(unittest.TestCase):
+    MANIFEST = {
+        "upstreamLockEvidence": {
+            "packages": [
+                {"name": "protobufjs", "npmUrl": "https://www.npmjs.com/package/protobufjs/v/7.2.5"},
+                {"name": "guid-typescript", "npmUrl": "https://www.npmjs.com/package/guid-typescript/v/1.0.9"}
+            ]
+        },
+        "upstreamBundleEvidence": {
+            "confirmedBundledPackages": [
+                {"name": "protobufjs", "version": "7.2.5", "license": "BSD-3-Clause"},
+                {"name": "guid-typescript", "version": "1.0.9", "license": "ISC"}
+            ]
+        }
+    }
+    HTML = """
+    <section id="onnxruntime-transitive-notices">
+      protobufjs — version 7.2.5 BSD-3-Clause
+      https://www.npmjs.com/package/protobufjs/v/7.2.5
+      Copyright (c) 2016, Daniel Wirtz
+      guid-typescript — version 1.0.9 ISC
+      https://www.npmjs.com/package/guid-typescript/v/1.0.9
+      Copyright (c) Nicolas Silva dos Santos
+      https://spdx.org/licenses/BSD-3-Clause.html
+      https://spdx.org/licenses/ISC.html
+    </section>
+    """
+
+    def test_complete_versioned_transitive_notices_are_accepted(self):
+        self.assertEqual(missing_confirmed_bundled_license_notices(self.MANIFEST, self.HTML), [])
+
+    def test_missing_exact_package_version_is_reported(self):
+        html = self.HTML.replace("guid-typescript — version 1.0.9", "guid-typescript")
+        self.assertIn(
+            "Public transitive license notice missing exact package/version: guid-typescript@1.0.9",
+            missing_confirmed_bundled_license_notices(self.MANIFEST, html),
+        )
+
+    def test_missing_copyright_attribution_is_reported(self):
+        html = self.HTML.replace("Nicolas Silva dos Santos", "Unknown")
+        self.assertTrue(any("missing copyright attribution" in item for item in missing_confirmed_bundled_license_notices(self.MANIFEST, html)))
+
+
 
 
 if __name__ == "__main__":
