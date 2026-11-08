@@ -1,7 +1,7 @@
 """Unit tests for internal URL fragment validation."""
 import unittest
 
-from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_no_analytics_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege)
 
 
 class SharedFaviconTests(unittest.TestCase):
@@ -781,6 +781,102 @@ class SitemapLastmodSyncTests(unittest.TestCase):
         self.assertEqual(
             missing_sitemap_lastmod_sync("<urlset>", "https://buytools.si/licenses/", self.PAGE),
             ["sitemap XML cannot be parsed"],
+        )
+
+
+
+class PagesWorkflowLeastPrivilegeTests(unittest.TestCase):
+    WORKFLOW = """name: Deploy BuyTools.si to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/configure-pages@v6
+  deploy:
+    environment:
+      name: github-pages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    needs: build
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/deploy-pages@v5
+"""
+
+    def test_minimal_job_scoped_permissions_are_accepted(self):
+        self.assertEqual(missing_pages_workflow_least_privilege(self.WORKFLOW), [])
+
+    def test_workflow_level_write_permissions_are_rejected(self):
+        unsafe = self.WORKFLOW.replace(
+            "permissions: {}",
+            "permissions:\n  pages: write\n  id-token: write",
+        )
+        self.assertIn(
+            "workflow-level permissions must be empty so job permissions are explicit",
+            missing_pages_workflow_least_privilege(unsafe),
+        )
+
+    def test_build_job_pages_write_is_rejected(self):
+        unsafe = self.WORKFLOW.replace("      pages: read", "      pages: write")
+        self.assertIn(
+            "build job must have only contents:read and pages:read permissions",
+            missing_pages_workflow_least_privilege(unsafe),
+        )
+
+    def test_build_job_oidc_write_is_rejected(self):
+        unsafe = self.WORKFLOW.replace(
+            "      pages: read",
+            "      pages: read\n      id-token: write",
+        )
+        self.assertIn(
+            "build job must have only contents:read and pages:read permissions",
+            missing_pages_workflow_least_privilege(unsafe),
+        )
+
+    def test_build_job_requires_pages_read(self):
+        unsafe = self.WORKFLOW.replace("      pages: read\n", "")
+        self.assertIn(
+            "build job must have only contents:read and pages:read permissions",
+            missing_pages_workflow_least_privilege(unsafe),
+        )
+
+    def test_deploy_job_requires_pages_write(self):
+        unsafe = self.WORKFLOW.replace("      pages: write\n", "      pages: read\n")
+        self.assertIn(
+            "deploy job must have contents:read, pages:write and id-token:write permissions",
+            missing_pages_workflow_least_privilege(unsafe),
+        )
+
+    def test_deploy_job_requires_oidc_write(self):
+        unsafe = self.WORKFLOW.replace("      id-token: write", "      id-token: read")
+        self.assertIn(
+            "deploy job must have contents:read, pages:write and id-token:write permissions",
+            missing_pages_workflow_least_privilege(unsafe),
+        )
+
+    def test_extra_deploy_permission_is_rejected(self):
+        unsafe = self.WORKFLOW.replace(
+            "      contents: read\n      pages: write",
+            "      contents: read\n      actions: write\n      pages: write",
+        )
+        self.assertIn(
+            "deploy job must have contents:read, pages:write and id-token:write permissions",
+            missing_pages_workflow_least_privilege(unsafe),
         )
 
 

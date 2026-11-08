@@ -659,3 +659,45 @@ def missing_sitemap_lastmod_sync(sitemap_content, page_url, page_html):
             + " does not match visible page date " + page_date.isoformat()
         ]
     return []
+
+
+def missing_pages_workflow_least_privilege(workflow_text):
+    """Return errors when Pages write/OIDC permissions are not isolated to deploy."""
+    errors = []
+    top_permissions = re.search(r"(?m)^permissions:\s*(.*?)\s*$", workflow_text)
+    if not top_permissions or top_permissions.group(1) != "{}":
+        errors.append("workflow-level permissions must be empty so job permissions are explicit")
+
+    jobs_match = re.search(r"(?ms)^jobs:\s*\n(.*)\Z", workflow_text)
+    if not jobs_match:
+        return errors + ["Pages workflow is missing its jobs section."]
+
+    jobs_text = jobs_match.group(1)
+    build_match = re.search(r"(?m)^  build:\s*$", jobs_text)
+    deploy_match = re.search(r"(?m)^  deploy:\s*$", jobs_text)
+    if not build_match or not deploy_match or deploy_match.start() <= build_match.start():
+        return errors + ["Pages workflow must define build and deploy jobs in order."]
+
+    build_block = jobs_text[build_match.end():deploy_match.start()]
+    deploy_block = jobs_text[deploy_match.end():]
+
+    def parse_permissions(job_block):
+        lines = job_block.splitlines()
+        for index, line in enumerate(lines):
+            if line == "    permissions:":
+                permissions = {}
+                for candidate in lines[index + 1:]:
+                    if not candidate.startswith("      "):
+                        break
+                    match = re.fullmatch(r"      ([a-z0-9-]+): (read|write|none)", candidate)
+                    if not match:
+                        return None
+                    permissions[match.group(1)] = match.group(2)
+                return permissions
+        return None
+
+    if parse_permissions(build_block) != {"contents": "read", "pages": "read"}:
+        errors.append("build job must have only contents:read and pages:read permissions")
+    if parse_permissions(deploy_block) != {"contents": "read", "pages": "write", "id-token": "write"}:
+        errors.append("deploy job must have contents:read, pages:write and id-token:write permissions")
+    return errors
