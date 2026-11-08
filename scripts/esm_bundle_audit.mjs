@@ -24,7 +24,7 @@ export function findSourceMapReference(body, headers = {}, moduleUrl) {
     };
   }
 
-  const match = String(body).match(/(?:\/\/[#@]\\s*sourceMappingURL=([^\\s]+)|\/\\*[#@]\\s*sourceMappingURL=([^*]+?)\\s*\\*\/)/);
+  const match = String(body).match(/(?:\/\/[#@]\s*sourceMappingURL=([^\s]+)|\/\*[#@]\s*sourceMappingURL=([^*]+?)\s*\*\/)/);
   const reference = match?.[1] || match?.[2]?.trim();
   if (!reference) return null;
   return {
@@ -36,8 +36,8 @@ export function findSourceMapReference(body, headers = {}, moduleUrl) {
 export function extractModuleSpecifiers(source) {
   const found = new Set();
   const patterns = [
-    /\\b(?:import|export)\\s+(?:[^'";]*?\\s+from\\s*)?["']([^"']+)["']/g,
-    /\\bimport\\s*\\(\\s*["']([^"']+)["']\\s*\\)/g
+    /\b(?:import|export)\s+(?:[^'";]*?\s+from\s*)?["']([^"']+)["']/g,
+    /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g
   ];
   for (const pattern of patterns) {
     for (const match of String(source).matchAll(pattern)) found.add(match[1]);
@@ -99,7 +99,7 @@ async function loadSourceMap(reference, fetchImpl) {
 }
 
 function sourcePathSignals(sources) {
-  const normalized = sources.map(source => String(source).replaceAll("\\\\", "/").toLowerCase());
+  const normalized = sources.map(source => String(source).replaceAll("\\", "/").toLowerCase());
   const has = fragment => normalized.some(source => source.includes(fragment));
   return {
     protobufReader: has("protobufjs/src/reader.js"),
@@ -136,7 +136,7 @@ export async function auditEsmBundle({ runtimeProvenance, baseline, fetchImpl = 
   const modules = [];
   for (const request of requests) {
     const response = await fetchImpl(request.url, { headers: { accept: "*/*" } });
-    if (!response.ok) throw new Error(`Could not refetch observed esm.sh module (${response.status}): ${request.url}`);
+    if (!response.ok) throw new Error("Could not refetch observed esm.sh module (" + response.status + "): " + request.url);
     const bytes = Buffer.from(await response.arrayBuffer());
     const body = bytes.toString("utf8");
     const fetchedHash = sha256(bytes);
@@ -217,10 +217,11 @@ export async function auditEsmBundle({ runtimeProvenance, baseline, fetchImpl = 
   }
 
   const hashMismatches = modules.filter(module => !module.browserResponseHashMatchesRefetch).map(module => module.url);
-  const cdnMapsWithProtobuf = modules.filter(module =>
-    module.sourceMap?.sourcePathSignals?.protobufReader ||
-    module.sourceMap?.sourcePathSignals?.protobufWriter ||
-    module.sourceMap?.sourcePathSignals?.protobufUtf8
+  const associatedMapsWithProtobuf = modules.filter(module =>
+    ["declared-by-response-header", "declared-by-response-comment", "conventional-sidecar-file-match"].includes(module.sourceMapAssociation) &&
+    module.sourceMap?.status === 200 &&
+    !module.sourceMap?.parseError &&
+    (module.sourceMap.sourcePathSignals.protobufReader || module.sourceMap.sourcePathSignals.protobufWriter || module.sourceMap.sourcePathSignals.protobufUtf8)
   );
   const report = {
     schemaVersion: 1,
@@ -236,11 +237,11 @@ export async function auditEsmBundle({ runtimeProvenance, baseline, fetchImpl = 
       browserHashMatches: modules.length - hashMismatches.length,
       browserHashMismatches: hashMismatches.length,
       sourceMapsDeclaredByResponse: modules.filter(module => module.sourceMapAssociation.startsWith("declared-")).length,
-      sourceMapsWithProtobufSources: cdnMapsWithProtobuf.length,
+      sourceMapsWithProtobufSources: associatedMapsWithProtobuf.length,
       upstreamCpuMapStatus: upstream.find(item => item.name === "cpu")?.status ?? null,
       upstreamWebgpuMapStatus: upstream.find(item => item.name === "webgpu")?.status ?? null,
-      exactTransformedBundleMapping: cdnMapsWithProtobuf.length > 0
-        ? "CDN source-map evidence exposes protobuf-related source paths; compare the recorded paths with upstream evidence before treating package attribution as confirmed."
+      exactTransformedBundleMapping: associatedMapsWithProtobuf.length > 0
+        ? "A response-associated esm.sh source map exposes protobuf-related source paths; compare the recorded paths with upstream evidence before treating package attribution as confirmed."
         : "Unresolved: no response-associated esm.sh source map exposed protobuf-related source paths in this run."
     },
     hashMismatches
@@ -252,7 +253,7 @@ async function main() {
   const runtimeProvenance = JSON.parse(await readFile(new URL("../runtime-provenance.json", import.meta.url), "utf8"));
   const baseline = JSON.parse(await readFile(new URL("../audits/background-removal-runtime-baseline.json", import.meta.url), "utf8"));
   const report = await auditEsmBundle({ runtimeProvenance, baseline });
-  await writeFile(new URL("../esm-bundle-audit.json", import.meta.url), JSON.stringify(report, null, 2) + "\\n");
+  await writeFile(new URL("../esm-bundle-audit.json", import.meta.url), JSON.stringify(report, null, 2) + "\n");
   console.log("Exact esm.sh ONNX Runtime audit: " + JSON.stringify(report.summary, null, 2));
   if (report.hashMismatches.length) {
     throw new Error("The esm.sh module response differed from the Chromium-captured response hash; exact response identity is unresolved.");
