@@ -284,11 +284,15 @@ try {
   await page.locator('[data-tool="json"]').click();
   await auditAccessibility("JSON formatter tool");
   await page.locator("#text").fill('{"hello":"world","count":2}');
+  const unformattedJson = await page.locator("#text").inputValue();
+  await page.locator('[data-json="validate"]').click();
+  assert.equal(await page.locator("#text").inputValue(), unformattedJson, "Validate must not rewrite the source JSON");
+  assert.match(await page.locator("#result").innerText(), /Valid JSON/);
   await page.locator('[data-json="pretty"]').click();
   assert.match(await page.locator("#text").inputValue(), /\n  "hello": "world"/);
   assert.match(await page.locator("#result").innerText(), /Valid JSON/);
   await page.locator("#text").fill('{"broken":');
-  await page.locator('[data-json="pretty"]').click();
+  await page.locator('[data-json="validate"]').click();
   assert.match(await page.locator("#result").innerText(), /Invalid JSON/);
 
   // Homepage JSON file import: local read, exact 5 MiB boundary and oversize rejection.
