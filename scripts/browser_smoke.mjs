@@ -291,8 +291,20 @@ try {
   await page.locator('[data-json="pretty"]').click();
   assert.match(await page.locator("#text").inputValue(), /\n  "hello": "world"/);
   assert.match(await page.locator("#result").innerText(), /Valid JSON/);
+  await page.locator("#text").fill('{"download":true,"count":2}');
+  const homepageJsonBeforeDownload = await page.locator("#text").inputValue();
+  const thirdPartyBeforeHomepageDownload = thirdPartyRequests.length;
+  const [homepageJsonDownload] = await Promise.all([page.waitForEvent("download"), page.locator('[data-json="download"]').click()]);
+  assert.equal(homepageJsonDownload.suggestedFilename(), "formatted.json");
+  const homepageJsonDownloadPath = await homepageJsonDownload.path();
+  assert.equal(await readFile(homepageJsonDownloadPath, "utf8"), '{\n  "download": true,\n  "count": 2\n}\n');
+  assert.match(await page.locator("#result").innerText(), /Downloaded formatted\.json/);
+  assert.equal(await page.locator("#text").inputValue(), homepageJsonBeforeDownload, "Downloading must not rewrite the source JSON");
+  assert.equal(thirdPartyRequests.length, thirdPartyBeforeHomepageDownload, "JSON download must remain local and create no third-party request");
   await page.locator("#text").fill('{"broken":');
   await page.locator('[data-json="validate"]').click();
+  assert.match(await page.locator("#result").innerText(), /Invalid JSON/);
+  await page.locator('[data-json="download"]').click();
   assert.match(await page.locator("#result").innerText(), /Invalid JSON/);
 
   // Homepage JSON file import: local read, exact 5 MiB boundary and oversize rejection.
@@ -337,6 +349,11 @@ try {
   assert.equal(thirdPartyRequests.length, thirdPartyBeforeStandaloneJsonImport, "Standalone local JSON import must not contact third-party hosts");
   await page.locator("#formatBtn").click();
   assert.match(await page.locator("#jsonOutput").inputValue(), /\n  "standalone": true/);
+  const [standaloneJsonDownload] = await Promise.all([page.waitForEvent("download"), page.locator("#downloadBtn").click()]);
+  assert.equal(standaloneJsonDownload.suggestedFilename(), "formatted.json");
+  const standaloneJsonDownloadPath = await standaloneJsonDownload.path();
+  assert.equal(await readFile(standaloneJsonDownloadPath, "utf8"), '{\n  "standalone": true\n}\n');
+  assert.match(await page.locator("#status").innerText(), /Downloaded formatted\.json/);
   await page.locator("#jsonFile").setInputFiles({ name: "bom.json", mimeType: "application/json", buffer: utf8BomJson });
   await page.waitForFunction(() => document.querySelector("#jsonInput")?.value.includes('"bom"'));
   assert.equal(await page.locator("#jsonInput").inputValue(), '{"bom":true}', "Standalone formatter should strip a UTF-8 BOM");
@@ -345,6 +362,8 @@ try {
   await page.waitForFunction(() => /Could not read this file.*UTF-8/.test(document.querySelector("#status")?.textContent || ""));
   assert.match(await page.locator("#status").innerText(), /Could not read this file.*UTF-8/);
   assert.equal(await page.locator("#jsonInput").inputValue(), "", "Standalone formatter must reject malformed UTF-8");
+  await page.locator("#downloadBtn").click();
+  assert.match(await page.locator("#status").innerText(), /There is no output to download/);
   assert.equal(thirdPartyRequests.length, thirdPartyBeforeStandaloneInvalidUtf8, "Invalid local JSON must not contact third-party hosts");
   await page.locator("#jsonFile").setInputFiles({ name: "too-large.json", mimeType: "application/json", buffer: oversizedJsonBuffer });
   assert.match(await page.locator("#status").innerText(), /5 MiB/);
