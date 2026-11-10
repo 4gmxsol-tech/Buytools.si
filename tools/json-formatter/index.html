@@ -29,7 +29,7 @@
    "browserRequirements":"Requires JavaScript and a modern web browser.",
    "isAccessibleForFree":true,
    "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
-   "featureList":["Open local UTF-8 JSON files up to 5 MiB","Format and beautify JSON","Validate JSON syntax","Minify JSON","Copy formatted JSON","Show syntax error type, line and column"],
+   "featureList":["Open local UTF-8 JSON files up to 5 MiB","Format and beautify JSON","Validate JSON syntax","Minify JSON","Copy formatted JSON","Download formatted JSON file","Show syntax error type, line and column"],
    "publisher":{"@type":"Organization","name":"BuyTools.si","url":"https://buytools.si/"}
   },
   {
@@ -85,6 +85,7 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 <button class="btn" id="validateBtn" type="button">Validate</button>
 <button class="btn" id="minifyBtn" type="button">Minify</button>
 <button class="btn" id="copyBtn" type="button">Copy output</button>
+<button class="btn" id="downloadBtn" type="button">Download .json</button>
 <button class="btn" id="sampleBtn" type="button">Load example</button>
 <button class="btn" id="clearBtn" type="button">Clear</button>
 </div>
@@ -105,7 +106,7 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 </section>
 <section class="content-card">
 <h2>How to use the JSON formatter</h2>
-<ol><li>Choose a local UTF-8 <code>.json</code> file up to 5 MiB, or paste or type JSON into the input editor.</li><li>Select <strong>Format</strong> to add readable indentation.</li><li>Select <strong>Validate</strong> to check whether the JSON syntax is valid.</li><li>Select <strong>Minify</strong> to remove unnecessary whitespace from valid JSON.</li><li>Use <strong>Copy output</strong> to copy the result, then save it as a new file if needed.</li></ol>
+<ol><li>Choose a local UTF-8 <code>.json</code> file up to 5 MiB, or paste or type JSON into the input editor.</li><li>Select <strong>Format</strong> to add readable indentation.</li><li>Select <strong>Validate</strong> to check whether the JSON syntax is valid.</li><li>Select <strong>Minify</strong> to remove unnecessary whitespace from valid JSON.</li><li>Use <strong>Download .json</strong> to save the formatted result directly, or <strong>Copy output</strong> to copy it. Keep the original file until you have verified the new file.</li></ol>
 <h3>Common JSON syntax errors</h3>
 <ul><li>Using single quotes instead of double quotes around strings and property names.</li><li>Leaving a trailing comma after the final property or array item.</li><li>Forgetting a comma between properties or array values.</li><li>Using comments, <code>undefined</code> or other JavaScript syntax that JSON does not support.</li><li>Leaving a closing brace or bracket out of place.</li></ul>
 </section>
@@ -179,7 +180,7 @@ fileInput.addEventListener("change",async()=>{const file=fileInput.files&&fileIn
 document.getElementById("formatBtn").addEventListener("click",()=>{const p=parseInput();if(!p)return;output.value=JSON.stringify(p.value,null,2);setStatus("Valid JSON. Formatting completed successfully.","success");updateCounts()});
 document.getElementById("validateBtn").addEventListener("click",()=>{if(!parseInput())return;setStatus("Valid JSON. No syntax errors were found.","success");updateCounts()});
 document.getElementById("minifyBtn").addEventListener("click",()=>{const p=parseInput();if(!p)return;output.value=JSON.stringify(p.value);setStatus("Valid JSON. Minification completed successfully.","success");updateCounts()});
-document.getElementById("copyBtn").addEventListener("click",async()=>{if(!output.value){setStatus("There is no output to copy. Format or minify valid JSON first.","error");return}try{await navigator.clipboard.writeText(output.value);setStatus("Output copied to clipboard.","success")}catch(_){output.focus();output.select();const ok=document.execCommand("copy");setStatus(ok?"Output copied to clipboard.":"Clipboard access was blocked. Select and copy manually.",ok?"success":"error")}});
+document.getElementById("copyBtn").addEventListener("click",async()=>{if(!output.value){setStatus("There is no output to copy. Format or minify valid JSON first.","error");return}try{await navigator.clipboard.writeText(output.value);setStatus("Output copied to clipboard.","success")}catch(_){output.focus();output.select();const ok=document.execCommand("copy");setStatus(ok?"Output copied to clipboard.":"Clipboard access was blocked. Select and copy manually.",ok?"success":"error")}});document.getElementById("downloadBtn").addEventListener("click",()=>{if(!output.value){setStatus("There is no output to download. Format or minify valid JSON first.","error");return}try{const parsed=JSON.parse(output.value),blob=new Blob([JSON.stringify(parsed,null,2)+"\n"],{type:"application/json;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="formatted.json";document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);setStatus("Downloaded formatted.json.","success")}catch(_){setStatus("Output is not valid JSON. Format or minify valid JSON first.","error")}});
 document.getElementById("sampleBtn").addEventListener("click",()=>{fileReadRequest++;fileInput.value="";input.value=JSON.stringify({project:"BuyTools",active:true,version:2,features:["format","validate","minify"],owner:{team:"engineering",contact:null}},null,2);output.value="";setStatus("Example loaded. Select Format, Validate or Minify.");updateCounts();input.focus()});
 document.getElementById("clearBtn").addEventListener("click",()=>{fileReadRequest++;fileInput.value="";input.value="";output.value="";setStatus("Editors cleared. Paste JSON to begin.");updateCounts();input.focus()});
 input.addEventListener("input",()=>{fileReadRequest++;fileInput.value="";updateCounts()});updateCounts();
