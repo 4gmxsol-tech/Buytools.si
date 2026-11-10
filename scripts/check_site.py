@@ -364,6 +364,8 @@ if json_tool_parser and "/guides/format-json-online/" not in json_tool_parser.hr
     fail("JSON Formatter landing page must link to the practical JSON formatting guide.")
 if json_guide_parser and "/tools/json-formatter/" not in json_guide_parser.hrefs:
     fail("JSON formatting guide must link to the JSON Formatter landing page.")
+if json_guide_parser and "/tools/csv-viewer/" not in json_guide_parser.hrefs:
+    fail("JSON formatting guide must contextually link to the CSV Viewer for spreadsheet-data discovery.")
 
 # Extend the JSON guide's topical cluster from adjacent JSON utilities.
 for related_json_page in (
