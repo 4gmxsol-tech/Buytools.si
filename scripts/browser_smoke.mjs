@@ -248,6 +248,41 @@ try {
   await page.locator("#clear").click();
   assert.match(await page.locator("#status").innerText(), /No images selected/i);
 
+  // Developer Studio: local JWT decoding and SQL formatting, plus a same-origin API request.
+  await page.goto("http://127.0.0.1:8000/tools/developer-studio/", { waitUntil: "load" });
+  assert.match(await page.title(), /Developer Studio/i);
+  await page.addScriptTag({ content: axe.source });
+  await auditAccessibility("Developer Studio");
+  const base64url = value => Buffer.from(JSON.stringify(value)).toString("base64url");
+  const jwt = base64url({ alg: "HS256", typ: "JWT" }) + "." + base64url({ sub: "demo-user", role: "reader", exp: 1893456000 }) + ".signature";
+  const developerRequestsBefore = thirdPartyRequestDetails.length;
+  await page.locator("#token").fill(jwt);
+  await page.locator("#decode").click();
+  assert.match(await page.locator("#jwtHeader").innerText(), /HS256/);
+  assert.match(await page.locator("#jwtPayload").innerText(), /demo-user/);
+  assert.match(await page.locator("#jwtStatus").innerText(), /Decoded locally/i);
+  await page.locator('[data-tab="sql"]').click();
+  await page.locator("#sqlInput").fill("select id, name from users where status = 'select' order by name");
+  await page.locator("#formatSql").click();
+  const formattedSql = await page.locator("#sqlOutput").inputValue();
+  assert.match(formattedSql, /SELECT/);
+  assert.match(formattedSql, /FROM/);
+  assert.match(formattedSql, /WHERE/);
+  assert.match(formattedSql, /ORDER BY/);
+  assert.match(formattedSql, /'select'/);
+  await page.locator('[data-tab="api"]').click();
+  await page.locator("#apiUrl").fill("http://127.0.0.1:8000/robots.txt");
+  await page.locator("#makeCurl").click();
+  assert.match(await page.locator("#curlOutput").innerText(), /curl -X GET/);
+  await page.locator("#sendApi").click();
+  await page.getByText(/Completed in browser/i).waitFor();
+  assert.match(await page.locator("#apiResponse").innerText(), /User-agent:/);
+  assert.equal(
+    thirdPartyRequestDetails.length,
+    developerRequestsBefore,
+    "JWT decoding and SQL formatting must stay local; the same-origin API request must not contact a third party"
+  );
+
   // Search and discoverability: the semantic form must match the SearchAction q URL.
   assert.equal(await page.locator("#toolSearch").getAttribute("role"), "search");
   assert.equal(await page.locator("#toolSearch").getAttribute("method"), "get");
