@@ -15,7 +15,6 @@
     return node;
   }
   function loadNative(target) {
-    target.id = "container-" + NATIVE_ID;
     var script = el("script", { async: "async", "data-cfasync": "false", src: "https://bicea.org/21/" + NATIVE_ID });
     target.appendChild(script);
     target.appendChild(el("div", { id: "container-" + NATIVE_ID }));
