@@ -586,8 +586,24 @@ try {
   await page.locator("#text").fill(csvFixture);
   await page.locator("#run").click();
   assert.equal(await page.locator("#csvTable tbody tr").count(), 5);
+  const csvSummary = page.locator("#csvSummary");
+  assert.equal(await csvSummary.getAttribute("role"), "status", "CSV result count should be announced as a status update");
+  assert.equal(await csvSummary.getAttribute("aria-live"), "polite", "CSV result updates should use a polite live region");
+  assert.equal(await csvSummary.getAttribute("aria-atomic"), "true", "CSV result count should be announced as one update");
+  const stockHeader = page.locator("#csvTable thead th").nth(3);
+  assert.equal(await stockHeader.getAttribute("aria-sort"), null, "Unsorted columns should not claim a sort order");
+  const stockSortButton = page.locator('#csvTable thead button[data-sort="3"]');
+  await stockSortButton.click();
+  assert.equal(await stockHeader.getAttribute("aria-sort"), "ascending", "The active column should expose ascending sort state");
+  assert.match(await stockSortButton.getAttribute("aria-label"), /currently ascending/i);
+  assert.equal(await page.locator("#csvTable tbody tr").first().locator("td").nth(1).innerText(), "Desk lamp");
+  await stockSortButton.click();
+  assert.equal(await stockHeader.getAttribute("aria-sort"), "descending", "The active column should expose descending sort state");
+  assert.match(await stockSortButton.getAttribute("aria-label"), /currently descending/i);
+  assert.equal(await page.locator("#csvTable tbody tr").first().locator("td").nth(1).innerText(), "Notebook");
   await page.locator("#csvFilter").fill("Electronics");
   assert.equal(await page.locator("#csvTable tbody tr").count(), 2);
+  assert.match(await csvSummary.innerText(), /^2 of 5 data rows/i, "Filtering should announce the updated result count");
   await page.locator("#csvFilter").fill("");
   const [download] = await Promise.all([
     page.waitForEvent("download"),
