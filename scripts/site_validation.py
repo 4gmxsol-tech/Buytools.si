@@ -66,13 +66,18 @@ def known_analytics_or_ad_markers(html):
     return markers
 
 
-def missing_no_analytics_disclosure(html):
-    """Return explicit current-state privacy disclosures missing from the policy."""
+def missing_advertising_consent_disclosure(html):
+    """Return active advertising, consent-choice and hosting disclosures missing from the policy."""
     visible_text = " ".join(re.sub(r"<[^>]+>", " ", html).lower().split())
     required = (
-        "no third-party advertising or site-analytics scripts, pixels, or ad tags are currently loaded by buytools.si",
-        "hosting provider may process technical information",
-        "before activation",
+        "buytools.si displays advertising provided by adsterra on eligible content and tool pages",
+        "the advertising technology is not loaded unless a visitor chooses “accept advertising”",
+        "visitors can choose “reject” and continue using the tools",
+        "when rejected, the advertising scripts are not loaded",
+        "buytools-ad-consent-v1",
+        "if accepted, the site loads ad delivery code from bicea.org",
+        "the site does not currently run a separate site-analytics platform",
+        "the hosting provider may still process technical request data",
     )
     return [phrase for phrase in required if phrase not in visible_text]
 

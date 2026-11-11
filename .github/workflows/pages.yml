@@ -24,6 +24,8 @@ jobs:
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
       - name: Run structural, SEO and internal-link checks
         run: python scripts/check_site.py
+      - name: Run regression tests
+        run: python -m unittest discover -s scripts -p 'test_*.py' -v
       - name: Validate required static files
         run: |
           test -s index.html
