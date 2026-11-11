@@ -209,7 +209,8 @@ try {
   assert.equal(await page.locator('link[rel="icon"][href="/assets/favicon.svg"]').count(), 1);
   await page.addScriptTag({ content: axe.source });
   await auditAccessibility("Image Studio");
-  const studioPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64");
+  const studioPngDataUrl = await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = 128; canvas.height = 128; const ctx = canvas.getContext("2d"); ctx.fillStyle = "#f04"; ctx.fillRect(0, 0, 128, 128); return canvas.toDataURL("image/png"); });
+  const studioPng = Buffer.from(studioPngDataUrl.split(",")[1], "base64");
   const studioRequestsBefore = thirdPartyRequestDetails.length;
   await page.locator("#picker").setInputFiles([
     { name: "studio-one.png", mimeType: "image/png", buffer: studioPng },
