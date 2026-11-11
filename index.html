@@ -152,7 +152,7 @@ const tools=[
 {id:'remove-spaces',name:'Clean Text',cat:'Text',icon:'🧹',desc:'Remove extra spaces and tidy up copied text.',tags:'trim whitespace clean format'},
 {id:'json',name:'JSON Formatter',cat:'Developer',icon:'{ }',desc:'Format, check JSON syntax and minify JSON data.',tags:'developer code json syntax check validate pretty print'},
 {id:'base64',name:'Base64 Encoder',cat:'Developer',icon:'🔐',desc:'Encode text to Base64 or decode it back.',tags:'encode decode base 64'},
-{id:'qr',name:'QR Code Generator',cat:'Utilities',icon:'▦',desc:'Create a QR code from a link or any short text.',tags:'qr code url link scan'},
+{id:'qr',name:'QR Code Generator',cat:'Utilities',icon:'▦',desc:'Create a private QR code from a link or short text, then download a crisp SVG.',tags:'qr code url link scan wifi private svg download'},
 {id:'password',name:'Password Generator',cat:'Utilities',icon:'🔑',desc:'Generate a strong random password in your browser.',tags:'secure random password generator'},
 {id:'url-codec',name:'URL Encoder / Decoder',cat:'Developer',icon:'🔗',desc:'Encode or decode URL components safely.',tags:'url encode decode percent uri'},
 {id:'unit-converter',name:'Unit Converter',cat:'Utilities',icon:'📐',desc:'Convert common length, weight and temperature units.',tags:'units conversion cm inches kg pounds celsius fahrenheit'},
@@ -198,7 +198,7 @@ if(id==='word-counter')return '<textarea class="textinput" id="text" placeholder
 if(id==='case-converter'||id==='remove-spaces')return '<textarea class="textinput" id="text" placeholder="Paste your text here..."></textarea><div class="controls">'+(id==='case-converter'?'<button class="primary" data-case="upper">UPPERCASE</button><button class="primary" data-case="lower">lowercase</button><button class="primary" data-case="title">Title Case</button>':'<button class="primary" id="run">Clean extra spaces</button>')+'<button class="close" id="copy">Copy text</button></div><div class="result" id="result"></div>';
 if(id==='json')return '<label for="jsonFile">Open a local JSON file (up to 5 MiB)</label><input class="textinput" style="min-height:0" id="jsonFile" type="file" accept=".json,application/json,text/json" aria-describedby="jsonFileHelp"><p class="notice" id="jsonFileHelp">The browser File API reads the selected file locally. It is not uploaded to a BuyTools.si processing endpoint.</p><textarea class="textinput" id="text" placeholder="{ &quot;hello&quot;: &quot;world&quot; }"></textarea><div class="controls"><button class="primary" data-json="pretty">Format JSON</button><button class="close" data-json="validate">Validate JSON</button><button class="close" data-json="min">Minify</button><button class="close" data-json="download">Download .json</button></div><div class="result" id="result" role="status" aria-live="polite"></div>';
 if(id==='base64')return '<textarea class="textinput" id="text" placeholder="Enter text to encode or Base64 to decode..."></textarea><div class="controls"><button class="primary" data-b64="encode">Encode</button><button class="close" data-b64="decode">Decode</button><button class="close" id="copy">Copy result</button></div><div class="result" id="result"></div>';
-if(id==='qr')return '<label for="text">Text or URL to encode</label><input class="textinput" style="min-height:0" id="text" aria-describedby="qrPrivacyNotice" placeholder="Enter a URL or text for your QR code"><p class="notice" id="qrPrivacyNotice" role="note">Your text or URL is sent to QRServer to generate the QR image. Do not enter passwords, private URLs, or confidential information. See the <a href="/privacy/">Privacy Policy</a> for details.</p><div class="controls"><button class="primary" id="run">Generate QR code</button></div><div class="result" id="result" role="status" aria-live="polite"></div>';
+if(id==='qr')return '<label for="text">Text or URL to encode</label><input class="textinput" style="min-height:0" id="text" aria-describedby="qrPrivacyNotice" placeholder="Enter a URL or text for your QR code"><p class="notice" id="qrPrivacyNotice" role="note">Your text is encoded locally in your browser. It is not sent to a QR-generation service. A small QR library is loaded from jsDelivr; the library request does not include your QR content. See the <a href="/privacy/">Privacy Policy</a> for details.</p><div class="controls"><button class="primary" id="run">Generate QR code</button></div><div class="result" id="result" role="status" aria-live="polite"></div>';
 if(id==='password')return '<div class="controls"><label>Password length <input id="plen" type="number" min="8" max="64" value="20"></label><label><input id="psym" type="checkbox" checked> Include symbols</label><button class="primary" id="run">Generate password</button></div><input class="textinput" id="text" readonly placeholder="Your password will appear here"><div class="controls"><button class="close" id="copy">Copy password</button></div><div class="result" id="result">Generated locally in your browser.</div>';
 if(id==='url-codec')return '<textarea class="textinput" id="text" placeholder="Paste text or an encoded URL component..."></textarea><div class="controls"><button class="primary" data-url="encode">Encode</button><button class="close" data-url="decode">Decode</button><button class="close" id="copy">Copy result</button></div><div class="result" id="result"></div>';
 if(id==='unit-converter')return '<div class="controls"><label>Category <select id="ucategory"><option value="length">Length</option><option value="weight">Weight</option><option value="temperature">Temperature</option></select></label><label>Value <input id="uvalue" type="number" value="1" step="any"></label><label>From <select id="ufrom"></select></label><label>To <select id="uto"></select></label></div><div class="result" id="result">Choose units to convert.</div>';
@@ -266,39 +266,46 @@ $('#result').textContent=words+' '+wordLabel+' · '+characters+' '+characterLabe
 if(id==='text-pdf')$('#run').onclick=()=>{const lines=text.value.split('\n');let pages=[],page=[],y=0;for(const line of lines){const chunks=line.match(/.{1,88}(?:\s|$)|.{1,88}/g)||[''];for(const c of chunks){if(page.length>=48){pages.push(page);page=[]}page.push(c)}}pages.push(page);const esc=s=>s.replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)').replace(/[^\x20-\x7E]/g,'?');let objs=['<< /Type /Catalog /Pages 2 0 R >>',''];let pageRefs=[];pages.forEach((p,i)=>{const pageId=3+i*2,contentId=pageId+1;pageRefs.push(pageId+' 0 R');const stream='BT /F1 11 Tf 50 790 Td 15 TL '+p.map((l,j)=>(j?'T* ':'')+'('+esc(l)+') Tj').join(' ')+' ET';objs[pageId-1]='<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents '+contentId+' 0 R >>';objs[contentId-1]='<< /Length '+stream.length+' >>\nstream\n'+stream+'\nendstream'});objs[1]='<< /Type /Pages /Kids ['+pageRefs.join(' ')+'] /Count '+pages.length+' >>';let pdf='%PDF-1.4\n',offs=[0];objs.forEach((o,i)=>{offs.push(pdf.length);pdf+=(i+1)+' 0 obj\n'+o+'\nendobj\n'});let xref=pdf.length;pdf+='xref\n0 '+(objs.length+1)+'\n0000000000 65535 f \n'+offs.slice(1).map(n=>String(n).padStart(10,'0')+' 00000 n \n').join('')+'trailer\n<< /Size '+(objs.length+1)+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';download(new Blob([pdf],{type:'application/pdf'}),'buytools-document.pdf');$('#result').textContent='Your PDF is ready.'};
 if(id==='qr'){
 const qrResult=$('#result');
-let qrPreview=null;
+let qrPreviewUrl=null;
 let qrRequestId=0;
-const clearQrPreview=()=>{if(!qrPreview)return;qrPreview.onload=null;qrPreview.onerror=null;qrPreview.removeAttribute('src');qrPreview.remove();qrPreview=null};
+let qrLibraryPromise=null;
+const clearQrPreview=()=>{if(qrPreviewUrl){URL.revokeObjectURL(qrPreviewUrl);qrPreviewUrl=null}const preview=$('#qrPreview');if(preview)preview.remove()};
+const loadQrLibrary=()=>qrLibraryPromise||(qrLibraryPromise=new Promise((resolve,reject)=>{if(typeof window.qrcode==='function'){resolve(window.qrcode);return}const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/qrcode-generator@2.0.4/dist/qrcode.min.js';script.async=true;script.onload=()=>typeof window.qrcode==='function'?resolve(window.qrcode):reject(Error('QR library loaded but its generator was unavailable.'));script.onerror=()=>{qrLibraryPromise=null;reject(Error('Could not load the QR generator. Check your connection and try again.'))};document.head.appendChild(script)}));
 text.addEventListener('input',()=>{qrRequestId++;clearQrPreview();qrResult.textContent=''});
-$('#run').onclick=()=>{
-const v=text.value.trim();
+$('#run').onclick=async()=>{
+const value=text.value.trim();
 qrRequestId++;
 const requestId=qrRequestId;
 clearQrPreview();
-if(!v){qrResult.textContent='Enter some text or a URL first.';return}
-qrResult.textContent='Generating QR code…';
-const img=document.createElement('img');
-img.className='preview';
-img.alt='Generated QR code';
-img.onload=()=>{
-if(requestId!==qrRequestId){img.remove();return}
-const a=document.createElement('a');
-a.href=img.src;
-a.download='buytools-qr.png';
-a.textContent='Open / save QR image';
-qrResult.replaceChildren(a);
-};
-img.onerror=()=>{
-if(requestId!==qrRequestId){img.remove();return}
-img.remove();
-if(qrPreview===img)qrPreview=null;
-qrResult.textContent='QR code could not be generated. Check your connection and try again.';
-};
-qrPreview=img;
-qrResult.before(img);
-img.src='https://api.qrserver.com/v1/create-qr-code/?size=260x260&data='+encodeURIComponent(v);
-};
+if(!value){qrResult.textContent='Enter some text or a URL first.';return}
+if(value.length>2900){qrResult.textContent='This QR tool supports up to 2,900 characters. Shorten the text or use a shorter URL.';return}
+qrResult.textContent='Preparing the QR generator…';
+try{
+const makeQr=await loadQrLibrary();
+if(requestId!==qrRequestId)return;
+const code=makeQr(0,'M');
+code.addData(value,'Byte');
+code.make();
+const svg=code.createSvgTag({cellSize:8,margin:4,scalable:true});
+const blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
+qrPreviewUrl=URL.createObjectURL(blob);
+const preview=document.createElement('img');
+preview.id='qrPreview';
+preview.className='preview';
+preview.alt='QR code encoding the entered text or URL';
+preview.src=qrPreviewUrl;
+const downloadLink=document.createElement('a');
+downloadLink.href=qrPreviewUrl;
+downloadLink.download='buytools-qr-code.svg';
+downloadLink.textContent='Download QR code (SVG)';
+const note=document.createElement('span');
+note.textContent='Vector SVG · scans locally generated content';
+qrResult.replaceChildren(downloadLink,document.createElement('br'),note);
+qrResult.before(preview);
+}catch(error){
+if(requestId===qrRequestId)qrResult.textContent='Could not generate the QR code: '+error.message;
 }
+};
 if(['image-convert','image-compress','image-resize','batch-compress','batch-resize','pdf-images','background','pdf-merge','pdf-split'].includes(id)){const input=$('#fileInput'),drop=$('#drop');input.onchange=()=>loadFiles(input.files,id);['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));drop.addEventListener('drop',e=>loadFiles(e.dataTransfer.files,id));if($('#quality'))$('#quality').oninput=e=>$('#qval').textContent=Math.round(+e.target.value*100)+'%';if($('#keep'))$('#width').oninput=()=>{const file=chosenFiles[0],widthInput=$('#width'),requestedWidth=Number(widthInput.value);if(!file||!$('#keep').checked||!Number.isFinite(requestedWidth)||requestedWidth<=0)return;createImageBitmap(file).then(bitmap=>{try{const currentWidth=$('#width'),heightInput=$('#height');if(chosenFiles[0]===file&&$('#keep')?.checked&&currentWidth&&heightInput&&Number(currentWidth.value)===requestedWidth)heightInput.value=Math.round(bitmap.height*(requestedWidth/bitmap.width))}finally{bitmap.close?.()}}).catch(()=>{})};if(['batch-compress','batch-resize'].includes(id))$('#run').onclick=()=>processBatchImages(id);else if(!['pdf-merge','pdf-split'].includes(id))$('#run').onclick=()=>processImages(id)}}
 function escapeHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function secureRandomString(length,alphabet,fillRandom=(values)=>crypto.getRandomValues(values)){
