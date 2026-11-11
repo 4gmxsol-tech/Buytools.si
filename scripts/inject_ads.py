@@ -30,7 +30,7 @@ def inject_ads(root=ROOT):
             raise ValueError(f"Duplicate ad-engine tags found in {relative}")
 
         if TAG not in source:
-            source = source[:body_close] + TAG + "\\n" + source[body_close:]
+            source = source[:body_close] + TAG + chr(10) + source[body_close:]
             page.write_text(source, encoding="utf-8")
             injected += 1
 
