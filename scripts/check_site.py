@@ -570,20 +570,22 @@ for dependency_url in dynamic_import_urls:
         fail(f"Third-party library import missing from privacy policy: {dependency_url}")
     if dependency_url not in licenses_page:
         fail(f"Direct browser package import missing from third-party license notice: {dependency_url}")
-for host in ("api.qrserver.com", "staticimgly.com"):
+for host in ("staticimgly.com",):
     if host not in privacy_text:
         fail(f"Third-party processing or asset host missing from privacy policy: {host}")
 qr_notice_requirements = (
     'for="text"',
     'aria-describedby="qrPrivacyNotice"',
     'id="qrPrivacyNotice"',
-    'sent to QRServer',
-    'Do not enter passwords',
+    'encoded locally in your browser',
+    'not sent to a QR-generation service',
     'href="/privacy/"',
     'id="result" role="status" aria-live="polite"',
 )
 if any(requirement.lower() not in home.lower() for requirement in qr_notice_requirements):
-    fail("QR generator must show an accessible, tool-level disclosure before text is sent to the third-party QR service.")
+    fail("QR generator must show an accessible disclosure that QR payloads are encoded locally.")
+if "api.qrserver.com" in home.lower() or "api.qrserver.com" in privacy_text.lower():
+    fail("QR content must not be sent to the retired third-party QR generation endpoint.")
 if "buytools-theme" not in privacy_text:
     fail("Browser theme storage key is not disclosed in the privacy policy.")
 
