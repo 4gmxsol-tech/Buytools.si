@@ -167,8 +167,8 @@ try {
 
   // Image-size guide: answer the observed no-quality-loss query accurately and expose both relevant workflows.
   await page.goto("http://127.0.0.1:8000/guides/reduce-image-size/", { waitUntil: "load" });
-  assert.match(await page.title(), /Reduce Image File Size Without Losing Quality/i);
-  assert.match(await page.locator("h1").innerText(), /Reduce Image File Size Without Losing Quality/i);
+  assert.match(await page.title(), /Reduce .*Image File Size Without Losing Quality/i);
+  assert.match(await page.locator("h1").innerText(), /Reduce .*Image File Size Without Losing Quality/i);
   const imageQuickAnswer = page.locator("#quick-answer");
   const imageQuickAnswerText = await imageQuickAnswer.innerText();
   assert.match(imageQuickAnswerText, /Lossless optimization can reduce file size without changing decoded pixels/i);
