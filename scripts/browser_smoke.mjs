@@ -203,6 +203,51 @@ try {
   assert.ok(renderedCard.height >= 190, "A deferred tool card must recover its reserved layout size when brought into view");
   assert.match(renderedCard.text, /Open tool/i, "Deferred card content must remain in the DOM");
 
+  // Image Studio: batch edits, local-only processing, individual output and ZIP archive.
+  await page.goto("http://127.0.0.1:8000/tools/image-studio/", { waitUntil: "load" });
+  assert.match(await page.title(), /Image Studio/i);
+  assert.equal(await page.locator('link[rel="icon"][href="/assets/favicon.svg"]').count(), 1);
+  await page.addScriptTag({ content: axe.source });
+  await auditAccessibility("Image Studio");
+  const studioPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64");
+  const studioRequestsBefore = thirdPartyRequestDetails.length;
+  await page.locator("#picker").setInputFiles([
+    { name: "studio-one.png", mimeType: "image/png", buffer: studioPng },
+    { name: "studio-two.png", mimeType: "image/png", buffer: studioPng }
+  ]);
+  assert.match(await page.locator("#status").innerText(), /2 image\(s\) selected/i);
+  await page.locator("#width").fill("64");
+  await page.locator("#height").fill("64");
+  await page.locator("#format").selectOption("image/webp");
+  await page.locator("#rotate").selectOption("90");
+  await page.locator("#process").click();
+  await page.getByText(/Done\. 2 image\(s\) processed successfully/i).waitFor();
+  assert.equal(await page.locator("#outputs .file").count(), 2);
+  assert.match(await page.locator("#outputs").innerText(), /64 × 64/);
+  const [studioImageDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#outputs .file a").first().click()
+  ]);
+  assert.match(studioImageDownload.suggestedFilename(), /\.webp$/);
+  assert.ok((await readFile(await studioImageDownload.path())).length > 0);
+  const [studioZipDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#zip").click()
+  ]);
+  assert.equal(studioZipDownload.suggestedFilename(), "buytools-image-studio.zip");
+  const studioZip = await JSZip.loadAsync(await readFile(await studioZipDownload.path()));
+  assert.equal(Object.keys(studioZip.files).filter(name => !studioZip.files[name].dir).length, 2);
+  const studioRequests = thirdPartyRequestDetails.slice(studioRequestsBefore);
+  assert.deepEqual(
+    studioRequests.filter(detail => detail.method !== "GET" || detail.requestBodyBytes > 0).map(detail => ({
+      url: detail.url, method: detail.method, requestBodyBytes: detail.requestBodyBytes
+    })),
+    [],
+    "Image Studio must not upload image files while processing or creating the ZIP"
+  );
+  await page.locator("#clear").click();
+  assert.match(await page.locator("#status").innerText(), /No images selected/i);
+
   // Search and discoverability: the semantic form must match the SearchAction q URL.
   assert.equal(await page.locator("#toolSearch").getAttribute("role"), "search");
   assert.equal(await page.locator("#toolSearch").getAttribute("method"), "get");
