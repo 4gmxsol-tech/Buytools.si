@@ -59,9 +59,9 @@ def known_analytics_or_ad_markers(html):
     normalized = html.lower()
     markers = [marker for marker in ANALYTICS_AND_AD_MARKERS if marker not in ("gtag(", "fbq(") and marker in normalized]
     # Avoid false positives such as createSvgTag(), which contains the substring "gtag(".
-    if re.search(r"(?<![a-z0-9_$])gtag\\s*\\(", normalized):
+    if re.search(r"(?<![a-z0-9_$])gtag\s*\(", normalized):
         markers.append("gtag(")
-    if re.search(r"(?<![a-z0-9_$])fbq\\s*\\(", normalized):
+    if re.search(r"(?<![a-z0-9_$])fbq\s*\(", normalized):
         markers.append("fbq(")
     return markers
 
