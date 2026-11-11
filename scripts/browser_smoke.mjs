@@ -283,6 +283,7 @@ try {
     developerRequestsBefore,
     "JWT decoding and SQL formatting must stay local; the same-origin API request must not contact a third party"
   );
+  await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
 
   // Search and discoverability: the semantic form must match the SearchAction q URL.
   assert.equal(await page.locator("#toolSearch").getAttribute("role"), "search");
