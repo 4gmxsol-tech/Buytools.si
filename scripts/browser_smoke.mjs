@@ -485,50 +485,47 @@ try {
   assert.ok(!safeConvertedCsv.includes("' -5"), "Safe negative numeric values should not be unnecessarily prefixed");
 
 
-  // QR generator: verify the disclosed third-party request occurs only after an explicit action and encodes the input safely.
+  // QR generator: content is encoded locally; only the library itself is fetched after user action.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="qr"]').click();
   const qrPrivacyNotice = page.locator("#qrPrivacyNotice");
-  assert.ok(await qrPrivacyNotice.isVisible(), "QR generator must show its third-party data disclosure before use");
+  assert.ok(await qrPrivacyNotice.isVisible(), "QR generator must disclose local processing before use");
   const qrNoticeText = await qrPrivacyNotice.innerText();
-  assert.match(qrNoticeText, /sent to QRServer/i);
-  assert.match(qrNoticeText, /do not enter passwords.*confidential information/i);
+  assert.match(qrNoticeText, /encoded locally in your browser/i);
+  assert.match(qrNoticeText, /not sent to a QR-generation service/i);
+  assert.match(qrNoticeText, /library request does not include your QR content/i);
   assert.equal(await page.locator("#text").getAttribute("aria-describedby"), "qrPrivacyNotice");
   await auditAccessibility("QR Generator tool");
-  assert.equal(thirdPartyRequests.filter(url => url.hostname === "api.qrserver.com").length, 0, "QR input must not be sent before the user requests generation");
-  await page.route("https://api.qrserver.com/**", route => route.fulfill({
-    status: 200,
-    contentType: "image/svg+xml",
-    body: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="#fff"/></svg>'
-  }));
+  assert.equal(thirdPartyRequests.filter(url => url.hostname === "api.qrserver.com").length, 0, "QR payload must never be sent to a remote QR service");
   const qrInput = "https://example.com/?a=1&b=two words";
+  const qrThirdPartyBefore = thirdPartyRequestDetails.length;
   await page.locator("#text").fill(qrInput);
-  const [qrRequest] = await Promise.all([
-    page.waitForRequest(request => request.url().startsWith("https://api.qrserver.com/v1/create-qr-code/")),
-    page.locator("#run").click()
+  await page.locator("#run").click();
+  await page.locator("#qrPreview").waitFor({ state: "visible" });
+  await page.waitForFunction(() => document.querySelector("#qrPreview")?.naturalWidth > 0);
+  const qrLibraryRequests = thirdPartyRequestDetails.slice(qrThirdPartyBefore);
+  assert.ok(qrLibraryRequests.some(detail => new URL(detail.url).hostname === "cdn.jsdelivr.net" && new URL(detail.url).pathname.includes("qrcode-generator")), "QR library should load on demand from jsDelivr");
+  assert.deepEqual(
+    qrLibraryRequests.filter(detail => detail.method !== "GET" || detail.requestBodyBytes > 0).map(detail => ({
+      url: detail.url, method: detail.method, requestBodyBytes: detail.requestBodyBytes
+    })),
+    [],
+    "QR payload must not be sent in a third-party request"
+  );
+  assert.equal(await page.locator("#result a[download]").getAttribute("download"), "buytools-qr-code.svg");
+  const [qrDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.locator("#result a[download]").click()
   ]);
-  assert.equal(new URL(qrRequest.url()).searchParams.get("data"), qrInput, "QR input must be URL-encoded into the disclosed data parameter");
-  assert.equal(thirdPartyRequests.filter(url => url.hostname === "api.qrserver.com").length, 1, "QR service should be called once after generation is requested");
-  // Repeated generation must replace the previous preview rather than accumulate images.
+  assert.match(qrDownload.suggestedFilename(), /buytools-qr-code\.svg$/);
+  assert.match(await readFile(await qrDownload.path(), "utf8"), /<svg/i);
+  // Repeated generation replaces the preview; editing input revokes the prior preview.
   await page.locator("#run").click();
-  await page.waitForFunction(() => document.querySelectorAll(".preview").length === 1);
-  assert.equal(await page.locator(".preview").count(), 1, "QR regeneration must leave exactly one preview");
+  await page.waitForFunction(() => document.querySelectorAll("#qrPreview").length === 1);
+  assert.equal(await page.locator("#qrPreview").count(), 1);
   await page.locator("#text").fill("updated QR content");
-  assert.equal(await page.locator(".preview").count(), 0, "Changing QR input must clear the previous preview");
-
-  await page.unroute("https://api.qrserver.com/**");
-  // A failed provider request must produce an accessible error state and remove the broken preview.
-  await page.route("https://api.qrserver.com/**", route => route.fulfill({
-    status: 503,
-    contentType: "text/plain",
-    body: "temporarily unavailable"
-  }));
-  await page.locator("#run").click();
-  await page.waitForFunction(() => document.querySelector("#result")?.textContent.includes("could not be generated"));
-  assert.equal(await page.locator(".preview").count(), 0, "Failed QR requests must not leave a broken preview");
-  assert.equal(await page.locator("#result").getAttribute("role"), "status");
-  assert.equal(await page.locator("#result").getAttribute("aria-live"), "polite");
-  await page.unroute("https://api.qrserver.com/**");
+  assert.equal(await page.locator("#qrPreview").count(), 0);
+  assert.equal(thirdPartyRequests.filter(url => url.hostname === "api.qrserver.com").length, 0);
 
   // JSON to TypeScript: reserved interface name and mixed array union.
   await page.locator("#closeWork").click();
