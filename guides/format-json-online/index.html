@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="index,follow,max-image-preview:large">
-<title>How to Format a JSON File Online: Free Formatter &amp; Validator | BuyTools.si</title>
-<meta name="description" content="Learn how to format a JSON file or string online, validate JSON syntax, fix common errors and download clean, readable JSON with a free browser-based formatter.">
+<title>How to Format JSON Online: Free Formatter &amp; Syntax Checker | BuyTools.si</title>
+<meta name="description" content="Format a JSON file or string online, or check whether JSON is valid with a free browser-based syntax checker. Fix common errors and download readable JSON.">
 <link rel="canonical" href="https://buytools.si/guides/format-json-online/"><link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <meta name="theme-color" content="#0d0f17"><meta property="og:type" content="article"><meta property="og:site_name" content="BuyTools.si">
-<meta property="og:title" content="How to Format a JSON File Online: Free Formatter and Validator | BuyTools.si"><meta property="og:description" content="Step-by-step guide to formatting JSON files and strings, validating syntax, fixing common errors and using a free local browser formatter."><meta property="og:url" content="https://buytools.si/guides/format-json-online/"><meta name="twitter:card" content="summary">
+<meta property="og:title" content="How to Format JSON Online: Free Formatter and Syntax Checker | BuyTools.si"><meta property="og:description" content="Format JSON files and strings, check JSON syntax, fix common errors and download readable JSON with a free browser-based tool."><meta property="og:url" content="https://buytools.si/guides/format-json-online/"><meta name="twitter:card" content="summary">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
-{"@type":"Article","headline":"How to Format a JSON File Online: Free Formatter and Validator","description":"Learn how to format JSON files and strings, validate JSON syntax, fix common errors and use a free browser-based formatter.","dateModified":"2026-11-10","mainEntityOfPage":"https://buytools.si/guides/format-json-online/","author":{"@type":"Organization","name":"BuyTools.si"},"publisher":{"@type":"Organization","name":"BuyTools.si","url":"https://buytools.si/"}},
+{"@type":"Article","headline":"How to Format JSON Online: Free Formatter and Syntax Checker","description":"Learn how to format JSON files and strings, check whether JSON syntax is valid, fix common errors and use a free browser-based formatter.","dateModified":"2026-11-10","mainEntityOfPage":"https://buytools.si/guides/format-json-online/","author":{"@type":"Organization","name":"BuyTools.si"},"publisher":{"@type":"Organization","name":"BuyTools.si","url":"https://buytools.si/"}},
 {"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://buytools.si/"},{"@type":"ListItem","position":2,"name":"Guides","item":"https://buytools.si/guides/"},{"@type":"ListItem","position":3,"name":"Format and Validate JSON","item":"https://buytools.si/guides/format-json-online/"}]}
 ]}
 </script>
@@ -50,8 +50,10 @@
 const formatted = JSON.stringify(JSON.parse(jsonText), null, 2);
 console.log(formatted);</pre>
 <p><code>JSON.parse()</code> rejects invalid JSON. The third argument to <code>JSON.stringify()</code> sets the indentation width; <code>2</code> produces two-space indentation. This changes whitespace, not the represented data.</p>
-<h2>How to check JSON syntax online</h2>
-<p>Use a JSON syntax checker when an API response, configuration file or pasted JSON string will not parse. Paste the entire document into the validator and select <strong>Validate</strong>. A valid result confirms that the text follows JSON syntax; an error result gives you a starting location to inspect. Check the surrounding line as well, because a missing comma or quote can cause the parser to report a later character.</p>
+<h2>JSON syntax checker: how to check if JSON is valid</h2>
+<p>Use the <a href="/tools/json-formatter/">free JSON syntax checker</a> when an API response, configuration file or pasted JSON string will not parse. Paste the complete document into the input editor and select <strong>Validate</strong>. A valid result confirms that the text follows JSON syntax; an error result gives you a starting location to inspect. Check the surrounding line as well, because a missing comma or quote can cause the parser to report a later character.</p>
+<ol><li>Paste the complete JSON object or array, including its opening and closing brackets.</li><li>Select <strong>Validate</strong> to check JSON syntax without changing the input.</li><li>If validation fails, inspect the reported error category and line and column when available.</li><li>Correct the nearby quotes, commas, colons or brackets, then validate again.</li></ol>
+<p>Syntax validation is not the same as JSON Schema validation: a document can be valid JSON and still contain fields or value types that an API does not accept.</p>
 <h2>Valid JSON example</h2>
 <p>This is a valid JSON object containing strings, a number, a Boolean, an array and a nested object:</p>
 <pre class="code-sample">{
