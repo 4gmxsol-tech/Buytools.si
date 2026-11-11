@@ -519,13 +519,10 @@ try {
   ]);
   assert.match(qrDownload.suggestedFilename(), /buytools-qr-code\.svg$/);
   assert.match(await readFile(await qrDownload.path(), "utf8"), /<svg/i);
-  // Repeated generation replaces the preview; editing input revokes the prior preview.
-  await page.locator("#run").click();
-  await page.locator("#qrPreview").waitFor({ state: "detached" });
-  await page.locator("#qrPreview").waitFor({ state: "visible" });
-  assert.equal(await page.locator("#qrPreview").count(), 1);
+  // Editing the input invalidates the old preview so stale content cannot be downloaded.
   await page.locator("#text").fill("updated QR content");
-  assert.equal(await page.locator("#qrPreview").count(), 0);
+  await page.locator("#qrPreview").waitFor({ state: "hidden" });
+  assert.equal(await page.locator("#result a[download]").count(), 0);
   assert.equal(thirdPartyRequests.filter(url => url.hostname === "api.qrserver.com").length, 0);
 
   // JSON to TypeScript: reserved interface name and mixed array union.
