@@ -57,7 +57,13 @@ ANALYTICS_AND_AD_MARKERS = (
 def known_analytics_or_ad_markers(html):
     """Return known client-side analytics or advertising tags found in public HTML."""
     normalized = html.lower()
-    return [marker for marker in ANALYTICS_AND_AD_MARKERS if marker in normalized]
+    markers = [marker for marker in ANALYTICS_AND_AD_MARKERS if marker not in ("gtag(", "fbq(") and marker in normalized]
+    # Avoid false positives such as createSvgTag(), which contains the substring "gtag(".
+    if re.search(r"(?<![a-z0-9_$])gtag\\s*\\(", normalized):
+        markers.append("gtag(")
+    if re.search(r"(?<![a-z0-9_$])fbq\\s*\\(", normalized):
+        markers.append("fbq(")
+    return markers
 
 
 def missing_no_analytics_disclosure(html):
