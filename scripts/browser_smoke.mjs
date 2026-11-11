@@ -521,7 +521,8 @@ try {
   assert.match(await readFile(await qrDownload.path(), "utf8"), /<svg/i);
   // Repeated generation replaces the preview; editing input revokes the prior preview.
   await page.locator("#run").click();
-  await page.waitForFunction(() => document.querySelectorAll("#qrPreview").length === 1);
+  await page.locator("#qrPreview").waitFor({ state: "detached" });
+  await page.locator("#qrPreview").waitFor({ state: "visible" });
   assert.equal(await page.locator("#qrPreview").count(), 1);
   await page.locator("#text").fill("updated QR content");
   assert.equal(await page.locator("#qrPreview").count(), 0);
