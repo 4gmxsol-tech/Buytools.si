@@ -395,7 +395,7 @@ async function processBatchImages(id){
   }
   out.textContent='Building ZIP archive…';const archive=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:5}});
   download(archive,id==='batch-compress'?'buytools-compressed-images.zip':'buytools-resized-images.zip');
-  out.textContent='Finished '+files.length+' image(s). Original total: '+formatBytes(totalBefore)+' · Output total before ZIP: '+formatBytes(totalAfter)+' · ZIP: '+formatBytes(archive.size)+'. Download started.';
+  const batchDelta=totalBefore-totalAfter;const batchSaving=batchDelta>0?'Saved '+(totalBefore?(batchDelta/totalBefore*100).toFixed(1):'0.0')+'% ('+formatBytes(batchDelta)+')':batchDelta<0?'Output images are '+(totalBefore?(Math.abs(batchDelta)/totalBefore*100).toFixed(1):'0.0')+'% larger':'No size change';out.textContent='Finished '+files.length+' image(s). Original total: '+formatBytes(totalBefore)+' · Output total before ZIP: '+formatBytes(totalAfter)+' · '+batchSaving+' · ZIP archive: '+formatBytes(archive.size)+'. Download started.';
  }catch(e){out.textContent='Could not process the image batch: '+e.message}
 }
 
