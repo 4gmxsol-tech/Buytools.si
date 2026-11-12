@@ -5,6 +5,8 @@ from pathlib import Path
 
 from inject_ads import TAG, inject_ads
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 class InjectAdsTests(unittest.TestCase):
     def make_site(self, root):
@@ -72,6 +74,21 @@ class InjectAdsTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "ad engine is missing"):
                 inject_ads(root)
+
+
+class AdConsentPrivacyLinkTests(unittest.TestCase):
+    def test_consent_prompt_links_to_existing_advertising_disclosure(self):
+        engine = (ROOT / "assets" / "buytools-ads.js").read_text(encoding="utf-8")
+        policy = (ROOT / "privacy" / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn(
+            'var privacyLink = el("a", { href: "/privacy/", class: "buytools-consent-privacy-link" }, "Read the privacy policy");',
+            engine,
+        )
+        self.assertIn("panel.appendChild(copy); panel.appendChild(privacyLink); panel.appendChild(actions);", engine)
+        self.assertIn(".buytools-consent-privacy-link:focus-visible", engine)
+        self.assertIn("<h2>Advertising and analytics</h2>", policy)
+        self.assertIn("Adsterra and its partners may process technical information", policy)
 
 
 if __name__ == "__main__":
