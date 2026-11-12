@@ -15,7 +15,7 @@ class JsonGuideSnippetTests(unittest.TestCase):
         description = match.group(1)
         self.assertGreaterEqual(len(description), 120)
         self.assertLessEqual(len(description), 160)
-        for phrase in ("Format JSON online for free", "local .json file", "line-and-column errors", "No upload"):
+        for phrase in ("Format JSON online for free", "local .json file", "JSON syntax", "JSON Schema", "line/column errors", "No upload"):
             self.assertIn(phrase, description)
 
     def test_open_graph_and_twitter_descriptions_match_meta(self):
