@@ -42,7 +42,7 @@ class JsonGuideSnippetTests(unittest.TestCase):
 
         h1 = re.search(r"<h1>(.*?)</h1>", HTML, re.DOTALL).group(1)
         visible_h1 = unescape(re.sub(r"<[^>]+>", "", h1)).strip()
-        schema_match = re.search(r'<script type="application/ld\\+json">\\s*(.*?)\\s*</script>', HTML, re.DOTALL)
+        schema_match = re.search(r'<script type="application/ld\+json">\s*(.*?)\s*</script>', HTML, re.DOTALL)
         self.assertIsNotNone(schema_match)
         graph = json.loads(schema_match.group(1))["@graph"]
         article = next(node for node in graph if node.get("@type") == "Article")
@@ -54,7 +54,7 @@ class JsonGuideSnippetTests(unittest.TestCase):
         pattern = r'<loc>https://buytools\.si/guides/format-json-online/</loc><lastmod>([^<]+)</lastmod>'
         match = re.search(pattern, SITEMAP)
         self.assertIsNotNone(match)
-        self.assertEqual(match.group(1), "2026-11-12")
+        self.assertEqual(match.group(1), "2026-11-13")
 
     def test_canonical_and_tool_cta_are_preserved(self):
         self.assertIn('href="https://buytools.si/guides/format-json-online/"', HTML)
