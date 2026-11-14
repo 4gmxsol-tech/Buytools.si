@@ -33,12 +33,13 @@ class JsonGuideSnippetTests(unittest.TestCase):
         title = re.search(r"<title>(.*?)</title>", HTML).group(1)
         og_title = re.search(r'<meta property="og:title" content="([^"]+)"', HTML).group(1)
         twitter_title = re.search(r'<meta name="twitter:title" content="([^"]+)"', HTML).group(1)
-        self.assertEqual(title, "JSON Formatter &amp; Syntax Checker: How to Format JSON | BuyTools.si")
+        self.assertEqual(title, "Format JSON Online: Free JSON Formatter &amp; Syntax Checker")
+        self.assertLessEqual(len(unescape(title)), 60)
+        self.assertIn("Format JSON Online", title)
         self.assertEqual(og_title, title)
         self.assertEqual(twitter_title, title)
         self.assertIn("JSON Formatter", title)
         self.assertIn("Syntax Checker", title)
-        self.assertIn("How to Format JSON", title)
 
         h1 = re.search(r"<h1>(.*?)</h1>", HTML, re.DOTALL).group(1)
         visible_h1 = unescape(re.sub(r"<[^>]+>", "", h1)).strip()
@@ -49,12 +50,12 @@ class JsonGuideSnippetTests(unittest.TestCase):
         self.assertEqual(article["headline"], visible_h1)
 
     def test_article_modified_date_matches_sitemap(self):
-        self.assertIn('"dateModified":"2026-11-13"', HTML)
-        self.assertIn("Last updated: November 13, 2026", HTML)
+        self.assertIn('"dateModified":"2026-11-14"', HTML)
+        self.assertIn("Last updated: November 14, 2026", HTML)
         pattern = r'<loc>https://buytools\.si/guides/format-json-online/</loc><lastmod>([^<]+)</lastmod>'
         match = re.search(pattern, SITEMAP)
         self.assertIsNotNone(match)
-        self.assertEqual(match.group(1), "2026-11-13")
+        self.assertEqual(match.group(1), "2026-11-14")
 
     def test_canonical_and_tool_cta_are_preserved(self):
         self.assertIn('href="https://buytools.si/guides/format-json-online/"', HTML)
