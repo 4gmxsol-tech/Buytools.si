@@ -48,8 +48,8 @@
   function showConsent() {
     if (localStorage.getItem(CONSENT_KEY) === "accepted") { mountAds(); return; }
     if (localStorage.getItem(CONSENT_KEY) === "rejected") return;
-    var panel = el("aside", { id: "buytools-ad-consent", role: "dialog", "aria-live": "polite", "aria-label": "Advertising preferences" });
-    var copy = el("p", {}, "BuyTools.si uses Adsterra advertising. If you accept, its ad technology may use cookies or similar technologies and process technical data to deliver and measure ads. You can reject and continue using the site.");
+    var panel = el("aside", { id: "buytools-ad-consent", role: "region", "aria-live": "polite", "aria-label": "Advertising preferences", "aria-describedby": "buytools-ad-consent-description" });
+    var copy = el("p", { id: "buytools-ad-consent-description" }, "BuyTools.si uses Adsterra advertising. If you accept, its ad technology may use cookies or similar technologies and process technical data to deliver and measure ads. You can reject and continue using the site.");
     var privacyLink = el("a", { href: "/privacy/", class: "buytools-consent-privacy-link" }, "Read the privacy policy");
     var actions = el("div", { class: "buytools-consent-actions" });
     var accept = el("button", { type: "button" }, "Accept advertising");
