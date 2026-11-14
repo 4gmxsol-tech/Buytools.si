@@ -90,6 +90,19 @@ class AdConsentPrivacyLinkTests(unittest.TestCase):
         self.assertIn("<h2>Advertising and analytics</h2>", policy)
         self.assertIn("Adsterra and its partners may process technical information", policy)
 
+    def test_consent_prompt_uses_a_named_nonmodal_region_with_description(self):
+        engine = (ROOT / "assets" / "buytools-ads.js").read_text(encoding="utf-8")
+
+        self.assertIn(
+            'var panel = el("aside", { id: "buytools-ad-consent", role: "region", "aria-live": "polite", "aria-label": "Advertising preferences", "aria-describedby": "buytools-ad-consent-description" });',
+            engine,
+        )
+        self.assertIn(
+            'var copy = el("p", { id: "buytools-ad-consent-description" }, "BuyTools.si uses Adsterra advertising.',
+            engine,
+        )
+        self.assertNotIn('role: "dialog"', engine)
+
 
 if __name__ == "__main__":
     unittest.main()
