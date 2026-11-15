@@ -20,14 +20,18 @@ class MonetizationDocumentationTests(unittest.TestCase):
     def test_documented_consent_states_match_runtime_and_privacy_policy(self):
         for snippet in (
             'var CONSENT_KEY = "buytools-ad-consent-v1";',
+            'var consentReadFailed = false;',
             'function readConsent()',
             'window.localStorage.getItem(CONSENT_KEY)',
-            'catch (error) { return null; }',
+            'catch (error) { consentReadFailed = true; return null; }',
             'function saveConsent(value)',
             'window.localStorage.setItem(CONSENT_KEY, value); return true;',
             'catch (error) { return false; }',
+            'function showConsentNotice()',
             'if (!saveConsent("accepted"))',
-            'saveConsent("rejected");',
+            'var saved = saveConsent("rejected");',
+            'if (!saved || consentReadFailed) showConsentNotice();',
+            'Your rejection applies to this page, but your browser could not confirm that it saved the preference.',
             'Advertising will remain disabled for this visit.',
             'src: "https://bicea.org/21/"',
         ):
@@ -35,10 +39,12 @@ class MonetizationDocumentationTests(unittest.TestCase):
         self.assertIn("buytools-ad-consent-v1", POLICY)
         self.assertIn("not loaded unless a visitor chooses “Accept advertising”", POLICY)
         self.assertIn("can choose “Reject”", POLICY)
+        self.assertIn("rejected choice still keeps advertising disabled for the current page", POLICY)
+        self.assertIn("page-level status explains", DOC)
         self.assertIn("Accept advertising", DOC)
         self.assertIn("Reject", DOC)
         self.assertIn("fails closed and does not request ad delivery", DOC)
-        self.assertIn("prompt may appear again after reload", DOC)
+        self.assertIn("prompt may return after navigation or reload", DOC)
 
     def test_documented_placements_and_exclusions_match_source(self):
         self.assertIn('var nativePages = location.pathname === "/" || location.pathname.indexOf("/guides/") === 0;', ENGINE)

@@ -168,6 +168,9 @@ try {
   assert.equal(blockedAdRequests.length, 0, "Blocked storage must never fall through to ad delivery");
   await blockedPage.getByRole("button", { name: "Reject" }).click();
   await blockedPage.locator("#buytools-ad-consent").waitFor({ state: "detached" });
+  const blockedRejectStatus = blockedPage.getByRole("status");
+  await blockedRejectStatus.waitFor();
+  assert.match(await blockedRejectStatus.innerText(), /rejection applies to this page.*could not confirm that it saved/i);
   assert.equal(blockedAdRequests.length, 0, "Rejecting with blocked storage must remain ad-free");
   assert.deepEqual(blockedPageErrors, [], "Blocked local storage must not create uncaught page errors");
   await blockedContext.close();
@@ -201,6 +204,9 @@ try {
   assert.equal(writeDeniedAdRequests.length, 0, "A failed consent write must not request Adsterra");
   await writeDeniedPage.getByRole("button", { name: "Reject" }).click();
   await writeDeniedPage.locator("#buytools-ad-consent").waitFor({ state: "detached" });
+  const writeDeniedRejectStatus = writeDeniedPage.getByRole("status");
+  await writeDeniedRejectStatus.waitFor();
+  assert.match(await writeDeniedRejectStatus.innerText(), /rejection applies to this page.*could not confirm that it saved/i);
   assert.equal(writeDeniedAdRequests.length, 0, "Rejecting with non-writable storage must remain ad-free");
   await writeDeniedPage.reload({ waitUntil: "load" });
   await writeDeniedPage.addScriptTag({ content: adEngineSource });
