@@ -302,17 +302,20 @@ try {
   await consentTabA.locator("#buytools-ad-preferences").click();
   await consentTabA.locator("#buytools-ad-consent").waitFor();
   const rejectReloadA = consentTabA.waitForEvent("load");
-  const rejectReloadB = consentTabB.waitForEvent("load");
   await consentTabA.getByRole("button", { name: "Reject" }).click();
-  await Promise.all([rejectReloadA, rejectReloadB]);
+  await rejectReloadA;
   await consentTabA.addScriptTag({ content: adEngineSource });
-  await consentTabB.addScriptTag({ content: adEngineSource });
+  await consentTabB.locator("#buytools-ad-consent-notice").waitFor();
+  assert.match(
+    await consentTabB.locator("#buytools-ad-consent-notice").innerText(),
+    /saved preference changed in another tab.*third-party code already requested.*cannot be recalled/i
+  );
   assert.equal(await consentTabA.evaluate(() => window.localStorage.getItem("buytools-ad-consent-v1")), "rejected");
   assert.equal(await consentTabB.evaluate(() => window.localStorage.getItem("buytools-ad-consent-v1")), "rejected");
   assert.equal(await consentTabA.locator("#buytools-ad-slot").count(), 0, "The rejecting tab must reload without its ad slot");
-  assert.equal(await consentTabB.locator("#buytools-ad-slot").count(), 0, "Other tabs with mounted ads must reload after a saved rejection");
+  assert.equal(await consentTabB.locator("#buytools-ad-slot").count(), 0, "Other tabs must remove their ad slots when rejection is saved");
   assert.equal(await consentTabA.locator("#buytools-ad-consent").count(), 0);
-  assert.equal(await consentTabB.locator("#buytools-ad-consent").count(), 0);
+  assert.equal(await consentTabB.locator("#buytools-ad-consent").count(), 0, "A saved rejection in another tab must close the stale prompt");
   assert.equal(crossTabRequestsA.length, 1, "Rejecting in another tab must not create another ad request");
   assert.equal(crossTabRequestsB.length, 1, "A synchronized rejection must not request more ads");
   await consentTabA.evaluate(() => window.localStorage.clear());

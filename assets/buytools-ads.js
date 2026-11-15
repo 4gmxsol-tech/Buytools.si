@@ -29,6 +29,18 @@
     if (panel) panel.remove();
     if (preferencesButton) preferencesButton.setAttribute("aria-expanded", "false");
   }
+  function showCrossTabNotice() {
+    if (document.getElementById("buytools-ad-consent-notice")) return;
+    var notice = el("p", {
+      id: "buytools-ad-consent-notice",
+      role: "status",
+      "aria-live": "polite",
+      class: "buytools-ad-consent-notice"
+    }, "Advertising was disabled because your saved preference changed in another tab. The ad slot has been removed; third-party code already requested during this page cannot be recalled.");
+    var main = document.querySelector("main");
+    if (main) main.insertBefore(notice, main.firstChild);
+    else document.body.insertBefore(notice, document.body.firstChild);
+  }
   function handleConsentStorage(event) {
     if (!event || (event.key !== CONSENT_KEY && event.key !== null)) return;
     try {
@@ -48,10 +60,7 @@
     var hadAdSlot = !!existingSlot;
     if (existingSlot) existingSlot.remove();
     closeConsentPanel();
-    if (hadAdSlot) {
-      window.location.reload();
-      return;
-    }
+    if (hadAdSlot) showCrossTabNotice();
     if (nextValue !== "rejected") showConsent(false);
   }
   function showConsentNotice(adWasAlreadyRequested) {
