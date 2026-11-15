@@ -15,6 +15,7 @@
     return node;
   }
   var consentReadFailed = false;
+  var preferencesButton = null;
   function readConsent() {
     try { return window.localStorage.getItem(CONSENT_KEY); }
     catch (error) { consentReadFailed = true; return null; }
@@ -23,13 +24,17 @@
     try { window.localStorage.setItem(CONSENT_KEY, value); return true; }
     catch (error) { return false; }
   }
-  function showConsentNotice() {
+  function showConsentNotice(adWasAlreadyRequested) {
+    if (document.getElementById("buytools-ad-consent-notice")) return;
+    var message = adWasAlreadyRequested
+      ? "Your rejection applies to this page, but your browser could not save the preference. The ad slot has been removed; third-party code already requested during this page cannot be recalled. The prompt may appear again after you navigate or reload."
+      : "Your rejection applies to this page, but your browser could not confirm that it saved the preference. The prompt may appear again after you navigate or reload.";
     var notice = el("p", {
       id: "buytools-ad-consent-notice",
       role: "status",
       "aria-live": "polite",
       class: "buytools-ad-consent-notice"
-    }, "Your rejection applies to this page, but your browser could not confirm that it saved the preference. The prompt may appear again after you navigate or reload.");
+    }, message);
     var main = document.querySelector("main");
     if (main) main.insertBefore(notice, main.firstChild);
     else document.body.insertBefore(notice, document.body.firstChild);
@@ -65,13 +70,15 @@
     else document.body.appendChild(slot);
     if (nativePages) loadNative(target); else loadBanner(target);
   }
-  function showConsent() {
+  function showConsent(force) {
+    if (document.getElementById("buytools-ad-consent")) return;
     var consent = readConsent();
-    if (consent === "accepted") { mountAds(); return; }
-    if (consent === "rejected") return;
+    if (!force && consent === "accepted") { mountAds(); return; }
+    if (!force && consent === "rejected") return;
     var panel = el("aside", { id: "buytools-ad-consent", role: "region", "aria-live": "polite", "aria-label": "Advertising preferences", "aria-describedby": "buytools-ad-consent-description" });
     var copy = el("p", { id: "buytools-ad-consent-description" }, "BuyTools.si uses Adsterra advertising. If you accept, its ad technology may use cookies or similar technologies and process technical data to deliver and measure ads. You can reject and continue using the site.");
     var privacyLink = el("a", { href: "/privacy/", class: "buytools-consent-privacy-link" }, "Read the privacy policy");
+    if (preferencesButton) preferencesButton.setAttribute("aria-expanded", "true");
     var actions = el("div", { class: "buytools-consent-actions" });
     var accept = el("button", { type: "button" }, "Accept advertising");
     var reject = el("button", { type: "button" }, "Reject");
@@ -86,24 +93,53 @@
         return;
       }
       panel.remove();
+      if (preferencesButton) preferencesButton.setAttribute("aria-expanded", "false");
+      var oldNotice = document.getElementById("buytools-ad-consent-notice");
+      if (oldNotice) oldNotice.remove();
       mountAds();
     });
     reject.addEventListener("click", function () {
+      var hadAdSlot = !!document.getElementById("buytools-ad-slot");
       var saved = saveConsent("rejected");
       panel.remove();
-      if (!saved || consentReadFailed) showConsentNotice();
+      if (preferencesButton) preferencesButton.setAttribute("aria-expanded", "false");
+      if (!saved && hadAdSlot) {
+        var existingSlot = document.getElementById("buytools-ad-slot");
+        if (existingSlot) existingSlot.remove();
+      }
+      if (saved && !consentReadFailed) {
+        var oldNotice = document.getElementById("buytools-ad-consent-notice");
+        if (oldNotice) oldNotice.remove();
+      }
+      if (!saved || consentReadFailed) showConsentNotice(hadAdSlot);
+      if (saved && hadAdSlot) window.location.reload();
     });
     actions.appendChild(accept); actions.appendChild(reject);
     panel.appendChild(copy); panel.appendChild(privacyLink); panel.appendChild(actions);
     document.body.appendChild(panel);
   }
+  function addPreferencesControl() {
+    var existing = document.getElementById("buytools-ad-preferences");
+    if (existing) { preferencesButton = existing; return; }
+    var footer = document.querySelector("footer");
+    preferencesButton = el("button", {
+      id: "buytools-ad-preferences",
+      type: "button",
+      "aria-controls": "buytools-ad-consent",
+      "aria-expanded": "false"
+    }, "Advertising preferences");
+    preferencesButton.addEventListener("click", function () { showConsent(true); });
+    (footer || document.body).appendChild(preferencesButton);
+  }
   function start() {
     if (!document.querySelector("style#buytools-ad-styles")) {
       var style = el("style", { id: "buytools-ad-styles" });
-      style.textContent = "#buytools-ad-slot{box-sizing:border-box;width:min(100% - 32px,1000px);margin:28px auto 36px;padding:14px 12px;border:1px solid rgba(150,160,180,.16);border-radius:14px;background:rgba(120,130,150,.035);text-align:center;overflow:hidden;min-height:58px}#buytools-ad-slot .buytools-ad-label{margin:0 0 8px;color:#8992a6;font:10px/1.4 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}#buytools-ad-slot .buytools-ad-content{display:flex;justify-content:center;align-items:center;max-width:100%;overflow:hidden;min-height:50px}#buytools-ad-slot iframe{max-width:100%;border:0}#buytools-ad-consent{position:fixed;z-index:99999;left:12px;right:12px;bottom:12px;max-width:620px;margin:auto;padding:16px;border:1px solid #596174;border-radius:14px;background:#171b28;color:#f4f6ff;box-shadow:0 8px 36px #0008;font:14px/1.5 system-ui,sans-serif}#buytools-ad-consent p{margin:0 0 12px}#buytools-ad-consent .buytools-consent-privacy-link{display:inline-block;margin:0 0 12px;color:#a5f36b;text-decoration:underline;text-underline-offset:3px}#buytools-ad-consent .buytools-consent-privacy-link:focus-visible{outline:2px solid #a5f36b;outline-offset:3px;border-radius:3px}#buytools-ad-consent .buytools-consent-actions{display:flex;gap:10px;flex-wrap:wrap}#buytools-ad-consent button{border:1px solid #7c879d;border-radius:8px;padding:9px 13px;background:transparent;color:inherit;font:inherit;cursor:pointer}#buytools-ad-consent button:first-child{background:#a5f36b;color:#10150d;border-color:#a5f36b;font-weight:700}#buytools-ad-consent-notice{width:min(100% - 32px,620px);margin:16px auto;padding:12px 14px;border:1px solid #596174;border-radius:10px;background:#171b28;color:#f4f6ff;box-shadow:0 4px 18px #0005;font:13px/1.5 system-ui,sans-serif}#buytools-ad-consent-notice:focus{outline:2px solid #a5f36b;outline-offset:3px}@media(max-width:380px){#buytools-ad-slot{width:calc(100% - 16px);padding:10px 4px}}";
+      style.textContent = "#buytools-ad-slot{box-sizing:border-box;width:min(100% - 32px,1000px);margin:28px auto 36px;padding:14px 12px;border:1px solid rgba(150,160,180,.16);border-radius:14px;background:rgba(120,130,150,.035);text-align:center;overflow:hidden;min-height:58px}#buytools-ad-slot .buytools-ad-label{margin:0 0 8px;color:#8992a6;font:10px/1.4 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}#buytools-ad-slot .buytools-ad-content{display:flex;justify-content:center;align-items:center;max-width:100%;overflow:hidden;min-height:50px}#buytools-ad-slot iframe{max-width:100%;border:0}#buytools-ad-consent{position:fixed;z-index:99999;left:12px;right:12px;bottom:12px;max-width:620px;margin:auto;padding:16px;border:1px solid #596174;border-radius:14px;background:#171b28;color:#f4f6ff;box-shadow:0 8px 36px #0008;font:14px/1.5 system-ui,sans-serif}#buytools-ad-consent p{margin:0 0 12px}#buytools-ad-consent .buytools-consent-privacy-link{display:inline-block;margin:0 0 12px;color:#a5f36b;text-decoration:underline;text-underline-offset:3px}#buytools-ad-consent .buytools-consent-privacy-link:focus-visible{outline:2px solid #a5f36b;outline-offset:3px;border-radius:3px}#buytools-ad-consent .buytools-consent-actions{display:flex;gap:10px;flex-wrap:wrap}#buytools-ad-consent button{border:1px solid #7c879d;border-radius:8px;padding:9px 13px;background:transparent;color:inherit;font:inherit;cursor:pointer}#buytools-ad-consent button:first-child{background:#a5f36b;color:#10150d;border-color:#a5f36b;font-weight:700}#buytools-ad-consent-notice{width:min(100% - 32px,620px);margin:16px auto;padding:12px 14px;border:1px solid #596174;border-radius:10px;background:#171b28;color:#f4f6ff;box-shadow:0 4px 18px #0005;font:13px/1.5 system-ui,sans-serif}#buytools-ad-consent-notice:focus{outline:2px solid #a5f36b;outline-offset:3px}#buytools-ad-preferences{display:inline-block;margin:10px 12px 10px 0;padding:6px 0;border:0;background:transparent;color:inherit;text-decoration:underline;text-underline-offset:3px;font:inherit;cursor:pointer}#buytools-ad-preferences:focus-visible{outline:2px solid #a5f36b;outline-offset:3px;border-radius:3px}@media(max-width:380px){#buytools-ad-slot{width:calc(100% - 16px);padding:10px 4px}}";
       document.head.appendChild(style);
     }
-    showConsent();
+    addPreferencesControl();
+    var openPreferences = /(?:^|[?&])ad-preferences=1(?:&|$)/.test(window.location.search);
+    showConsent(openPreferences);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();

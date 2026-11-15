@@ -138,7 +138,40 @@ try {
   assert.equal(await acceptPage.evaluate(() => window.localStorage.getItem("buytools-ad-consent-v1")), "accepted");
   assert.equal(await acceptPage.locator("#buytools-ad-slot").count(), 1, "Acceptance should mount one ad slot");
   assert.equal(acceptedAdRequests.length, 1, "Acceptance should initiate one native ad request");
+  assert.equal(await acceptPage.locator("#buytools-ad-preferences").count(), 1, "A persistent preference control must be available after acceptance");
+  await acceptPage.locator("#buytools-ad-preferences").click();
+  await acceptPage.locator("#buytools-ad-consent").waitFor();
+  const acceptedPageReload = acceptPage.waitForEvent("load");
+  await acceptPage.getByRole("button", { name: "Reject" }).click();
+  await acceptedPageReload;
+  await acceptPage.addScriptTag({ content: adEngineSource });
+  assert.equal(await acceptPage.evaluate(() => window.localStorage.getItem("buytools-ad-consent-v1")), "rejected");
+  assert.equal(await acceptPage.locator("#buytools-ad-consent").count(), 0, "A saved rejection must suppress the reopened prompt after reload");
+  assert.equal(await acceptPage.locator("#buytools-ad-slot").count(), 0, "Changing an accepted preference to reject must remove ads after reload");
+  assert.equal(acceptedAdRequests.length, 1, "Changing to reject must not request another ad after reload");
   await acceptContext.close();
+
+  const reopenContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const reopenPage = await reopenContext.newPage();
+  await reopenPage.route("https://bicea.org/**", route => route.fulfill({
+    status: 200, contentType: "application/javascript", body: "window.__buytoolsAdTestStub = true;"
+  }));
+  const reopenedAdRequests = [];
+  reopenPage.on("request", request => {
+    if (new URL(request.url()).hostname === "bicea.org") reopenedAdRequests.push(request.url());
+  });
+  await openConsentFixture(reopenPage);
+  await reopenPage.getByRole("button", { name: "Reject" }).click();
+  assert.equal(await reopenPage.evaluate(() => window.localStorage.getItem("buytools-ad-consent-v1")), "rejected");
+  await reopenPage.locator("#buytools-ad-preferences").click();
+  await reopenPage.locator("#buytools-ad-consent").waitFor();
+  const reopenedAdRequest = reopenPage.waitForRequest(request => request.url().startsWith("https://bicea.org/21/"));
+  await reopenPage.getByRole("button", { name: "Accept advertising" }).click();
+  await reopenedAdRequest;
+  assert.equal(await reopenPage.locator("#buytools-ad-slot").count(), 1, "A saved rejection can be changed to acceptance");
+  assert.equal(await reopenPage.evaluate(() => window.localStorage.getItem("buytools-ad-consent-v1")), "accepted");
+  assert.equal(reopenedAdRequests.length, 1, "Re-accepting must create exactly one ad request");
+  await reopenContext.close();
 
   const blockedContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await blockedContext.addInitScript(() => {
@@ -214,6 +247,26 @@ try {
   assert.equal(writeDeniedAdRequests.length, 0, "The prompt may return after reload when rejection could not be saved");
   assert.deepEqual(writeDeniedPageErrors, [], "A localStorage write failure must not create uncaught page errors");
   await writeDeniedContext.close();
+
+  const policyPreferencesContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const policyPreferencesPage = await policyPreferencesContext.newPage();
+  await policyPreferencesPage.route("https://bicea.org/**", route => route.fulfill({
+    status: 200, contentType: "application/javascript", body: "window.__buytoolsAdTestStub = true;"
+  }));
+  const policyAdRequests = [];
+  policyPreferencesPage.on("request", request => {
+    if (new URL(request.url()).hostname === "bicea.org") policyAdRequests.push(request.url());
+  });
+  await policyPreferencesPage.goto("http://127.0.0.1:8000/privacy/", { waitUntil: "load" });
+  const policyPreferencesLink = policyPreferencesPage.getByRole("link", { name: "Advertising preferences" });
+  assert.equal(await policyPreferencesLink.getAttribute("href"), "/?ad-preferences=1#buytools-ad-preferences");
+  await policyPreferencesPage.evaluate(() => window.localStorage.setItem("buytools-ad-consent-v1", "rejected"));
+  await policyPreferencesPage.goto("http://127.0.0.1:8000/?ad-preferences=1#buytools-ad-preferences", { waitUntil: "load" });
+  await policyPreferencesPage.addScriptTag({ content: adEngineSource });
+  await policyPreferencesPage.locator("#buytools-ad-consent").waitFor();
+  assert.equal(await policyPreferencesPage.locator("#buytools-ad-slot").count(), 0, "The privacy-policy link must reopen preferences without loading ads");
+  assert.equal(policyAdRequests.length, 0, "Opening the preference link must not request ads before a new acceptance");
+  await policyPreferencesContext.close();
 
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
   assert.equal(thirdPartyRequests.length, 0, "Initial page load must not contact third-party hosts before a tool is used");
@@ -1935,7 +1988,7 @@ try {
     hashedModelAssetResponses: allModelAssetRequests.filter(item => item.sha256).length,
     artifact: "runtime-provenance.json"
   }, null, 2));
-  console.log(`Browser smoke tests passed: ${toolCount} tool cards; initial first-party-only page load; on-demand QR, PDF, ZIP and image-to-PDF requests; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, stage-aware background-removal progress, per-model consent, standard and smaller quantized-model UI workflows, synthetic model benchmark, downloads, theme, 390px mobile layout and axe audits.`);
+  console.log(`Browser smoke tests passed: ${toolCount} tool cards; advertising preference reopening and saved-choice switching; privacy-policy preference link; initial first-party-only page load; on-demand QR, PDF, ZIP and image-to-PDF requests; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, stage-aware background-removal progress, per-model consent, standard and smaller quantized-model UI workflows, synthetic model benchmark, downloads, theme, 390px mobile layout and axe audits.`);
 } finally {
   await browser.close();
 }
