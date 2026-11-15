@@ -85,7 +85,7 @@ page.on("requestfinished", request => {
 try {
   // Exercise the advertising consent gate without contacting the real ad provider.
   const adEngineSource = await readFile(new URL("../assets/buytools-ads.js", import.meta.url), "utf8");
-  const consentFixtureUrl = "http://127.0.0.1:8000/__ad-consent-test";
+  const consentFixtureUrl = "http://127.0.0.1:8000/";
   const consentFixtureHtml = "<!doctype html><html lang='en'><head><meta charset='utf-8'><title>Consent fixture</title></head><body><main><h1>Consent fixture</h1></main><footer></footer></body></html>";
   async function openConsentFixture(targetPage) {
     await targetPage.route(consentFixtureUrl, route => route.fulfill({
