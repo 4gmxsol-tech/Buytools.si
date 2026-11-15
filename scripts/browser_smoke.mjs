@@ -311,7 +311,7 @@ try {
   assert.equal(crossTabRequestsA.length, 1);
   assert.equal(crossTabRequestsB.length, 1);
   await consentTabA.locator("#buytools-ad-preferences").click();
-  await consentTabA.locator("#buytools-ad-consent").waitFor();
+  await consentTabA.locator("#buytools-ad-consent").waitFor({ timeout: 15000 });
   const rejectReloadA = consentTabA.waitForEvent("load", { timeout: 15000 });
   await consentTabA.getByRole("button", { name: "Reject" }).click();
   await rejectReloadA;
@@ -330,11 +330,11 @@ try {
   assert.equal(crossTabRequestsA.length, 1, "Rejecting in another tab must not create another ad request");
   assert.equal(crossTabRequestsB.length, 1, "A synchronized rejection must not request more ads");
   await consentTabA.evaluate(() => window.localStorage.clear());
-  await consentTabB.locator("#buytools-ad-consent").waitFor();
+  await consentTabB.locator("#buytools-ad-consent").waitFor({ timeout: 15000 });
   assert.equal(await consentTabB.locator("#buytools-ad-slot").count(), 0, "Clearing storage in one tab must not leave ads mounted in another");
   await consentTabA.reload({ waitUntil: "load", timeout: 15000 });
   await consentTabA.addScriptTag({ content: adEngineSource });
-  await consentTabA.locator("#buytools-ad-consent").waitFor();
+  await consentTabA.locator("#buytools-ad-consent").waitFor({ timeout: 15000 });
   assert.equal(crossTabRequestsA.length + crossTabRequestsB.length, 2, "Clearing preferences must reopen prompts without requesting ads");
   await crossTabContext.close();
 
