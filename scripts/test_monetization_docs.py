@@ -27,10 +27,14 @@ class MonetizationDocumentationTests(unittest.TestCase):
             'function saveConsent(value)',
             'window.localStorage.setItem(CONSENT_KEY, value); return true;',
             'catch (error) { return false; }',
-            'function showConsentNotice()',
+            'function showConsentNotice(adWasAlreadyRequested)',
             'if (!saveConsent("accepted"))',
             'var saved = saveConsent("rejected");',
-            'if (!saved || consentReadFailed) showConsentNotice();',
+            'if (!saved || consentReadFailed) showConsentNotice(hadAdSlot);',
+            'function addPreferencesControl()',
+            'showConsent(true)',
+            'if (saved && hadAdSlot) window.location.reload();',
+            'var openPreferences = /(?:^|[?&])ad-preferences=1(?:&|$)/.test(window.location.search);',
             'Your rejection applies to this page, but your browser could not confirm that it saved the preference.',
             'Advertising will remain disabled for this visit.',
             'src: "https://bicea.org/21/"',
@@ -45,6 +49,10 @@ class MonetizationDocumentationTests(unittest.TestCase):
         self.assertIn("Reject", DOC)
         self.assertIn("fails closed and does not request ad delivery", DOC)
         self.assertIn("prompt may return after navigation or reload", DOC)
+        self.assertIn("A persistent **Advertising preferences** control", DOC)
+        self.assertIn("without clearing all site data", DOC)
+        self.assertIn("page reloads so subsequent page loads do not mount the ad slot", DOC)
+        self.assertIn("Advertising preferences", POLICY)
 
     def test_documented_placements_and_exclusions_match_source(self):
         self.assertIn('var nativePages = location.pathname === "/" || location.pathname.indexOf("/guides/") === 0;', ENGINE)
