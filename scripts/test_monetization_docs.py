@@ -44,7 +44,7 @@ class MonetizationDocumentationTests(unittest.TestCase):
         self.assertIn("Accept advertising", DOC)
         self.assertIn("Reject", DOC)
         self.assertIn("fails closed and does not request ad delivery", DOC)
-        self.assertIn("prompt may appear again after reload", DOC)
+        self.assertIn("prompt may return after navigation or reload", DOC)
 
     def test_documented_placements_and_exclusions_match_source(self):
         self.assertIn('var nativePages = location.pathname === "/" || location.pathname.indexOf("/guides/") === 0;', ENGINE)
