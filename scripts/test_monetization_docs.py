@@ -64,7 +64,7 @@ class MonetizationDocumentationTests(unittest.TestCase):
             'window.addEventListener("storage", handleConsentStorage);',
         ):
             self.assertIn(snippet, ENGINE)
-        self.assertIn("synchronized across other open BuyTools.si tabs", DOC)
+        self.assertIn("synchronize across other open BuyTools.si tabs", DOC)
         self.assertIn("synchronized with other open BuyTools.si tabs", POLICY)
         self.assertIn("clearing the preference in one tab reopens the prompt in other tabs", DOC)
         self.assertIn("clearing the key reopens the prompt in other tabs", POLICY)
