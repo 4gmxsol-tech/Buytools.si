@@ -558,14 +558,21 @@ else:
     ad_engine = ad_engine_path.read_text(encoding="utf-8")
     required_ad_engine_markers = (
         'var CONSENT_KEY = "buytools-ad-consent-v1";',
-        'if (localStorage.getItem(CONSENT_KEY) === "accepted") { mountAds(); return; }',
-        'if (localStorage.getItem(CONSENT_KEY) === "rejected") return;',
+        'function readConsent()',
+        'window.localStorage.getItem(CONSENT_KEY)',
+        'catch (error) { return null; }',
+        'function saveConsent(value)',
+        'window.localStorage.setItem(CONSENT_KEY, value); return true;',
+        'catch (error) { return false; }',
+        'if (consent === "accepted") { mountAds(); return; }',
+        'if (consent === "rejected") return;',
+        'if (!saveConsent("accepted"))',
+        'saveConsent("rejected");',
+        'Advertising will remain disabled for this visit.',
         'src: "https://bicea.org/21/" + NATIVE_ID',
         'src: "https://bicea.org/22/" + key',
         'accept.addEventListener("click"',
         'reject.addEventListener("click"',
-        'localStorage.setItem(CONSENT_KEY, "accepted")',
-        'localStorage.setItem(CONSENT_KEY, "rejected")',
     )
     for marker in required_ad_engine_markers:
         if marker not in ad_engine:

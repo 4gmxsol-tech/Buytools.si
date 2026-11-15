@@ -83,6 +83,95 @@ page.on("requestfinished", request => {
 });
 
 try {
+  // Exercise the advertising consent gate without contacting the real ad provider.
+  const adEngineSource = await readFile(new URL("../assets/buytools-ads.js", import.meta.url), "utf8");
+  const consentFixtureUrl = "http://127.0.0.1:8000/";
+  const consentFixtureHtml = "<!doctype html><html lang='en'><head><meta charset='utf-8'><title>Consent fixture</title></head><body><main><h1>Consent fixture</h1></main><footer></footer></body></html>";
+  async function openConsentFixture(targetPage) {
+    await targetPage.route(consentFixtureUrl, route => route.fulfill({
+      status: 200,
+      contentType: "text/html; charset=utf-8",
+      body: consentFixtureHtml
+    }));
+    await targetPage.goto(consentFixtureUrl, { waitUntil: "load" });
+    await targetPage.addScriptTag({ content: adEngineSource });
+  }
+
+  const rejectContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const rejectPage = await rejectContext.newPage();
+  const rejectedAdRequests = [];
+  await rejectPage.route("https://bicea.org/**", route => route.fulfill({
+    status: 200, contentType: "application/javascript", body: "window.__buytoolsAdTestStub = true;"
+  }));
+  rejectPage.on("request", request => {
+    if (new URL(request.url()).hostname === "bicea.org") rejectedAdRequests.push(request.url());
+  });
+  await openConsentFixture(rejectPage);
+  await rejectPage.locator("#buytools-ad-consent").waitFor();
+  assert.equal(rejectedAdRequests.length, 0, "No Adsterra request may occur before a visitor chooses");
+  await rejectPage.getByRole("button", { name: "Reject" }).click();
+  await rejectPage.locator("#buytools-ad-consent").waitFor({ state: "detached" });
+  assert.equal(await rejectPage.locator("#buytools-ad-slot").count(), 0, "Rejecting must not mount an ad slot");
+  assert.equal(rejectedAdRequests.length, 0, "Rejecting must not request Adsterra delivery");
+  await rejectPage.reload({ waitUntil: "load" });
+  await rejectPage.addScriptTag({ content: adEngineSource });
+  assert.equal(await rejectPage.locator("#buytools-ad-consent").count(), 0, "A saved rejection must suppress the prompt on reload");
+  assert.equal(rejectedAdRequests.length, 0, "A saved rejection must remain free of ad requests");
+  await rejectContext.close();
+
+  const acceptContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const acceptPage = await acceptContext.newPage();
+  await acceptPage.route("https://bicea.org/**", route => route.fulfill({
+    status: 200, contentType: "application/javascript", body: "window.__buytoolsAdTestStub = true;"
+  }));
+  const acceptedAdRequests = [];
+  acceptPage.on("request", request => {
+    if (new URL(request.url()).hostname === "bicea.org") acceptedAdRequests.push(request.url());
+  });
+  await openConsentFixture(acceptPage);
+  await acceptPage.locator("#buytools-ad-consent").waitFor();
+  assert.equal(acceptedAdRequests.length, 0, "Adsterra must not be requested before explicit acceptance");
+  const acceptedRequestPromise = acceptPage.waitForRequest(request => request.url().startsWith("https://bicea.org/21/"));
+  await acceptPage.getByRole("button", { name: "Accept advertising" }).click();
+  await acceptedRequestPromise;
+  await acceptPage.waitForFunction(() => window.__buytoolsAdTestStub === true);
+  assert.equal(await acceptPage.evaluate(() => window.localStorage.getItem("buytools-ad-consent-v1")), "accepted");
+  assert.equal(await acceptPage.locator("#buytools-ad-slot").count(), 1, "Acceptance should mount one ad slot");
+  assert.equal(acceptedAdRequests.length, 1, "Acceptance should initiate one native ad request");
+  await acceptContext.close();
+
+  const blockedContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await blockedContext.addInitScript(() => {
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get() { throw new DOMException("Storage access denied", "SecurityError"); }
+    });
+  });
+  const blockedPage = await blockedContext.newPage();
+  const blockedAdRequests = [];
+  const blockedPageErrors = [];
+  await blockedPage.route("https://bicea.org/**", route => route.fulfill({
+    status: 200, contentType: "application/javascript", body: "window.__buytoolsAdTestStub = true;"
+  }));
+  blockedPage.on("request", request => {
+    if (new URL(request.url()).hostname === "bicea.org") blockedAdRequests.push(request.url());
+  });
+  blockedPage.on("pageerror", error => blockedPageErrors.push(error.message));
+  await openConsentFixture(blockedPage);
+  await blockedPage.locator("#buytools-ad-consent").waitFor();
+  assert.equal(blockedAdRequests.length, 0, "Blocked storage must not trigger ad requests");
+  await blockedPage.getByRole("button", { name: "Accept advertising" }).click();
+  const blockedStatus = blockedPage.getByRole("status");
+  await blockedStatus.waitFor();
+  assert.match(await blockedStatus.innerText(), /Advertising will remain disabled for this visit/i);
+  assert.equal(await blockedPage.locator("#buytools-ad-slot").count(), 0, "Acceptance must fail closed when storage cannot save the choice");
+  assert.equal(blockedAdRequests.length, 0, "Blocked storage must never fall through to ad delivery");
+  await blockedPage.getByRole("button", { name: "Reject" }).click();
+  await blockedPage.locator("#buytools-ad-consent").waitFor({ state: "detached" });
+  assert.equal(blockedAdRequests.length, 0, "Rejecting with blocked storage must remain ad-free");
+  assert.deepEqual(blockedPageErrors, [], "Blocked local storage must not create uncaught page errors");
+  await blockedContext.close();
+
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
   assert.equal(thirdPartyRequests.length, 0, "Initial page load must not contact third-party hosts before a tool is used");
 

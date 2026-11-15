@@ -20,10 +20,15 @@ class MonetizationDocumentationTests(unittest.TestCase):
     def test_documented_consent_states_match_runtime_and_privacy_policy(self):
         for snippet in (
             'var CONSENT_KEY = "buytools-ad-consent-v1";',
-            'if (localStorage.getItem(CONSENT_KEY) === "accepted") { mountAds(); return; }',
-            'if (localStorage.getItem(CONSENT_KEY) === "rejected") return;',
-            'localStorage.setItem(CONSENT_KEY, "accepted");',
-            'localStorage.setItem(CONSENT_KEY, "rejected");',
+            'function readConsent()',
+            'window.localStorage.getItem(CONSENT_KEY)',
+            'catch (error) { return null; }',
+            'function saveConsent(value)',
+            'window.localStorage.setItem(CONSENT_KEY, value); return true;',
+            'catch (error) { return false; }',
+            'if (!saveConsent("accepted"))',
+            'saveConsent("rejected");',
+            'Advertising will remain disabled for this visit.',
             'src: "https://bicea.org/21/"',
         ):
             self.assertIn(snippet, ENGINE)
@@ -32,6 +37,8 @@ class MonetizationDocumentationTests(unittest.TestCase):
         self.assertIn("can choose “Reject”", POLICY)
         self.assertIn("Accept advertising", DOC)
         self.assertIn("Reject", DOC)
+        self.assertIn("fails closed and does not request ad delivery", DOC)
+        self.assertIn("prompt may appear again after reload", DOC)
 
     def test_documented_placements_and_exclusions_match_source(self):
         self.assertIn('var nativePages = location.pathname === "/" || location.pathname.indexOf("/guides/") === 0;', ENGINE)
