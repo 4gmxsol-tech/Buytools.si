@@ -172,6 +172,43 @@ try {
   assert.deepEqual(blockedPageErrors, [], "Blocked local storage must not create uncaught page errors");
   await blockedContext.close();
 
+  // A readable localStorage whose setItem method throws must also fail closed.
+  const writeDeniedContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await writeDeniedContext.addInitScript(() => {
+    Object.defineProperty(Storage.prototype, "setItem", {
+      configurable: true,
+      value() { throw new DOMException("Storage write denied", "QuotaExceededError"); }
+    });
+  });
+  const writeDeniedPage = await writeDeniedContext.newPage();
+  const writeDeniedAdRequests = [];
+  const writeDeniedPageErrors = [];
+  await writeDeniedPage.route("https://bicea.org/**", route => route.fulfill({
+    status: 200, contentType: "application/javascript", body: "window.__buytoolsAdTestStub = true;"
+  }));
+  writeDeniedPage.on("request", request => {
+    if (new URL(request.url()).hostname === "bicea.org") writeDeniedAdRequests.push(request.url());
+  });
+  writeDeniedPage.on("pageerror", error => writeDeniedPageErrors.push(error.message));
+  await openConsentFixture(writeDeniedPage);
+  await writeDeniedPage.locator("#buytools-ad-consent").waitFor();
+  assert.equal(writeDeniedAdRequests.length, 0, "Readable but non-writable storage must not trigger ads before consent");
+  await writeDeniedPage.getByRole("button", { name: "Accept advertising" }).click();
+  const writeDeniedStatus = writeDeniedPage.getByRole("status");
+  await writeDeniedStatus.waitFor();
+  assert.match(await writeDeniedStatus.innerText(), /Advertising will remain disabled for this visit/i);
+  assert.equal(await writeDeniedPage.locator("#buytools-ad-slot").count(), 0, "A failed consent write must not mount an ad slot");
+  assert.equal(writeDeniedAdRequests.length, 0, "A failed consent write must not request Adsterra");
+  await writeDeniedPage.getByRole("button", { name: "Reject" }).click();
+  await writeDeniedPage.locator("#buytools-ad-consent").waitFor({ state: "detached" });
+  assert.equal(writeDeniedAdRequests.length, 0, "Rejecting with non-writable storage must remain ad-free");
+  await writeDeniedPage.reload({ waitUntil: "load" });
+  await writeDeniedPage.addScriptTag({ content: adEngineSource });
+  await writeDeniedPage.locator("#buytools-ad-consent").waitFor();
+  assert.equal(writeDeniedAdRequests.length, 0, "The prompt may return after reload when rejection could not be saved");
+  assert.deepEqual(writeDeniedPageErrors, [], "A localStorage write failure must not create uncaught page errors");
+  await writeDeniedContext.close();
+
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
   assert.equal(thirdPartyRequests.length, 0, "Initial page load must not contact third-party hosts before a tool is used");
 
