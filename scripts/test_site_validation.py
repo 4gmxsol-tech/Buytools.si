@@ -97,8 +97,8 @@ class AdvertisingConsentDisclosureTests(unittest.TestCase):
         "If accepted, the site loads ad delivery code from bicea.org. "
         "The site does not currently run a separate site-analytics platform. "
         "The hosting provider may still process technical request data as described above. "
-        "If the browser blocks reading or saving the preference, the prompt may reappear after navigation or reload; "
-        "a rejected choice still keeps advertising disabled for the current page when the browser cannot confirm that it was saved.</p>"
+        "If browser storage blocks reading or saving the preference, a previously saved choice, if any, may still apply after navigation or reload; "
+        "a rejection that cannot be saved still keeps advertising disabled for the current page.</p>"
     )
 
     def test_complete_consent_gated_advertising_disclosure_is_accepted(self):
@@ -116,11 +116,11 @@ class AdvertisingConsentDisclosureTests(unittest.TestCase):
 
     def test_missing_storage_failure_disclosure_is_reported(self):
         html = self.COMPLETE.replace(
-            "a rejected choice still keeps advertising disabled for the current page when the browser cannot confirm that it was saved.</p>",
+            "a rejection that cannot be saved still keeps advertising disabled for the current page.</p>",
             "</p>",
         )
         self.assertIn(
-            "a rejected choice still keeps advertising disabled for the current page when the browser cannot confirm that it was saved",
+            "a rejection that cannot be saved still keeps advertising disabled for the current page",
             missing_advertising_consent_disclosure(html),
         )
 

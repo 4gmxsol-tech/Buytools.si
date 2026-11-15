@@ -27,8 +27,8 @@
   function showConsentNotice(adWasAlreadyRequested) {
     if (document.getElementById("buytools-ad-consent-notice")) return;
     var message = adWasAlreadyRequested
-      ? "Your rejection applies to this page, but your browser could not save the preference. The ad slot has been removed; third-party code already requested during this page cannot be recalled. The prompt may appear again after you navigate or reload."
-      : "Your rejection applies to this page, but your browser could not confirm that it saved the preference. The prompt may appear again after you navigate or reload.";
+      ? "Your rejection applies to this page, but your browser could not save the preference. The ad slot has been removed; third-party code already requested during this page cannot be recalled. A previously saved preference, if any, may still apply after navigation or reload."
+      : "Your rejection applies to this page, but your browser could not confirm that it saved the preference. A previously saved preference, if any, may still apply after navigation or reload.";
     var notice = el("p", {
       id: "buytools-ad-consent-notice",
       role: "status",

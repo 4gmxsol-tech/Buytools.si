@@ -78,8 +78,8 @@ def missing_advertising_consent_disclosure(html):
         "if accepted, the site loads ad delivery code from bicea.org",
         "the site does not currently run a separate site-analytics platform",
         "the hosting provider may still process technical request data",
-        "if the browser blocks reading or saving the preference, the prompt may reappear after navigation or reload",
-        "a rejected choice still keeps advertising disabled for the current page when the browser cannot confirm that it was saved",
+        "if browser storage blocks reading or saving the preference, a previously saved choice, if any, may still apply after navigation or reload",
+        "a rejection that cannot be saved still keeps advertising disabled for the current page",
     )
     return [phrase for phrase in required if phrase not in visible_text]
 

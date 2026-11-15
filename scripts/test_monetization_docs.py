@@ -48,7 +48,7 @@ class MonetizationDocumentationTests(unittest.TestCase):
         self.assertIn("Accept advertising", DOC)
         self.assertIn("Reject", DOC)
         self.assertIn("fails closed and does not request ad delivery", DOC)
-        self.assertIn("prompt may return after navigation or reload", DOC)
+        self.assertIn("a previously saved preference, if any, may still be applied on later page loads", DOC)
         self.assertIn("A persistent **Advertising preferences** control", DOC)
         self.assertIn("without clearing all site data", DOC)
         self.assertIn("page reloads so subsequent page loads do not mount the ad slot", DOC)
