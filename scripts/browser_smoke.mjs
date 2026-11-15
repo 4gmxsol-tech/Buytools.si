@@ -584,7 +584,7 @@ try {
     '<script>window.__markdownXss=1</script>',
     '[unsafe](javascript:alert(1))',
     '[safe](https://example.com/docs?a=1&b=2)'
-  ].join("\\n");
+  ].join("\n");
   await page.locator("#text").fill(markdownPayload);
   await page.locator("#run").click();
   const markdownPreview = page.locator("#mdpreview");
@@ -593,7 +593,7 @@ try {
   assert.equal(await page.evaluate(() => window.__markdownXss), undefined, "Pasted HTML event handlers must remain inert");
   assert.match(await markdownPreview.innerText(), /<img src=x onerror=/, "Raw HTML should be displayed as escaped text");
   assert.equal(await markdownPreview.locator('a[href^="javascript:"]').count(), 0, "Unsafe javascript: links must not become anchors");
-  assert.match(await markdownPreview.innerText(), /\\[unsafe\\]\\(javascript:alert\\(1\\)\\)/);
+  assert.match(await markdownPreview.innerText(), /\[unsafe\]\(javascript:alert\(1\)\)/);
   const safeMarkdownLink = markdownPreview.locator('a[href^="https://example.com/"]');
   assert.equal(await safeMarkdownLink.count(), 1, "HTTPS Markdown links should remain usable");
   assert.equal(await safeMarkdownLink.getAttribute("href"), "https://example.com/docs?a=1&b=2");
