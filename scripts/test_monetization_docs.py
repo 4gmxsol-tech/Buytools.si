@@ -47,7 +47,7 @@ class MonetizationDocumentationTests(unittest.TestCase):
         self.assertIn("page-level status explains", DOC)
         self.assertIn("Accept advertising", DOC)
         self.assertIn("Reject", DOC)
-        self.assertIn("fails closed and does not request ad delivery", DOC)
+        self.assertIn("fails closed and does not request new ad delivery", DOC)
         self.assertIn("a previously saved preference, if any, may still be applied on later page loads", DOC)
         self.assertIn("A persistent **Advertising preferences** control", DOC)
         self.assertIn("without clearing all site data", DOC)
