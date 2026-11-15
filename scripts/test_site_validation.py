@@ -115,8 +115,8 @@ class AdvertisingConsentDisclosureTests(unittest.TestCase):
 
     def test_missing_storage_failure_disclosure_is_reported(self):
         html = self.COMPLETE.replace(
-            "a rejected choice still keeps advertising disabled for the current page when the browser cannot confirm that it was saved. ",
-            "",
+            "a rejected choice still keeps advertising disabled for the current page when the browser cannot confirm that it was saved.</p>",
+            "</p>",
         )
         self.assertIn(
             "a rejected choice still keeps advertising disabled for the current page when the browser cannot confirm that it was saved",
