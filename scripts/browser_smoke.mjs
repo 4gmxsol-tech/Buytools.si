@@ -134,6 +134,7 @@ try {
   const acceptedRequestPromise = acceptPage.waitForRequest(request => request.url().startsWith("https://bicea.org/21/"));
   await acceptPage.getByRole("button", { name: "Accept advertising" }).click();
   await acceptedRequestPromise;
+  await acceptPage.waitForFunction(() => window.__buytoolsAdTestStub === true);
   assert.equal(await acceptPage.evaluate(() => window.localStorage.getItem("buytools-ad-consent-v1")), "accepted");
   assert.equal(await acceptPage.locator("#buytools-ad-slot").count(), 1, "Acceptance should mount one ad slot");
   assert.equal(acceptedAdRequests.length, 1, "Acceptance should initiate one native ad request");
