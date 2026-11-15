@@ -43,7 +43,7 @@ class MonetizationDocumentationTests(unittest.TestCase):
         self.assertIn("buytools-ad-consent-v1", POLICY)
         self.assertIn("not loaded unless a visitor chooses “Accept advertising”", POLICY)
         self.assertIn("can choose “Reject”", POLICY)
-        self.assertIn("rejected choice still keeps advertising disabled for the current page", POLICY)
+        self.assertIn("a rejection that cannot be saved still keeps advertising disabled for the current page", POLICY)
         self.assertIn("page-level status explains", DOC)
         self.assertIn("Accept advertising", DOC)
         self.assertIn("Reject", DOC)
