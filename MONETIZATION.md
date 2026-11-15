@@ -1,28 +1,35 @@
 # BuyTools.si monetization readiness
 
-## Current state
-No advertising network is wired into the site by this change. Do not publish a fake publisher ID, fake ads.txt record, or unverified ad script. Add the actual provider code only after the account is approved and the official snippet is available.
+## Current implementation (verified against Main on 2026-11-15)
 
-## Recommended revenue sequence
-1. Build search traffic around genuinely useful tools and focused guides; review Search Console queries and landing-page performance.
-2. Improve completion rate and repeat use before adding intrusive placements.
-3. Start with one responsive display placement after the tool directory or between editorial sections. Keep ads away from file-picker buttons, download links, and form controls.
-4. Test on narrow mobile screens and desktop. Avoid forced redirects, deceptive download buttons, excessive pop-ups, and ad density that harms usability.
-5. If affiliate links are introduced, use relevant products only and disclose the commercial relationship next to the recommendation.
-6. Publish accurate privacy and terms information before enabling ad technology. Name the real advertising provider, describe its cookie/data practices, and add a consent mechanism when required for the audience and jurisdiction.
-7. Add ads.txt only with the exact line supplied by the approved advertising provider. Never guess the publisher ID or seller record.
+Adsterra is integrated into the production build. The Pages workflow runs `scripts/inject_ads.py`, which adds the first-party consent engine `assets/buytools-ads.js` once to eligible HTML pages. The injector excludes the `privacy/`, `terms/` and `licenses/` directories.
+
+The first-party engine creates one labelled advertising slot before the page footer when a footer exists. Its current placement rules are:
+
+- The homepage and pages under `/guides/` use the configured Adsterra native placement.
+- Other eligible pages, including tool pages, use one responsive banner placement.
+- Banner dimensions are selected by viewport width: 320 × 50 below 520 px, 300 × 250 from 520 px to below 900 px, and 728 × 90 at 900 px or wider.
+
+The ad-delivery scripts are **not** loaded merely because the first-party consent engine is present. The engine shows an advertising-preferences prompt when it has no stored choice. Selecting **Accept advertising** stores `accepted` under `buytools-ad-consent-v1` and mounts the ad slot, which then requests the Adsterra delivery code from `bicea.org`. Selecting **Reject** stores `rejected` and does not mount or request the ad slot. The choice is stored in browser local storage; the current site provides no in-page preference reset, so visitors can clear the saved choice using their browser's site-data controls.
+
+The prompt is a named, non-modal region with an associated description; it is not a modal dialog and does not trap or move keyboard focus. This lightweight site preference gate is not a certification of legal compliance, and it is not a full consent-management platform or an IAB Transparency and Consent Framework implementation. Requirements depend on visitor jurisdictions, the provider's current configuration and the actual ad partners. Obtain qualified privacy/legal review and confirm the provider's requirements before claiming compliance or expanding ad technology.
+
+The privacy policy at `/privacy/` identifies Adsterra, the `bicea.org` delivery host, the advertising preference key, the categories of technical data that the provider and its partners may process, and the distinction between advertising and site analytics. The site policy says no separate site-analytics platform is currently used. This does not mean the advertising provider performs no ad-delivery measurement after a visitor accepts.
+
+No `ads.txt` file is currently present in the repository. Do not create one or publish seller/publisher identifiers unless the approved provider supplies the exact authoritative record. No revenue amount, RPM, approval status or delivery rate is asserted in this repository.
+
+## Operational controls and next steps
+
+1. Keep the ad engine consent-gated: no Adsterra delivery request before an explicit accept choice; a reject choice must continue to leave the ad slot unmounted.
+2. Keep ads outside file pickers, upload/download controls, active tool workspaces and primary navigation. Do not add pop-ups, forced redirects or extra placements without a separate review and verified authorization.
+3. Re-test the accept and reject paths on mobile and desktop after any change to the engine, provider tags, consent copy or injection rules. Check that the prompt remains keyboard-usable, the privacy link is reachable, and ad containers do not cause layout shifts or obscure controls.
+4. Review provider approval, seller records, partner disclosures, consent requirements and geographic restrictions in the provider account before changing the integration. The public code and a successful CI deployment do not establish account approval or legal compliance.
+5. Use Search Console for organic search evidence and the provider's own reporting for advertising delivery/revenue when that account data is available. Do not add separate analytics, tracking pixels or another third-party service without explicit authorization.
+6. Keep `/privacy/` synchronized with actual runtime behavior and the providers' current terms. Re-test observed network requests; do not infer data handling solely from marketing descriptions.
 
 ## Third-party license review gate
 
 The Background Removal feature loads `@imgly/background-removal@1.5.5`. The upstream project identifies this package as AGPL-3.0. AGPL-3.0 permits commercial use subject to its conditions; Section 13 includes source-availability obligations for certain modified versions used over a network. The legal effect of this site's browser integration has not been determined. Do not describe this feature as license-cleared for monetization or modify its integration until a qualified review confirms the applicable obligations, or an appropriate alternative license is obtained from IMG.LY. The public attribution notice is at `/licenses/`; keep it synchronized with the actual package version.
-
-## Suggested placement plan
-- Primary placement: after the searchable tool grid, not inside the active tool workspace.
-- Optional second placement: after a substantial how-to guide, only if the page has enough content and the ad does not interrupt the instructions.
-- Do not load ad scripts on every tool action or insert ads between upload and download controls.
-
-## Measure before scaling
-Track impressions, viewability, page RPM, revenue per session, tool completion, search clicks, Core Web Vitals and bounce/engagement indicators where legally permitted. Compare pages and devices before adding another placement. Revenue and traffic are not guaranteed; ad networks may reject sites that lack sufficient original content, clear policies, or quality traffic.
 
 ## Background-removal transitive dependency review
 

@@ -1,0 +1,59 @@
+"""Keep monetization documentation aligned with the deployed consent-gated ad engine."""
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+DOC = (ROOT / "MONETIZATION.md").read_text(encoding="utf-8")
+ENGINE = (ROOT / "assets" / "buytools-ads.js").read_text(encoding="utf-8")
+INJECTOR = (ROOT / "scripts" / "inject_ads.py").read_text(encoding="utf-8")
+POLICY = (ROOT / "privacy" / "index.html").read_text(encoding="utf-8")
+
+
+class MonetizationDocumentationTests(unittest.TestCase):
+    def test_documentation_describes_the_existing_adsterra_integration(self):
+        self.assertIn("Adsterra is integrated into the production build", DOC)
+        self.assertIn("scripts/inject_ads.py", DOC)
+        self.assertIn("assets/buytools-ads.js", DOC)
+        self.assertIn("bicea.org", DOC)
+        self.assertNotIn("No advertising network is wired into the site", DOC)
+
+    def test_documented_consent_states_match_runtime_and_privacy_policy(self):
+        for snippet in (
+            'var CONSENT_KEY = "buytools-ad-consent-v1";',
+            'if (localStorage.getItem(CONSENT_KEY) === "accepted") { mountAds(); return; }',
+            'if (localStorage.getItem(CONSENT_KEY) === "rejected") return;',
+            'localStorage.setItem(CONSENT_KEY, "accepted");',
+            'localStorage.setItem(CONSENT_KEY, "rejected");',
+            'src: "https://bicea.org/21/"',
+        ):
+            self.assertIn(snippet, ENGINE)
+        self.assertIn("buytools-ad-consent-v1", POLICY)
+        self.assertIn("not loaded unless a visitor chooses “Accept advertising”", POLICY)
+        self.assertIn("can choose “Reject”", POLICY)
+        self.assertIn("Accept advertising", DOC)
+        self.assertIn("Reject", DOC)
+
+    def test_documented_placements_and_exclusions_match_source(self):
+        self.assertIn('var nativePages = location.pathname === "/" || location.pathname.indexOf("/guides/") === 0;', ENGINE)
+        self.assertIn(
+            "var size = width < 520 ? [320, 50, units.mobile] : width < 900 ? [300, 250, units.tablet] : [728, 90, units.desktop];",
+            ENGINE,
+        )
+        self.assertIn('SKIP = {"privacy", "terms", "licenses"}', INJECTOR)
+        self.assertIn("320 × 50 below 520 px", DOC)
+        self.assertIn("300 × 250 from 520 px to below 900 px", DOC)
+        self.assertIn("728 × 90 at 900 px or wider", DOC)
+        self.assertIn("privacy/", DOC)
+        self.assertIn("terms/", DOC)
+        self.assertIn("licenses/", DOC)
+
+    def test_documentation_does_not_claim_legal_clearance_or_revenue(self):
+        self.assertIn("not a certification of legal compliance", DOC)
+        self.assertIn("not a full consent-management platform", DOC)
+        self.assertIn("No revenue amount, RPM, approval status or delivery rate is asserted", DOC)
+        self.assertIn("AGPL-3.0", DOC)
+        self.assertIn("Section 13", DOC)
+
+
+if __name__ == "__main__":
+    unittest.main()
