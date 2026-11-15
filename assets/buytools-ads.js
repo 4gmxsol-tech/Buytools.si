@@ -24,6 +24,36 @@
     try { window.localStorage.setItem(CONSENT_KEY, value); return true; }
     catch (error) { return false; }
   }
+  function closeConsentPanel() {
+    var panel = document.getElementById("buytools-ad-consent");
+    if (panel) panel.remove();
+    if (preferencesButton) preferencesButton.setAttribute("aria-expanded", "false");
+  }
+  function handleConsentStorage(event) {
+    if (!event || (event.key !== CONSENT_KEY && event.key !== null)) return;
+    try {
+      if (event.storageArea && event.storageArea !== window.localStorage) return;
+    } catch (error) {
+      return;
+    }
+    var nextValue = event.key === null ? null : event.newValue;
+    var notice = document.getElementById("buytools-ad-consent-notice");
+    if (notice) notice.remove();
+    if (nextValue === "accepted") {
+      closeConsentPanel();
+      mountAds();
+      return;
+    }
+    var existingSlot = document.getElementById("buytools-ad-slot");
+    var hadAdSlot = !!existingSlot;
+    if (existingSlot) existingSlot.remove();
+    closeConsentPanel();
+    if (hadAdSlot) {
+      window.location.reload();
+      return;
+    }
+    if (nextValue !== "rejected") showConsent(false);
+  }
   function showConsentNotice(adWasAlreadyRequested) {
     if (document.getElementById("buytools-ad-consent-notice")) return;
     var message = adWasAlreadyRequested
@@ -138,6 +168,7 @@
       document.head.appendChild(style);
     }
     addPreferencesControl();
+    window.addEventListener("storage", handleConsentStorage);
     var openPreferences = /(?:^|[?&])ad-preferences=1(?:&|$)/.test(window.location.search);
     showConsent(openPreferences);
   }

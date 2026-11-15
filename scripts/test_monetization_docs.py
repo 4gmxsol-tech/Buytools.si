@@ -54,6 +54,21 @@ class MonetizationDocumentationTests(unittest.TestCase):
         self.assertIn("page reloads so subsequent page loads do not mount the ad slot", DOC)
         self.assertIn("Advertising preferences", POLICY)
 
+    def test_saved_preferences_synchronize_across_open_tabs(self):
+        for snippet in (
+            'function closeConsentPanel()',
+            'function handleConsentStorage(event)',
+            'event.key !== CONSENT_KEY && event.key !== null',
+            'if (nextValue === "accepted")',
+            'if (nextValue !== "rejected") showConsent(false);',
+            'window.addEventListener("storage", handleConsentStorage);',
+        ):
+            self.assertIn(snippet, ENGINE)
+        self.assertIn("synchronized across other open BuyTools.si tabs", DOC)
+        self.assertIn("synchronized with other open BuyTools.si tabs", POLICY)
+        self.assertIn("clearing the preference in one tab reopens the prompt in other tabs", DOC)
+        self.assertIn("clearing the key reopens the prompt in other tabs", POLICY)
+
     def test_documented_placements_and_exclusions_match_source(self):
         self.assertIn('var nativePages = location.pathname === "/" || location.pathname.indexOf("/guides/") === 0;', ENGINE)
         self.assertIn(
