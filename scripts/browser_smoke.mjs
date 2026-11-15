@@ -192,6 +192,15 @@ try {
   blockedPage.on("pageerror", error => blockedPageErrors.push(error.message));
   await openConsentFixture(blockedPage);
   await blockedPage.locator("#buytools-ad-consent").waitFor();
+  await blockedPage.evaluate(() => {
+    window.dispatchEvent(new StorageEvent("storage", {
+      key: "buytools-ad-consent-v1",
+      newValue: "accepted",
+      storageArea: window.sessionStorage
+    }));
+  });
+  assert.equal(await blockedPage.locator("#buytools-ad-slot").count(), 0, "A storage event from another storage area must not grant advertising consent");
+  assert.equal(blockedAdRequests.length, 0, "Blocked local storage must not fail open on an unrelated storage event");
   assert.equal(blockedAdRequests.length, 0, "Blocked storage must not trigger ad requests");
   await blockedPage.getByRole("button", { name: "Accept advertising" }).click();
   const blockedStatus = blockedPage.getByRole("status");
@@ -267,6 +276,76 @@ try {
   assert.equal(await policyPreferencesPage.locator("#buytools-ad-slot").count(), 0, "The privacy-policy link must reopen preferences without loading ads");
   assert.equal(policyAdRequests.length, 0, "Opening the preference link must not request ads before a new acceptance");
   await policyPreferencesContext.close();
+
+  // Saved advertising preferences must synchronize across already-open same-origin tabs.
+  const crossTabContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await crossTabContext.addInitScript(() => {
+    window.__buytoolsStorageEvents = [];
+    window.addEventListener("storage", event => {
+      window.__buytoolsStorageEvents.push({ key: event.key, newValue: event.newValue });
+    });
+  });
+  const consentTabA = await crossTabContext.newPage();
+  const consentTabB = await crossTabContext.newPage();
+  const crossTabRequestsA = [];
+  const crossTabRequestsB = [];
+  for (const targetPage of [consentTabA, consentTabB]) {
+    await targetPage.route("https://bicea.org/**", route => route.fulfill({
+      status: 200, contentType: "application/javascript", body: "window.__buytoolsAdTestStub = true;"
+    }));
+  }
+  consentTabA.on("request", request => {
+    if (new URL(request.url()).hostname === "bicea.org") crossTabRequestsA.push(request.url());
+  });
+  consentTabB.on("request", request => {
+    if (new URL(request.url()).hostname === "bicea.org") crossTabRequestsB.push(request.url());
+  });
+  await openConsentFixture(consentTabA);
+  await openConsentFixture(consentTabB);
+  await consentTabA.locator("#buytools-ad-consent").waitFor({ timeout: 15000 });
+  await consentTabB.locator("#buytools-ad-consent").waitFor({ timeout: 15000 });
+  assert.equal(crossTabRequestsA.length + crossTabRequestsB.length, 0, "Open tabs must remain ad-free before a saved choice");
+  const acceptRequestA = consentTabA.waitForRequest(request => request.url().startsWith("https://bicea.org/21/"), { timeout: 15000 });
+  const acceptRequestB = consentTabB.waitForRequest(request => request.url().startsWith("https://bicea.org/21/"), { timeout: 15000 });
+  await consentTabA.getByRole("button", { name: "Accept advertising" }).click();
+  await Promise.all([acceptRequestA, acceptRequestB]);
+  await consentTabB.locator("#buytools-ad-consent").waitFor({ state: "detached", timeout: 10000 });
+  assert.deepEqual(
+    await consentTabB.evaluate(() => window.__buytoolsStorageEvents.map(event => event.key)),
+    ["buytools-ad-consent-v1"],
+    "The other tab must receive the saved consent storage event"
+  );
+  assert.equal(await consentTabA.locator("#buytools-ad-slot").count(), 1);
+  assert.equal(await consentTabB.locator("#buytools-ad-slot").count(), 1, "A saved acceptance in one tab must update the other open tab");
+  assert.equal(crossTabRequestsA.length, 1);
+  assert.equal(crossTabRequestsB.length, 1);
+  await consentTabA.locator("#buytools-ad-preferences").click();
+  await consentTabA.locator("#buytools-ad-consent").waitFor({ timeout: 15000 });
+  const rejectReloadA = consentTabA.waitForEvent("load", { timeout: 15000 });
+  await consentTabA.getByRole("button", { name: "Reject" }).click();
+  await rejectReloadA;
+  await consentTabA.addScriptTag({ content: adEngineSource });
+  await consentTabB.locator("#buytools-ad-consent-notice").waitFor({ timeout: 15000 });
+  assert.match(
+    await consentTabB.locator("#buytools-ad-consent-notice").innerText(),
+    /saved preference changed in another tab.*third-party code already requested.*cannot be recalled/i
+  );
+  assert.equal(await consentTabA.evaluate(() => window.localStorage.getItem("buytools-ad-consent-v1")), "rejected");
+  assert.equal(await consentTabB.evaluate(() => window.localStorage.getItem("buytools-ad-consent-v1")), "rejected");
+  assert.equal(await consentTabA.locator("#buytools-ad-slot").count(), 0, "The rejecting tab must reload without its ad slot");
+  assert.equal(await consentTabB.locator("#buytools-ad-slot").count(), 0, "Other tabs must remove their ad slots when rejection is saved");
+  assert.equal(await consentTabA.locator("#buytools-ad-consent").count(), 0);
+  assert.equal(await consentTabB.locator("#buytools-ad-consent").count(), 0, "A saved rejection in another tab must close the stale prompt");
+  assert.equal(crossTabRequestsA.length, 1, "Rejecting in another tab must not create another ad request");
+  assert.equal(crossTabRequestsB.length, 1, "A synchronized rejection must not request more ads");
+  await consentTabA.evaluate(() => window.localStorage.clear());
+  await consentTabB.locator("#buytools-ad-consent").waitFor({ timeout: 15000 });
+  assert.equal(await consentTabB.locator("#buytools-ad-slot").count(), 0, "Clearing storage in one tab must not leave ads mounted in another");
+  await consentTabA.reload({ waitUntil: "load", timeout: 15000 });
+  await consentTabA.addScriptTag({ content: adEngineSource });
+  await consentTabA.locator("#buytools-ad-consent").waitFor({ timeout: 15000 });
+  assert.equal(crossTabRequestsA.length + crossTabRequestsB.length, 2, "Clearing preferences must reopen prompts without requesting ads");
+  await crossTabContext.close();
 
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
   assert.equal(thirdPartyRequests.length, 0, "Initial page load must not contact third-party hosts before a tool is used");
