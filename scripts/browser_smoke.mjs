@@ -270,6 +270,12 @@ try {
 
   // Saved advertising preferences must synchronize across already-open same-origin tabs.
   const crossTabContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await crossTabContext.addInitScript(() => {
+    window.__buytoolsStorageEvents = [];
+    window.addEventListener("storage", event => {
+      window.__buytoolsStorageEvents.push({ key: event.key, newValue: event.newValue });
+    });
+  });
   const consentTabA = await crossTabContext.newPage();
   const consentTabB = await crossTabContext.newPage();
   const crossTabRequestsA = [];
@@ -287,25 +293,30 @@ try {
   });
   await openConsentFixture(consentTabA);
   await openConsentFixture(consentTabB);
-  await consentTabA.locator("#buytools-ad-consent").waitFor();
-  await consentTabB.locator("#buytools-ad-consent").waitFor();
+  await consentTabA.locator("#buytools-ad-consent").waitFor({ timeout: 15000 });
+  await consentTabB.locator("#buytools-ad-consent").waitFor({ timeout: 15000 });
   assert.equal(crossTabRequestsA.length + crossTabRequestsB.length, 0, "Open tabs must remain ad-free before a saved choice");
-  const acceptRequestA = consentTabA.waitForRequest(request => request.url().startsWith("https://bicea.org/21/"));
-  const acceptRequestB = consentTabB.waitForRequest(request => request.url().startsWith("https://bicea.org/21/"));
+  const acceptRequestA = consentTabA.waitForRequest(request => request.url().startsWith("https://bicea.org/21/"), { timeout: 15000 });
+  const acceptRequestB = consentTabB.waitForRequest(request => request.url().startsWith("https://bicea.org/21/"), { timeout: 15000 });
   await consentTabA.getByRole("button", { name: "Accept advertising" }).click();
   await Promise.all([acceptRequestA, acceptRequestB]);
-  await consentTabB.locator("#buytools-ad-consent").waitFor({ state: "detached" });
+  await consentTabB.locator("#buytools-ad-consent").waitFor({ state: "detached", timeout: 10000 });
+  assert.deepEqual(
+    await consentTabB.evaluate(() => window.__buytoolsStorageEvents.map(event => event.key)),
+    ["buytools-ad-consent-v1"],
+    "The other tab must receive the saved consent storage event"
+  );
   assert.equal(await consentTabA.locator("#buytools-ad-slot").count(), 1);
   assert.equal(await consentTabB.locator("#buytools-ad-slot").count(), 1, "A saved acceptance in one tab must update the other open tab");
   assert.equal(crossTabRequestsA.length, 1);
   assert.equal(crossTabRequestsB.length, 1);
   await consentTabA.locator("#buytools-ad-preferences").click();
   await consentTabA.locator("#buytools-ad-consent").waitFor();
-  const rejectReloadA = consentTabA.waitForEvent("load");
+  const rejectReloadA = consentTabA.waitForEvent("load", { timeout: 15000 });
   await consentTabA.getByRole("button", { name: "Reject" }).click();
   await rejectReloadA;
   await consentTabA.addScriptTag({ content: adEngineSource });
-  await consentTabB.locator("#buytools-ad-consent-notice").waitFor();
+  await consentTabB.locator("#buytools-ad-consent-notice").waitFor({ timeout: 15000 });
   assert.match(
     await consentTabB.locator("#buytools-ad-consent-notice").innerText(),
     /saved preference changed in another tab.*third-party code already requested.*cannot be recalled/i
@@ -321,7 +332,7 @@ try {
   await consentTabA.evaluate(() => window.localStorage.clear());
   await consentTabB.locator("#buytools-ad-consent").waitFor();
   assert.equal(await consentTabB.locator("#buytools-ad-slot").count(), 0, "Clearing storage in one tab must not leave ads mounted in another");
-  await consentTabA.reload({ waitUntil: "load" });
+  await consentTabA.reload({ waitUntil: "load", timeout: 15000 });
   await consentTabA.addScriptTag({ content: adEngineSource });
   await consentTabA.locator("#buytools-ad-consent").waitFor();
   assert.equal(crossTabRequestsA.length + crossTabRequestsB.length, 2, "Clearing preferences must reopen prompts without requesting ads");
