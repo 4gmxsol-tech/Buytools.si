@@ -575,6 +575,34 @@ try {
   await page.locator("#searchBtn").click();
   assert.equal(new URL(page.url()).searchParams.has("q"), false, "Submitting an empty search must remove the stale q parameter");
 
+  // Markdown preview: raw HTML and unsafe URL schemes must remain inert user text.
+  await page.locator('[data-tool="markdown"]').click();
+  const markdownThirdPartyBefore = thirdPartyRequests.length;
+  await page.evaluate(() => { delete window.__markdownXss; });
+  const markdownPayload = [
+    '<img src=x onerror="window.__markdownXss=1">',
+    '<script>window.__markdownXss=1</script>',
+    '[unsafe](javascript:alert(1))',
+    '[safe](https://example.com/docs?a=1&b=2)'
+  ].join("\n");
+  await page.locator("#text").fill(markdownPayload);
+  await page.locator("#run").click();
+  const markdownPreview = page.locator("#mdpreview");
+  assert.equal(await markdownPreview.locator("img").count(), 0, "Raw Markdown HTML must not create executable image elements");
+  assert.equal(await markdownPreview.locator("script").count(), 0, "Raw Markdown HTML must not create script elements");
+  assert.equal(await page.evaluate(() => window.__markdownXss), undefined, "Pasted HTML event handlers must remain inert");
+  assert.match(await markdownPreview.innerText(), /<img src=x onerror=/, "Raw HTML should be displayed as escaped text");
+  assert.equal(await markdownPreview.locator('a[href^="javascript:"]').count(), 0, "Unsafe javascript: links must not become anchors");
+  assert.match(await markdownPreview.innerText(), /\[unsafe\]\(javascript:alert\(1\)\)/);
+  const safeMarkdownLink = markdownPreview.locator('a[href^="https://example.com/"]');
+  assert.equal(await safeMarkdownLink.count(), 1, "HTTPS Markdown links should remain usable");
+  assert.equal(await safeMarkdownLink.getAttribute("href"), "https://example.com/docs?a=1&b=2");
+  assert.equal(await safeMarkdownLink.getAttribute("target"), "_blank");
+  assert.match(await safeMarkdownLink.getAttribute("rel"), /noopener/);
+  assert.match(await safeMarkdownLink.getAttribute("rel"), /noreferrer/);
+  assert.equal(thirdPartyRequests.length, markdownThirdPartyBefore, "Markdown preview must not load a third-party renderer");
+  await page.locator("#closeWork").click();
+
   // Word Counter: count visible grapheme clusters, whitespace and singular labels.
   await page.locator('[data-tool="word-counter"]').click();
   await auditAccessibility("Word Counter tool");
