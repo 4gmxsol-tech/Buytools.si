@@ -14,6 +14,14 @@
     if (text) node.textContent = text;
     return node;
   }
+  function readConsent() {
+    try { return window.localStorage.getItem(CONSENT_KEY); }
+    catch (error) { return null; }
+  }
+  function saveConsent(value) {
+    try { window.localStorage.setItem(CONSENT_KEY, value); return true; }
+    catch (error) { return false; }
+  }
   function loadNative(target) {
     var script = el("script", { async: "async", "data-cfasync": "false", src: "https://bicea.org/21/" + NATIVE_ID });
     target.appendChild(script);
@@ -46,8 +54,9 @@
     if (nativePages) loadNative(target); else loadBanner(target);
   }
   function showConsent() {
-    if (localStorage.getItem(CONSENT_KEY) === "accepted") { mountAds(); return; }
-    if (localStorage.getItem(CONSENT_KEY) === "rejected") return;
+    var consent = readConsent();
+    if (consent === "accepted") { mountAds(); return; }
+    if (consent === "rejected") return;
     var panel = el("aside", { id: "buytools-ad-consent", role: "region", "aria-live": "polite", "aria-label": "Advertising preferences", "aria-describedby": "buytools-ad-consent-description" });
     var copy = el("p", { id: "buytools-ad-consent-description" }, "BuyTools.si uses Adsterra advertising. If you accept, its ad technology may use cookies or similar technologies and process technical data to deliver and measure ads. You can reject and continue using the site.");
     var privacyLink = el("a", { href: "/privacy/", class: "buytools-consent-privacy-link" }, "Read the privacy policy");
@@ -55,12 +64,20 @@
     var accept = el("button", { type: "button" }, "Accept advertising");
     var reject = el("button", { type: "button" }, "Reject");
     accept.addEventListener("click", function () {
-      localStorage.setItem(CONSENT_KEY, "accepted");
+      if (!saveConsent("accepted")) {
+        var status = panel.querySelector("#buytools-ad-consent-status");
+        if (!status) {
+          status = el("p", { id: "buytools-ad-consent-status", role: "status", "aria-live": "polite" });
+          panel.insertBefore(status, actions);
+        }
+        status.textContent = "Your browser blocked saving this choice. Advertising will remain disabled for this visit.";
+        return;
+      }
       panel.remove();
       mountAds();
     });
     reject.addEventListener("click", function () {
-      localStorage.setItem(CONSENT_KEY, "rejected");
+      saveConsent("rejected");
       panel.remove();
     });
     actions.appendChild(accept); actions.appendChild(reject);
