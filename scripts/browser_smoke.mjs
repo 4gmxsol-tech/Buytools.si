@@ -259,9 +259,9 @@ try {
   });
   await policyPreferencesPage.goto("http://127.0.0.1:8000/privacy/", { waitUntil: "load" });
   const policyPreferencesLink = policyPreferencesPage.getByRole("link", { name: "Advertising preferences" });
-  assert.equal(await policyPreferencesLink.getAttribute("href"), "/?ad-preferences=1#buytools-ad-preferences");
+  assert.equal(await policyPreferencesLink.getAttribute("href"), "/?ad-preferences=1");
   await policyPreferencesPage.evaluate(() => window.localStorage.setItem("buytools-ad-consent-v1", "rejected"));
-  await policyPreferencesPage.goto("http://127.0.0.1:8000/?ad-preferences=1#buytools-ad-preferences", { waitUntil: "load" });
+  await policyPreferencesPage.goto("http://127.0.0.1:8000/?ad-preferences=1", { waitUntil: "load" });
   await policyPreferencesPage.addScriptTag({ content: adEngineSource });
   await policyPreferencesPage.locator("#buytools-ad-consent").waitFor();
   assert.equal(await policyPreferencesPage.locator("#buytools-ad-slot").count(), 0, "The privacy-policy link must reopen preferences without loading ads");

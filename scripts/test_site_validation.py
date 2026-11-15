@@ -1107,7 +1107,7 @@ class AdvertisingPreferencesLinkTests(unittest.TestCase):
     def test_privacy_policy_links_to_reopen_advertising_preferences(self):
         root = Path(__file__).resolve().parents[1]
         privacy_page = (root / "privacy" / "index.html").read_text(encoding="utf-8")
-        self.assertIn('href="/?ad-preferences=1#buytools-ad-preferences"', privacy_page)
+        self.assertIn('href="/?ad-preferences=1"', privacy_page)
         self.assertIn('>Advertising preferences</a>', privacy_page)
 
 
