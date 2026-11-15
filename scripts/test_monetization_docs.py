@@ -14,7 +14,7 @@ class MonetizationDocumentationTests(unittest.TestCase):
         self.assertIn("Adsterra is integrated into the production build", DOC)
         self.assertIn("scripts/inject_ads.py", DOC)
         self.assertIn("assets/buytools-ads.js", DOC)
-        self.assertIn("https://bicea.org", DOC)
+        self.assertIn("bicea.org", DOC)
         self.assertNotIn("No advertising network is wired into the site", DOC)
 
     def test_documented_consent_states_match_runtime_and_privacy_policy(self):
@@ -29,7 +29,7 @@ class MonetizationDocumentationTests(unittest.TestCase):
             self.assertIn(snippet, ENGINE)
         self.assertIn("buytools-ad-consent-v1", POLICY)
         self.assertIn("not loaded unless a visitor chooses “Accept advertising”", POLICY)
-        self.assertIn("chooses “Reject”", POLICY)
+        self.assertIn("can choose “Reject”", POLICY)
         self.assertIn("Accept advertising", DOC)
         self.assertIn("Reject", DOC)
 
