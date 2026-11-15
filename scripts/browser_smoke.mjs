@@ -192,6 +192,15 @@ try {
   blockedPage.on("pageerror", error => blockedPageErrors.push(error.message));
   await openConsentFixture(blockedPage);
   await blockedPage.locator("#buytools-ad-consent").waitFor();
+  await blockedPage.evaluate(() => {
+    window.dispatchEvent(new StorageEvent("storage", {
+      key: "buytools-ad-consent-v1",
+      newValue: "accepted",
+      storageArea: window.sessionStorage
+    }));
+  });
+  assert.equal(await blockedPage.locator("#buytools-ad-slot").count(), 0, "A storage event from another storage area must not grant advertising consent");
+  assert.equal(blockedAdRequests.length, 0, "Blocked local storage must not fail open on an unrelated storage event");
   assert.equal(blockedAdRequests.length, 0, "Blocked storage must not trigger ad requests");
   await blockedPage.getByRole("button", { name: "Accept advertising" }).click();
   const blockedStatus = blockedPage.getByRole("status");

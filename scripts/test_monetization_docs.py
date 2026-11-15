@@ -60,6 +60,7 @@ class MonetizationDocumentationTests(unittest.TestCase):
             'function showCrossTabNotice()',
             'function handleConsentStorage(event)',
             'event.key !== CONSENT_KEY && event.key !== null',
+            'if (!event.storageArea || event.storageArea !== window.localStorage) return;',
             'if (nextValue === "accepted")',
             'if (hadAdSlot) showCrossTabNotice();',
             'if (nextValue !== "rejected") showConsent(false);',
@@ -74,7 +75,7 @@ class MonetizationDocumentationTests(unittest.TestCase):
         self.assertIn("clearing the key reopens the prompt in other tabs", POLICY)
         handler = ENGINE.split("function handleConsentStorage(event) {", 1)[1].split("function showConsent(", 1)[0]
         self.assertNotIn("window.location.reload()", handler)
-        self.assertNotIn("event.storageArea !== window.localStorage", handler)
+        self.assertIn("event.storageArea !== window.localStorage", handler)
 
     def test_documented_placements_and_exclusions_match_source(self):
         self.assertIn('var nativePages = location.pathname === "/" || location.pathname.indexOf("/guides/") === 0;', ENGINE)

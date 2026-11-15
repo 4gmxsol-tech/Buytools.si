@@ -43,6 +43,11 @@
   }
   function handleConsentStorage(event) {
     if (!event || (event.key !== CONSENT_KEY && event.key !== null)) return;
+    try {
+      if (!event.storageArea || event.storageArea !== window.localStorage) return;
+    } catch (error) {
+      return;
+    }
     var nextValue = event.key === null ? null : event.newValue;
     var notice = document.getElementById("buytools-ad-consent-notice");
     if (notice) notice.remove();

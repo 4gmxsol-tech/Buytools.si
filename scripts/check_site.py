@@ -581,6 +581,7 @@ else:
         'function showCrossTabNotice()',
         'function handleConsentStorage(event)',
         'event.key !== CONSENT_KEY && event.key !== null',
+        'if (!event.storageArea || event.storageArea !== window.localStorage) return;',
         'if (nextValue === "accepted")',
         'if (hadAdSlot) showCrossTabNotice();',
         'if (nextValue !== "rejected") showConsent(false);',
