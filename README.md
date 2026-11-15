@@ -50,7 +50,7 @@ After each production deployment, the Pages workflow fetches every URL in `sitem
 BuyTools.si has a consent-gated Adsterra integration: the first-party preference engine is present on eligible pages, but ad-delivery code is requested only after a visitor explicitly accepts. Rejecting keeps the ad slot unmounted. No ads.txt seller record is currently present; do not invent or publish seller identifiers. Read [MONETIZATION.md](MONETIZATION.md) before changing placements or provider settings, and use only an authoritative seller record supplied by the approved provider.
 
 ## Privacy
-Many image and text tools are designed to process data in the browser. QR content is encoded locally in the browser using qrcode-generator loaded on demand from jsDelivr; the library request does not include the QR payload, which is not sent to a QR-generation service. Background removal loads a third-party library and model assets. See the [Privacy Policy](https://buytools.si/privacy/) for the exact providers and data-handling details.
+Many image and text tools are designed to process data in the browser. QR content is encoded locally in the browser using qrcode-generator loaded on demand from jsDelivr. The library request does not include the QR payload, and the QR payload is not sent to a QR-generation service. Background removal loads a third-party library and model assets. See the [Privacy Policy](https://buytools.si/privacy/) for the exact providers and data-handling details.
 
 ## Deployment
 The site is static and deploys through GitHub Pages. Configure the custom domain and HTTPS in repository Pages settings. Do not report a deployment as successful until the relevant GitHub Actions run and live site are verified.
