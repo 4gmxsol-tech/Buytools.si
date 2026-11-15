@@ -643,6 +643,24 @@ if any(requirement.lower() not in home.lower() for requirement in qr_notice_requ
     fail("QR generator must show an accessible disclosure that QR payloads are encoded locally.")
 if "api.qrserver.com" in home.lower() or "api.qrserver.com" in privacy_text.lower():
     fail("QR content must not be sent to the retired third-party QR generation endpoint.")
+
+readme_path = ROOT / "README.md"
+if not readme_path.is_file():
+    fail("Repository README is missing.")
+else:
+    readme_text = readme_path.read_text(encoding="utf-8")
+    if (
+        "QR content is encoded locally" not in readme_text
+        or "QR payload is not sent to a QR-generation service" not in readme_text
+        or "sends its input to a third-party QR service" in readme_text
+    ):
+        fail("README must accurately describe local QR encoding and must not claim the QR payload is sent to a third-party service.")
+    if (
+        "consent-gated Adsterra integration" not in readme_text
+        or "ad-delivery code is requested only after a visitor explicitly accepts" not in readme_text
+        or "No ads.txt seller record is currently present" not in readme_text
+    ):
+        fail("README must accurately disclose the existing consent-gated Adsterra integration and the absence of a verified ads.txt seller record.")
 if "buytools-theme" not in privacy_text:
     fail("Browser theme storage key is not disclosed in the privacy policy.")
 
