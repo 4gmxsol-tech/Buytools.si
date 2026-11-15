@@ -195,6 +195,18 @@ else:
             missing_transitive_notices = missing_confirmed_bundled_license_notices(runtime_manifest, licenses_page)
             if missing_transitive_notices:
                 fail("Background-removal transitive license notices are incomplete: " + "; ".join(missing_transitive_notices))
+privacy_page_path = ROOT / "privacy" / "index.html"
+if not privacy_page_path.is_file():
+    fail("Privacy policy page is missing: privacy/index.html")
+else:
+    privacy_page = privacy_page_path.read_text(encoding="utf-8")
+    for message in missing_sitemap_lastmod_sync(
+        sitemap_path.read_text(encoding="utf-8"),
+        DOMAIN + "/privacy/",
+        privacy_page,
+    ):
+        fail("Privacy policy sitemap lastmod is out of sync: " + message)
+
 for linked_page in (ROOT / "privacy" / "index.html", ROOT / "tools" / "remove-background" / "index.html"):
     if 'href="/licenses/"' not in linked_page.read_text(encoding="utf-8"):
         fail("Relevant page must link to the third-party license notice: " + str(linked_page.relative_to(ROOT)))
