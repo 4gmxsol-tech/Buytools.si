@@ -1965,8 +1965,9 @@ try {
   let markDelayedPdfModuleRequested;
   const delayedPdfModuleRequested = new Promise(resolve => { markDelayedPdfModuleRequested = resolve; });
   const delayedPdfModuleGate = new Promise(resolve => { releaseDelayedPdfModule = resolve; });
-  const pdfModuleUrl = "https://esm.sh/pdf-lib@1.17.1";
-  await page.route(pdfModuleUrl, async route => {
+  const pdfModuleUrlPattern = "**/pdf-lib@1.17.1*";
+  await page.locator("#closeWork").click();
+  await page.route(pdfModuleUrlPattern, async route => {
     markDelayedPdfModuleRequested();
     await delayedPdfModuleGate;
     await route.fulfill({
@@ -1989,6 +1990,7 @@ try {
     .then(() => { stalePdfDownload = true; })
     .catch(() => {});
   await page.locator("#run").click();
+  await page.waitForRequest(request => request.url().includes("pdf-lib@1.17.1"), { timeout: 10000 });
   await delayedPdfModuleRequested;
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="word-counter"]').click();
@@ -2000,7 +2002,7 @@ try {
   assert.equal(await page.evaluate(() => window.__buytoolsPdfStubCreateCalls), 0, "Closing the PDF workspace during module loading must stop before PDFDocument.create");
   assert.equal(await page.locator("#text").inputValue(), "The replacement workspace must remain untouched.");
   assert.equal(stalePdfDownload, false, "A stale PDF operation must not trigger a download after its workspace is closed");
-  await page.unroute(pdfModuleUrl);
+  await page.unroute(pdfModuleUrlPattern);
 
   // Merge three PDFs and verify the downloaded document structurally.
   await page.locator("#closeWork").click();
