@@ -1478,6 +1478,32 @@ try {
   ]);
   assert.match(resizedDownload.suggestedFilename(), /resized\.png$/i);
 
+  // Oversized single-image resize output must be rejected before allocating a canvas.
+  await page.locator("#fileInput").setInputFiles({ name: "oversized-resize.png", mimeType: "image/png", buffer: pngBuffer });
+  await page.waitForFunction(() => document.querySelector("#preview")?.naturalWidth === 16);
+  await page.locator("#width").fill("5000");
+  await page.locator("#height").fill("5000");
+  await page.locator("#keep").uncheck();
+  await page.evaluate(() => {
+    const originalCreateImageBitmap = window.createImageBitmap;
+    const originalGetContext = HTMLCanvasElement.prototype.getContext;
+    window.__buytoolsRestoreSinglePixelBudget = () => {
+      window.createImageBitmap = originalCreateImageBitmap;
+      HTMLCanvasElement.prototype.getContext = originalGetContext;
+    };
+    window.__buytoolsPixelBudgetContextCalls = 0;
+    window.createImageBitmap = async () => ({ width: 16, height: 8, close() {} });
+    HTMLCanvasElement.prototype.getContext = function (...args) {
+      window.__buytoolsPixelBudgetContextCalls += 1;
+      return originalGetContext.apply(this, args);
+    };
+  });
+  await page.locator("#run").click();
+  await page.getByText(/16-million-pixel safety limit/i).waitFor();
+  assert.equal(await page.locator("#result a[download]").count(), 0, "An oversized single-image resize must not create a download");
+  assert.equal(await page.evaluate(() => window.__buytoolsPixelBudgetContextCalls), 0, "Single-image resize limits must run before canvas allocation");
+  await page.evaluate(() => window.__buytoolsRestoreSinglePixelBudget());
+
   // Batch image fixtures: transparent PNG + portrait JPEG with distinct dimensions.
   const batchFixtureData = await page.evaluate(() => {
     const png = document.createElement("canvas");
@@ -1718,6 +1744,71 @@ try {
   const resizedSecond = await resizedZip.file("002-portrait-source.png").async("nodebuffer");
   const resizedSecondInfo = await inspectImageBuffer(resizedSecond, "image/png");
   assert.deepEqual([resizedSecondInfo.width, resizedSecondInfo.height], [16, 32]);
+
+  // A batch-resize output above 16 million pixels must be rejected before canvas allocation.
+  await page.locator("#fileInput").setInputFiles(batchFiles);
+  await page.locator("#width").fill("5000");
+  await page.locator("#height").fill("5000");
+  await page.locator("#keep").uncheck();
+  await page.evaluate(() => {
+    const originalCreateImageBitmap = window.createImageBitmap;
+    const originalGetContext = HTMLCanvasElement.prototype.getContext;
+    window.__buytoolsRestoreBatchSinglePixelBudget = () => {
+      window.createImageBitmap = originalCreateImageBitmap;
+      HTMLCanvasElement.prototype.getContext = originalGetContext;
+    };
+    window.__buytoolsBatchPixelContextCalls = 0;
+    window.createImageBitmap = async () => ({ width: 16, height: 8, close() {} });
+    HTMLCanvasElement.prototype.getContext = function (...args) {
+      window.__buytoolsBatchPixelContextCalls += 1;
+      return originalGetContext.apply(this, args);
+    };
+  });
+  await page.locator("#run").click();
+  await page.getByText(/16-million-pixel safety limit/i).waitFor();
+  assert.equal(await page.locator("#result a[download]").count(), 0, "An oversized batch-resize output must not create a ZIP download");
+  assert.equal(await page.evaluate(() => window.__buytoolsBatchPixelContextCalls), 0, "Batch per-image limits must run before canvas allocation");
+  await page.evaluate(() => window.__buytoolsRestoreBatchSinglePixelBudget());
+
+  // The cumulative resize batch budget must stop before allocating the canvas that exceeds it.
+  await page.locator("#fileInput").setInputFiles(batchFiles.concat([{
+    name: "third-source.png",
+    mimeType: "image/png",
+    buffer: batchPngBuffer
+  }]));
+  await page.locator("#width").fill("3500");
+  await page.locator("#height").fill("3500");
+  await page.locator("#keep").uncheck();
+  await page.evaluate(() => {
+    const originalCreateImageBitmap = window.createImageBitmap;
+    const originalGetContext = HTMLCanvasElement.prototype.getContext;
+    const originalToBlob = HTMLCanvasElement.prototype.toBlob;
+    window.__buytoolsRestoreBatchTotalPixelBudget = () => {
+      window.createImageBitmap = originalCreateImageBitmap;
+      HTMLCanvasElement.prototype.getContext = originalGetContext;
+      HTMLCanvasElement.prototype.toBlob = originalToBlob;
+    };
+    window.__buytoolsBatchPixelContextCalls = 0;
+    window.__buytoolsBatchPixelBitmapCloses = 0;
+    window.createImageBitmap = async () => ({
+      width: 3500,
+      height: 3500,
+      close() { window.__buytoolsBatchPixelBitmapCloses += 1; }
+    });
+    HTMLCanvasElement.prototype.getContext = function () {
+      window.__buytoolsBatchPixelContextCalls += 1;
+      return { drawImage() {}, fillRect() {}, fillStyle: "" };
+    };
+    HTMLCanvasElement.prototype.toBlob = function (callback, type) {
+      callback(new Blob(["pixel-budget-fixture"], { type }));
+    };
+  });
+  await page.locator("#run").click();
+  await page.getByText(/32-million-pixel output budget/i).waitFor();
+  assert.equal(await page.locator("#result a[download]").count(), 0, "An over-budget resize batch must not create a ZIP download");
+  assert.equal(await page.evaluate(() => window.__buytoolsBatchPixelContextCalls), 2, "The cumulative budget must reject the third canvas before allocating it");
+  assert.equal(await page.evaluate(() => window.__buytoolsBatchPixelBitmapCloses), 3, "Every bitmap must be closed when a resize batch is stopped by its pixel budget");
+  await page.evaluate(() => window.__buytoolsRestoreBatchTotalPixelBudget());
 
   // Reject batches above the documented 100-file safety limit before loading ZIP code.
   await page.locator("#closeWork").click();

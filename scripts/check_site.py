@@ -635,10 +635,31 @@ if count_mismatch:
 missing_homepage_json = missing_homepage_json_syntax_disclosure(home)
 if missing_homepage_json:
     fail("Homepage JSON Formatter card must identify JSON syntax search intent: " + ", ".join(missing_homepage_json))
+image_resizer_page = (ROOT / "tools/image-resizer/index.html").read_text(encoding="utf-8")
+image_memory_privacy = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
+if "const MAX_RESIZED_CANVAS_PIXELS=16000000" not in home or "MAX_BATCH_RESIZE_CANVAS_PIXELS=32000000" not in home:
+    fail("Image resizer must enforce the 16-million-pixel per-image and 32-million-pixel batch budgets.")
+if "16 million pixels" not in image_resizer_page or "16 million output pixels" not in batch_image_resizer_page:
+    fail("Image resizer pages must disclose the output pixel limits.")
+if "16 million pixels" not in image_memory_privacy or "32 million output pixels" not in image_memory_privacy:
+    fail("Privacy policy must accurately disclose the image-resizing pixel budgets.")
+
 batch_process_start = home.find("async function processBatchImages(id){")
 batch_process_end = home.find("async function processImages(id){", batch_process_start)
 batch_process_branch = home[batch_process_start:batch_process_end] if batch_process_start >= 0 and batch_process_end > batch_process_start else ""
 batch_guard = batch_process_branch.find("const totalBatchBytes=files.reduce((total,file)=>total+file.size,0),largeBatchWarningThreshold=25*1024*1024")
+batch_pixel_guard = batch_process_branch.find("if(id==='batch-resize'){const outputPixels=w*h;")
+batch_canvas_allocation = batch_process_branch.find("canvas=document.createElement('canvas')")
+if batch_pixel_guard < 0 or batch_canvas_allocation < 0 or batch_pixel_guard > batch_canvas_allocation:
+    fail("Batch resize pixel budgets must be enforced before canvas allocation.")
+single_process_start = home.find("async function processImages(id){")
+single_process_end = home.find("const params=new URLSearchParams(location.search)", single_process_start)
+single_process_branch = home[single_process_start:single_process_end] if single_process_start >= 0 and single_process_end > single_process_start else ""
+single_pixel_guard = single_process_branch.find("w*h>MAX_RESIZED_CANVAS_PIXELS")
+single_canvas_allocation = single_process_branch.find("c=document.createElement('canvas')")
+if single_pixel_guard < 0 or single_canvas_allocation < 0 or single_pixel_guard > single_canvas_allocation:
+    fail("Single-image resize pixel budget must be enforced before canvas allocation.")
+
 batch_warning = batch_process_branch.find("25 MiB batch-image warning threshold")
 batch_import = batch_process_branch.find("await import('https://esm.sh/jszip@3.10.2')")
 if min(batch_guard, batch_warning, batch_import) < 0 or not (batch_guard < batch_warning < batch_import):
