@@ -379,6 +379,10 @@ try {
   await tamperedStorageContext.close();
 
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+  const escapedHeadText = await page.evaluate(() => Array.from(document.head.childNodes)
+    .filter(node => node.nodeType === Node.TEXT_NODE && node.textContent.includes("\\n"))
+    .map(node => node.textContent));
+  assert.deepEqual(escapedHeadText, [], "Homepage head must not contain literal escaped-newline text before JSON-LD");
   assert.equal(thirdPartyRequests.length, 0, "Initial page load must not contact third-party hosts before a tool is used");
 
   // Public third-party license notice: attribution and license links must be reachable without third-party requests.
