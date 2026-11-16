@@ -25,13 +25,14 @@
 .content code{color:var(--accent)}.sample{display:block;overflow-x:auto;padding:15px;border:1px solid var(--line);border-radius:12px;background:#0b0e16;color:#e9edfa;font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
 .content details{padding:14px 0;border-top:1px solid var(--line)}.content summary{cursor:pointer;font-weight:700}.content details p{margin-bottom:0}
 .related{display:flex;gap:10px;flex-wrap:wrap}.related a{border:1px solid var(--line);padding:8px 12px;border-radius:999px;text-decoration:none}
-.footer{padding:28px 0 42px;color:#929bb1;font-size:13px}.footer a{color:var(--accent);margin-right:12px}
+.footer{padding:28px 0 42px;color:#929bb1;font-size:13px}.footer a{color:var(--accent);margin-right:12px}.breadcrumbs{padding:14px 0 0;color:var(--muted);font-size:13px}.breadcrumbs ol{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}.breadcrumbs li+li::before{content:"/";margin-right:8px;color:var(--muted)}.breadcrumbs a{color:var(--accent);text-underline-offset:3px}.breadcrumbs [aria-current=page]{color:var(--text);font-weight:750}
 @media(max-width:520px){.hero{padding-top:38px}.nav{padding:15px 0}.content{padding:18px}.hero h1{font-size:clamp(34px,10vw,46px)}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style>
 </head>
 <body>
 <header class="wrap nav"><a class="brand" href="/">buytools<span>.</span>si</a><a href="/#tools">Explore all free tools ↗</a></header>
+<nav class="wrap breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><a href="/#tools">Developer tools</a></li><li aria-current="page">CSV to JSON Converter</li></ol></nav>
 <main class="wrap">
 <section class="hero"><div class="eyebrow">Free browser-based developer utility</div><h1>CSV to JSON Converter</h1><p>Convert a CSV table into an array of JSON objects, or turn a JSON array of objects into CSV. Work with spreadsheet exports, API data and simple data transformations.</p><a class="cta" href="/?tool=csv-json">Open the CSV ↔ JSON converter ↗</a></section>
 <section class="content">
