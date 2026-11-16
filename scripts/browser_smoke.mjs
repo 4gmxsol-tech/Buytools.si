@@ -423,6 +423,41 @@ try {
   assert.match(await page.locator("h1").innerText(), /Open-source software notices/i);
   assert.equal(thirdPartyRequests.length, 0, "Following the homepage license link must remain first-party only");
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+
+  // Tool-page breadcrumbs must be visible, keyboard reachable and usable on a narrow viewport.
+  for (const breadcrumbCase of [
+    { path: "/tools/csv-json-converter/", currentLabel: "CSV to JSON Converter" },
+    { path: "/tools/csv-viewer/", currentLabel: "CSV Viewer and Sorter" }
+  ]) {
+    await page.goto("http://127.0.0.1:8000" + breadcrumbCase.path, { waitUntil: "load" });
+    const breadcrumb = page.getByRole("navigation", { name: "Breadcrumb" });
+    assert.equal(await breadcrumb.count(), 1, "Each CSV landing page must expose one named breadcrumb navigation");
+    assert.ok(await breadcrumb.isVisible(), "Breadcrumb navigation must be visible");
+    assert.equal(await breadcrumb.locator("li").count(), 3, "Breadcrumb must contain Home, category and current page");
+    const breadcrumbLinks = breadcrumb.getByRole("link");
+    assert.deepEqual(await breadcrumbLinks.allTextContents(), ["Home", "Developer tools"]);
+    assert.equal(await breadcrumbLinks.nth(0).getAttribute("href"), "/");
+    assert.equal(await breadcrumbLinks.nth(1).getAttribute("href"), "/#tools");
+    assert.equal(
+      await breadcrumb.locator('li[aria-current="page"]').innerText(),
+      breadcrumbCase.currentLabel,
+      "The final breadcrumb item must identify the current page"
+    );
+    await breadcrumbLinks.first().focus();
+    await page.keyboard.press("Tab");
+    assert.equal(
+      await page.evaluate(() => document.activeElement?.textContent?.trim()),
+      "Developer tools",
+      "Breadcrumb links must be reachable in keyboard order"
+    );
+    assert.equal(
+      await breadcrumb.evaluate(element => element.scrollWidth > element.clientWidth),
+      false,
+      "Breadcrumb navigation must not overflow the 390px viewport"
+    );
+  }
+
+  await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
   await page.addScriptTag({ content: axe.source });
 
   // Crawlable homepage directory and reciprocal CSV tool-page navigation.
@@ -2130,7 +2165,7 @@ try {
     hashedModelAssetResponses: allModelAssetRequests.filter(item => item.sha256).length,
     artifact: "runtime-provenance.json"
   }, null, 2));
-  console.log(`Browser smoke tests passed: ${toolCount} tool cards; advertising preference reopening and saved-choice switching; privacy-policy preference link; initial first-party-only page load; on-demand QR, PDF, ZIP and image-to-PDF requests; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, stage-aware background-removal progress, per-model consent, standard and smaller quantized-model UI workflows, synthetic model benchmark, downloads, theme, 390px mobile layout and axe audits.`);
+  console.log(`Browser smoke tests passed: ${toolCount} tool cards; accessible CSV tool breadcrumbs; advertising preference reopening and saved-choice switching; privacy-policy preference link; initial first-party-only page load; on-demand QR, PDF, ZIP and image-to-PDF requests; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, stage-aware background-removal progress, per-model consent, standard and smaller quantized-model UI workflows, synthetic model benchmark, downloads, theme, 390px mobile layout and axe audits.`);
 } finally {
   await browser.close();
 }
