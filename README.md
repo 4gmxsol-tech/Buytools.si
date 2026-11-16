@@ -32,7 +32,7 @@ The check validates sitemap XML and full page coverage, exact canonical and Open
 
 ## Browser smoke tests
 
-GitHub Actions also runs Playwright with Chromium against a local static server. The browser suite exercises tool discovery, JSON validation, CSV conversion edge cases, TypeScript generation, CSV filtering and download, image compression/resizing, text-to-PDF, theme switching and a narrow mobile viewport.
+GitHub Actions also runs Playwright with Chromium against a local static server. The browser suite opens and exercises all 40 homepage tool cards, including text and developer utilities, calculators, image workflows, PDF tools and the two dedicated studios. It checks representative edge cases, local-only processing, downloads, accessible names, keyboard use, a 390px mobile viewport and axe accessibility results.
 
 To run it locally, install Node.js 24+, install Playwright and Chromium, start a static server on port 8000, then run:
 
