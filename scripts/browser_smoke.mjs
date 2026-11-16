@@ -1349,7 +1349,6 @@ try {
   assert.equal(await page.locator("#result a[download]").count(), 0, "An unsupported format must not leave a mislabeled or stale download link");
   assert.equal(unsupportedFormatDownloadStarted, false, "An unsupported WebP fallback must not start a download with a .webp filename");
   await page.evaluate(() => window.__buytoolsRestoreToBlob());
-  await page.locator("#closeWork").click();
 
   const sourcePortraitInfo = await inspectImageBuffer(batchJpegBuffer, "image/jpeg");
   assert.deepEqual([sourcePortraitInfo.width, sourcePortraitInfo.height], [8, 16], "Portrait fixture must start at 8×16 pixels");
