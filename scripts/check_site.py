@@ -12,7 +12,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_advertising_consent_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_image_lossless_workflow_disclosures, missing_image_reduction_workflow_steps, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, missing_article_date_modified_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins, missing_csv_troubleshooting_guidance, faq_schema_mismatches
+from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_advertising_consent_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_browser_tool_click_coverage, missing_image_lossless_workflow_disclosures, missing_image_reduction_workflow_steps, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, missing_article_date_modified_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins, missing_csv_troubleshooting_guidance, faq_schema_mismatches
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -931,6 +931,14 @@ else:
             fail(f"Homepage tool has no renderer mapping: {tool_id}")
     if len(tool_ids) != len(set(tool_ids)):
         fail("Homepage tool catalogue contains duplicate IDs.")
+    browser_smoke_path = ROOT / "scripts" / "browser_smoke.mjs"
+    if not browser_smoke_path.exists():
+        fail("Chromium browser smoke suite is missing.")
+    else:
+        browser_smoke_source = browser_smoke_path.read_text(encoding="utf-8")
+        missing_browser_coverage = missing_browser_tool_click_coverage(tool_ids, browser_smoke_source)
+        if missing_browser_coverage:
+            fail("Homepage tool cards lack direct Chromium click coverage: " + ", ".join(missing_browser_coverage))
 
 # Syntax-check inline JavaScript with Node.js when available.
 node = shutil.which("node")

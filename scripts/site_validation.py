@@ -323,6 +323,16 @@ def missing_batch_image_resizer_disclosures(html):
     return missing
 
 
+def missing_browser_tool_click_coverage(tool_ids, browser_source):
+    """Return homepage tool IDs without a direct Playwright click workflow."""
+    return [
+        tool_id
+        for tool_id in tool_ids
+        if f"page.locator('[data-tool=\"{tool_id}\"]').click()" not in browser_source
+    ]
+
+
+
 def homepage_tool_count_mismatch(html):
     """Return a message when the static homepage count disagrees with the tool catalogue."""
     catalogue_match = re.search(r"const tools\s*=\s*\[(.*?)\n\];", html, flags=re.DOTALL)

@@ -872,6 +872,89 @@ try {
   assert.equal((await page.locator("#text").inputValue()).length, 16);
   await page.locator("#closeWork").click();
 
+  // Complete deterministic calculator coverage: percentage, timestamp, contrast and date difference.
+  await page.locator('[data-tool="percentage"]').click();
+  await auditAccessibility("Percentage Calculator");
+  await page.locator("#pctMode").selectOption("of");
+  await page.locator("#pctA").fill("15");
+  await page.locator("#pctB").fill("200");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#result").innerText(), "30");
+  await page.locator("#pctMode").selectOption("change");
+  await page.locator("#pctA").fill("100");
+  await page.locator("#pctB").fill("125");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#result").innerText(), "25%");
+  await page.locator("#pctMode").selectOption("is");
+  await page.locator("#pctA").fill("25");
+  await page.locator("#pctB").fill("0");
+  await page.locator("#run").click();
+  assert.match(await page.locator("#result").innerText(), /zero denominator/i);
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="timestamp"]').click();
+  await auditAccessibility("Unix Timestamp Converter");
+  await page.locator("#epoch").fill("1735689600");
+  await page.locator("#epochRun").click();
+  assert.match(await page.locator("#epochResult").innerText(), /2025-01-01T00:00:00\.000Z/);
+  await page.locator("#epochMs").check();
+  await page.locator("#epoch").fill("1735689600000");
+  await page.locator("#epochRun").click();
+  assert.match(await page.locator("#epochResult").innerText(), /2025-01-01T00:00:00\.000Z/);
+  await page.locator("#epoch").fill("8640000000000001");
+  await page.locator("#epochRun").click();
+  assert.match(await page.locator("#epochResult").innerText(), /Timestamp is out of range/);
+  await page.locator("#dateInput").fill("2025-01-01T00:00");
+  await page.locator("#dateRun").click();
+  const dateTimestamp = await page.locator("#dateResult").innerText();
+  const dateTimestampParts = dateTimestamp.match(/^(\d+) seconds · (\d+) milliseconds$/);
+  assert.ok(dateTimestampParts, "Date-to-timestamp conversion must report seconds and milliseconds");
+  assert.equal(Number(dateTimestampParts[2]), Number(dateTimestampParts[1]) * 1000);
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="contrast"]').click();
+  await auditAccessibility("Color Contrast Checker");
+  await page.locator("#fgColor").evaluate((input) => {
+    input.value = "#777777";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.locator("#run").click();
+  const contrastResult = await page.locator("#result").innerText();
+  const contrastRatioMatch = contrastResult.match(/Contrast ratio: ([\d.]+):1/);
+  assert.ok(contrastRatioMatch, "Contrast checker must display a numeric ratio");
+  assert.ok(Math.abs(Number(contrastRatioMatch[1]) - 4.48) < 0.01);
+  assert.match(contrastResult, /WCAG AA normal text: FAIL/);
+  assert.match(contrastResult, /WCAG AA large text: PASS/);
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="date-diff"]').click();
+  await auditAccessibility("Date Difference Calculator");
+  await page.locator("#dateStart").fill("2024-01-01");
+  await page.locator("#dateEnd").fill("2024-01-08");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#result").innerText(), "7 days · 1.00 weeks · 168 hours");
+  await page.locator("#dateStart").fill("2024-01-08");
+  await page.locator("#dateEnd").fill("2024-01-01");
+  await page.locator("#run").click();
+  assert.match(await page.locator("#result").innerText(), /end date is before start date/);
+  await page.locator("#closeWork").click();
+
+  // The two dedicated studio cards must navigate to their canonical landing pages.
+  await Promise.all([
+    page.waitForURL("**/tools/image-studio/"),
+    page.locator('[data-tool="image-studio"]').click()
+  ]);
+  assert.match(await page.locator("h1").innerText(), /Image Studio/);
+  await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+  await page.addScriptTag({ content: axe.source });
+  await Promise.all([
+    page.waitForURL("**/tools/developer-studio/"),
+    page.locator('[data-tool="developer-studio"]').click()
+  ]);
+  assert.match(await page.locator("h1").innerText(), /Developer Studio/);
+  await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+  await page.addScriptTag({ content: axe.source });
+
   // Line tools: results must contain real line breaks, not literal backslash sequences.
   await page.locator('[data-tool="duplicate-lines"]').click();
   await page.locator("#text").fill("beta\nalpha\nbeta");
