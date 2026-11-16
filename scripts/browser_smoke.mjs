@@ -1453,7 +1453,7 @@ try {
   await page.evaluate(() => window.__buytoolsRestoreCanvasFailure());
   assert.equal(singleBitmapCloseCount, 1, "Single-image canvas failure must close its ImageBitmap");
 
-  // A large single-image file must prompt before decoding; cancelling must avoid createImageBitmap.
+  // A large single-image file must prompt before the canvas-processing bitmap decode; cancelling must avoid createImageBitmap.
   await page.evaluate(() => {
     const originalSizeDescriptor = Object.getOwnPropertyDescriptor(Blob.prototype, "size");
     const originalCreateImageBitmap = window.createImageBitmap;
@@ -1482,7 +1482,7 @@ try {
   await page.locator("#run").click();
   await page.getByText(/Image processing cancelled/i).waitFor();
   assert.equal(await page.evaluate(() => window.__buytoolsLargeSingleImageConfirmCalls), 1, "Large single-image processing must request confirmation");
-  assert.equal(await page.evaluate(() => window.__buytoolsLargeSingleImageDecodeCalls), 0, "Declining the large-image warning must stop before image decoding");
+  assert.equal(await page.evaluate(() => window.__buytoolsLargeSingleImageDecodeCalls), 0, "Declining the large-image warning must stop before the processing bitmap decode");
   await page.evaluate(() => window.__buytoolsRestoreLargeSingleImageWarning());
 
   await page.locator("#closeWork").click();
