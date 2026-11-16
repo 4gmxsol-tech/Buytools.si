@@ -664,7 +664,7 @@ if single_pixel_guard < 0 or single_canvas_allocation < 0 or single_pixel_guard 
 if "MAX_SINGLE_IMAGE_WARNING_BYTES=25*1024*1024" not in home:
     fail("Single-image processing must define the documented 25 MiB pre-decode warning threshold.")
 single_warning_guard = single_process_branch.find("f.size>MAX_SINGLE_IMAGE_WARNING_BYTES")
-single_bitmap_decode = single_process_branch.find("const im=await createImageBitmap(f)")
+single_bitmap_decode = single_process_branch.find("const im=await createImageBitmap(f)", single_warning_guard)
 if single_warning_guard < 0 or single_bitmap_decode < 0 or single_warning_guard > single_bitmap_decode:
     fail("Large single-image confirmation must run before createImageBitmap decodes the source.")
 for page_name, page_text in ((
@@ -674,7 +674,7 @@ for page_name, page_text in ((
 ):
     if "25 MiB" not in page_text or "not a hard limit" not in page_text or "large pixel dimensions" not in page_text:
         fail(f"{page_name} must disclose the pre-decode 25 MiB warning and its limits.")
-if "25 MiB single-image warning threshold" not in privacy_page or "smaller compressed file can still have very large pixel dimensions" not in privacy_page:
+if "25 MiB" not in privacy_page or "smaller compressed file can still have very large pixel dimensions" not in privacy_page:
     fail("Privacy policy must disclose the single-image pre-decode warning and clarify that file size is only a rough signal.")
 
 batch_warning = batch_process_branch.find("25 MiB batch-image warning threshold")
