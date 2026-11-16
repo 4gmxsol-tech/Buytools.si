@@ -674,7 +674,7 @@ for page_name, page_text in ((
 ):
     if "25 MiB" not in page_text or "not a hard limit" not in page_text or "large pixel dimensions" not in page_text:
         fail(f"{page_name} must disclose the pre-decode 25 MiB warning and its limits.")
-if "25 MiB single-image warning threshold" not in privacy_text or "smaller compressed file can still have very large pixel dimensions" not in privacy_text:
+if "25 MiB single-image warning threshold" not in privacy_page or "smaller compressed file can still have very large pixel dimensions" not in privacy_page:
     fail("Privacy policy must disclose the single-image pre-decode warning and clarify that file size is only a rough signal.")
 
 batch_warning = batch_process_branch.find("25 MiB batch-image warning threshold")
