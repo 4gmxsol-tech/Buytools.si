@@ -282,7 +282,7 @@ for relative_path, config in breadcrumb_pages.items():
             fail(f"Visible breadcrumb is incomplete in {relative_path}: {required}")
 
     nav_match = re.search(
-        r'<nav\b[^>]*aria-label=["\\']Breadcrumb["\\'][^>]*>(.*?)</nav>',
+        r"<nav\b[^>]*aria-label=['\"]Breadcrumb['\"][^>]*>(.*?)</nav>",
         page_html,
         re.DOTALL | re.IGNORECASE,
     )
