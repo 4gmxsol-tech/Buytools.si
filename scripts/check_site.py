@@ -915,7 +915,7 @@ if "25 MiB" not in privacy_text or "before requesting the library" not in privac
     fail("Privacy policy must explain the Images-to-PDF CDN request confirmation behavior.")
 
 pdf_import = home.find("const {PDFDocument}=await import('https://esm.sh/pdf-lib@1.17.1')")
-pdf_warning_guard = home.find("const totalPdfBytes=chosenFiles.reduce((total,file)=>total+file.size,0),largePdfWarningThreshold=25*1024*1024")
+pdf_warning_guard = home.find("const totalPdfBytes=operationFiles.reduce((total,file)=>total+file.size,0),largePdfWarningThreshold=25*1024*1024")
 pdf_warning_dialog = home.find("25 MiB large-file warning threshold")
 if min(pdf_import, pdf_warning_guard, pdf_warning_dialog) < 0 or not (pdf_warning_guard < pdf_warning_dialog < pdf_import):
     fail("PDF merge/split must validate size and ask before loading the PDF library for selections above 25 MiB.")
