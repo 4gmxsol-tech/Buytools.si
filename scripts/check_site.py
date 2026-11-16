@@ -637,7 +637,7 @@ if missing_homepage_json:
     fail("Homepage JSON Formatter card must identify JSON syntax search intent: " + ", ".join(missing_homepage_json))
 image_resizer_page = (ROOT / "tools/image-resizer/index.html").read_text(encoding="utf-8")
 image_memory_privacy = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
-if "const MAX_RESIZED_CANVAS_PIXELS=16000000" not in home or "const MAX_BATCH_RESIZE_CANVAS_PIXELS=32000000" not in home:
+if "const MAX_RESIZED_CANVAS_PIXELS=16000000" not in home or "MAX_BATCH_RESIZE_CANVAS_PIXELS=32000000" not in home:
     fail("Image resizer must enforce the 16-million-pixel per-image and 32-million-pixel batch budgets.")
 if "16 million pixels" not in image_resizer_page or "16 million output pixels" not in batch_image_resizer_page:
     fail("Image resizer pages must disclose the output pixel limits.")
