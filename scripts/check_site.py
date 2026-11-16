@@ -919,6 +919,15 @@ pdf_warning_guard = home.find("const totalPdfBytes=chosenFiles.reduce((total,fil
 pdf_warning_dialog = home.find("25 MiB large-file warning threshold")
 if min(pdf_import, pdf_warning_guard, pdf_warning_dialog) < 0 or not (pdf_warning_guard < pdf_warning_dialog < pdf_import):
     fail("PDF merge/split must validate size and ask before loading the PDF library for selections above 25 MiB.")
+pdf_handler_start = home.find("if(id==='pdf-merge'||id==='pdf-split'){")
+pdf_handler_end = home.find("if(id==='csv-json')", pdf_handler_start)
+pdf_handler = home[pdf_handler_start:pdf_handler_end] if pdf_handler_start >= 0 and pdf_handler_end > pdf_handler_start else ""
+if "workspaceGeneration=0" not in home or "$('#closeWork').onclick=()=>{workspaceGeneration++;" not in home or "workspaceGeneration++;clearToolObjectUrls();activeTool=id;" not in home:
+    fail("Opening or closing a tool workspace must invalidate pending asynchronous operations.")
+if "operationFiles=[...chosenFiles]" not in pdf_handler or "const isCurrent=()=>operationGeneration===workspaceGeneration" not in pdf_handler:
+    fail("PDF merge/split must snapshot selected files and capture the workspace generation.")
+if pdf_handler.count("if(!isCurrent())return") < 8:
+    fail("PDF merge/split must stop after asynchronous boundaries when the workspace is no longer current.")
 pdf_privacy_requirements = (
     "selected PDF files total more than 25 MiB",
     "before requesting the library",
