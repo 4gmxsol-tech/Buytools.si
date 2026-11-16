@@ -245,6 +245,51 @@ for required_search_contract in (
     if required_search_contract not in homepage_html:
         fail("Homepage search form and SearchAction contract are out of sync: " + required_search_contract)
 
+
+# Keep the JSON Formatter's visible breadcrumb and structured data aligned.
+json_tool_page_path = ROOT / "tools" / "json-formatter" / "index.html"
+if not json_tool_page_path.is_file():
+    fail("JSON Formatter landing page is missing for breadcrumb validation.")
+else:
+    json_tool_html = json_tool_page_path.read_text(encoding="utf-8")
+    for required_breadcrumb_markup in (
+        '<nav class="wrap breadcrumbs" aria-label="Breadcrumb">',
+        '<a href="/">Home</a>',
+        '<a href="/#tools">Tools</a>',
+        '<li aria-current="page">JSON Formatter</li>',
+    ):
+        if required_breadcrumb_markup not in json_tool_html:
+            fail("JSON Formatter visible breadcrumb is incomplete: " + required_breadcrumb_markup)
+    jsonld_match = re.search(
+        r'<script type="application/ld\\+json">\\s*(.*?)\\s*</script>',
+        json_tool_html,
+        re.DOTALL,
+    )
+    if not jsonld_match:
+        fail("JSON Formatter JSON-LD is missing for breadcrumb validation.")
+    else:
+        try:
+            jsonld_data = json.loads(jsonld_match.group(1))
+        except json.JSONDecodeError as exc:
+            fail("JSON Formatter JSON-LD is invalid: " + str(exc))
+        else:
+            graph = jsonld_data.get("@graph", [])
+            breadcrumb = next(
+                (item for item in graph if item.get("@type") == "BreadcrumbList"),
+                None,
+            )
+            expected_items = [
+                (1, "Home", DOMAIN + "/"),
+                (2, "Tools", DOMAIN + "/#tools"),
+                (3, "JSON Formatter", DOMAIN + "/tools/json-formatter/"),
+            ]
+            actual_items = [
+                (item.get("position"), item.get("name"), item.get("item"))
+                for item in (breadcrumb or {}).get("itemListElement", [])
+            ]
+            if actual_items != expected_items:
+                fail("JSON Formatter BreadcrumbList must match the visible Home > Tools > JSON Formatter path.")
+
 seen_urls = set()
 for url in sitemap_urls:
     if url in seen_urls:
