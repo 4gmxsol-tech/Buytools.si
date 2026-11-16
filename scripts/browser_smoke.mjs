@@ -1285,6 +1285,71 @@ try {
     }, { base64: buffer.toString("base64"), type: mimeType });
   }
 
+  // Image converter: verify requested formats and reject Canvas PNG fallbacks mislabeled as WebP.
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="image-convert"]').click();
+  await auditAccessibility("image converter");
+  await page.locator("#fileInput").setInputFiles({
+    name: "convert-source.png",
+    mimeType: "image/png",
+    buffer: pngBuffer
+  });
+  for (const conversionCase of [
+    { format: "image/png", extension: "png", signature: "89504e470d0a1a0a" },
+    { format: "image/jpeg", extension: "jpg", signature: "ffd8" },
+    { format: "image/webp", extension: "webp", signature: "52494646" }
+  ]) {
+    await page.locator("#format").selectOption(conversionCase.format);
+    const externalRequestsBeforeConversion = thirdPartyRequests.length;
+    await page.locator("#run").click();
+    const convertedLink = page.locator("#result a[download]");
+    await convertedLink.waitFor();
+    assert.equal(
+      await convertedLink.getAttribute("download"),
+      "buytools-converted." + conversionCase.extension
+    );
+    const [convertedDownload] = await Promise.all([
+      page.waitForEvent("download"),
+      convertedLink.click()
+    ]);
+    assert.equal(convertedDownload.suggestedFilename(), "buytools-converted." + conversionCase.extension);
+    const convertedBytes = await readDownloadBuffer(convertedDownload);
+    assert.ok(convertedBytes.length > 12, "Image converter must not return an empty file");
+    assert.equal(
+      convertedBytes.subarray(0, conversionCase.signature.length / 2).toString("hex"),
+      conversionCase.signature,
+      "Image converter output signature must match the selected " + conversionCase.format + " format"
+    );
+    if (conversionCase.format === "image/webp") {
+      assert.equal(convertedBytes.toString("ascii", 8, 12), "WEBP", "WebP output must contain its RIFF/WEBP signature");
+    }
+    const convertedInfo = await inspectImageBuffer(convertedBytes, conversionCase.format);
+    assert.deepEqual([convertedInfo.width, convertedInfo.height], [16, 8], "Image conversion must preserve source dimensions");
+    assert.equal(
+      thirdPartyRequests.length,
+      externalRequestsBeforeConversion,
+      "Image conversion must remain local and create no third-party request"
+    );
+  }
+
+  await page.evaluate(() => {
+    const originalToBlob = HTMLCanvasElement.prototype.toBlob;
+    window.__buytoolsRestoreToBlob = () => {
+      HTMLCanvasElement.prototype.toBlob = originalToBlob;
+    };
+    HTMLCanvasElement.prototype.toBlob = function (callback, type, quality) {
+      return originalToBlob.call(this, callback, type === "image/webp" ? "image/png" : type, quality);
+    };
+  });
+  await page.locator("#format").selectOption("image/webp");
+  let unsupportedFormatDownloadStarted = false;
+  page.once("download", () => { unsupportedFormatDownloadStarted = true; });
+  await page.locator("#run").click();
+  await page.getByText(/This browser could not export the selected WEBP format/i).waitFor();
+  assert.equal(await page.locator("#result a[download]").count(), 0, "An unsupported format must not leave a mislabeled or stale download link");
+  assert.equal(unsupportedFormatDownloadStarted, false, "An unsupported WebP fallback must not start a download with a .webp filename");
+  await page.evaluate(() => window.__buytoolsRestoreToBlob());
+
   const sourcePortraitInfo = await inspectImageBuffer(batchJpegBuffer, "image/jpeg");
   assert.deepEqual([sourcePortraitInfo.width, sourcePortraitInfo.height], [8, 16], "Portrait fixture must start at 8×16 pixels");
 
