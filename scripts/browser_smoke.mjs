@@ -429,7 +429,15 @@ try {
   for (const breadcrumbCase of [
     { path: "/tools/csv-json-converter/", currentLabel: "CSV to JSON Converter", middleLabel: "Developer tools", middleHref: "/#tools" },
     { path: "/tools/csv-viewer/", currentLabel: "CSV Viewer and Sorter", middleLabel: "Developer tools", middleHref: "/#tools" },
-    { path: "/guides/format-json-online/", currentLabel: "Format and Validate JSON", middleLabel: "Guides", middleHref: "/guides/" }
+    { path: "/guides/format-json-online/", currentLabel: "Format and Validate JSON", middleLabel: "Guides", middleHref: "/guides/" },
+    { path: "/guides/compress-multiple-images/", currentLabel: "How to compress multiple images online", middleLabel: "Guides", middleHref: "/guides/" },
+    { path: "/guides/convert-images-to-pdf/", currentLabel: "How to Convert Images to PDF: A Simple Step-by-Step Guide", middleLabel: "Guides", middleHref: "/guides/" },
+    { path: "/guides/convert-images-to-webp/", currentLabel: "How to convert JPG and PNG images to WebP", middleLabel: "Guides", middleHref: "/guides/" },
+    { path: "/guides/decode-jwt-online/", currentLabel: "How to decode a JWT online", middleLabel: "Guides", middleHref: "/guides/" },
+    { path: "/guides/format-sql-online/", currentLabel: "How to format SQL queries online", middleLabel: "Guides", middleHref: "/guides/" },
+    { path: "/guides/reduce-image-size/", currentLabel: "How to Reduce Photo & Image File Size Without Losing Quality", middleLabel: "Guides", middleHref: "/guides/" },
+    { path: "/guides/resize-multiple-images/", currentLabel: "How to resize multiple images at once", middleLabel: "Guides", middleHref: "/guides/" },
+    { path: "/guides/test-api-request-online/", currentLabel: "How to build and test an API request online", middleLabel: "Guides", middleHref: "/guides/" }
   ]) {
     await page.goto("http://127.0.0.1:8000" + breadcrumbCase.path, { waitUntil: "load" });
     const breadcrumb = page.getByRole("navigation", { name: "Breadcrumb" });
@@ -2167,7 +2175,7 @@ try {
     hashedModelAssetResponses: allModelAssetRequests.filter(item => item.sha256).length,
     artifact: "runtime-provenance.json"
   }, null, 2));
-  console.log(`Browser smoke tests passed: ${toolCount} tool cards; accessible CSV tool breadcrumbs; advertising preference reopening and saved-choice switching; privacy-policy preference link; initial first-party-only page load; on-demand QR, PDF, ZIP and image-to-PDF requests; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, stage-aware background-removal progress, per-model consent, standard and smaller quantized-model UI workflows, synthetic model benchmark, downloads, theme, 390px mobile layout and axe audits.`);
+  console.log(`Browser smoke tests passed: ${toolCount} tool cards; accessible tool and guide breadcrumbs; advertising preference reopening and saved-choice switching; privacy-policy preference link; initial first-party-only page load; on-demand QR, PDF, ZIP and image-to-PDF requests; homepage directory navigation, JSON, CSV, TypeScript, CSV Viewer, image compression/resizing, batch image ZIP compression/resizing, Images-to-PDF, text-to-PDF, PDF merge/split, stage-aware background-removal progress, per-model consent, standard and smaller quantized-model UI workflows, synthetic model benchmark, downloads, theme, 390px mobile layout and axe audits.`);
 } finally {
   await browser.close();
 }

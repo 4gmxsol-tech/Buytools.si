@@ -246,7 +246,7 @@ for required_search_contract in (
         fail("Homepage search form and SearchAction contract are out of sync: " + required_search_contract)
 
 
-# Keep visible breadcrumbs and their structured data aligned on tool landing pages.
+# Keep visible breadcrumbs and their structured data aligned across tool and guide landing pages.
 breadcrumb_pages = {
     "tools/json-formatter/index.html": {
         "label": "JSON Formatter",
@@ -271,7 +271,56 @@ breadcrumb_pages = {
         "middle_label": "Guides",
         "middle_href": "/guides/",
         "url": DOMAIN + "/guides/format-json-online/",
+    },,
+    "guides/compress-multiple-images/index.html": {
+        "label": "How to compress multiple images online",
+        "middle_label": "Guides",
+        "middle_href": "/guides/",
+        "url": DOMAIN + "guides/compress-multiple-images/",
     },
+    "guides/convert-images-to-pdf/index.html": {
+        "label": "How to Convert Images to PDF: A Simple Step-by-Step Guide",
+        "middle_label": "Guides",
+        "middle_href": "/guides/",
+        "url": DOMAIN + "guides/convert-images-to-pdf/",
+    },
+    "guides/convert-images-to-webp/index.html": {
+        "label": "How to convert JPG and PNG images to WebP",
+        "middle_label": "Guides",
+        "middle_href": "/guides/",
+        "url": DOMAIN + "guides/convert-images-to-webp/",
+    },
+    "guides/decode-jwt-online/index.html": {
+        "label": "How to decode a JWT online",
+        "middle_label": "Guides",
+        "middle_href": "/guides/",
+        "url": DOMAIN + "guides/decode-jwt-online/",
+    },
+    "guides/format-sql-online/index.html": {
+        "label": "How to format SQL queries online",
+        "middle_label": "Guides",
+        "middle_href": "/guides/",
+        "url": DOMAIN + "guides/format-sql-online/",
+    },
+    "guides/reduce-image-size/index.html": {
+        "label": "How to Reduce Photo & Image File Size Without Losing Quality",
+        "label_html": "How to Reduce Photo &amp; Image File Size Without Losing Quality",
+        "middle_label": "Guides",
+        "middle_href": "/guides/",
+        "url": DOMAIN + "guides/reduce-image-size/",
+    },
+    "guides/resize-multiple-images/index.html": {
+        "label": "How to resize multiple images at once",
+        "middle_label": "Guides",
+        "middle_href": "/guides/",
+        "url": DOMAIN + "guides/resize-multiple-images/",
+    },
+    "guides/test-api-request-online/index.html": {
+        "label": "How to build and test an API request online",
+        "middle_label": "Guides",
+        "middle_href": "/guides/",
+        "url": DOMAIN + "guides/test-api-request-online/",
+    }
 }
 for relative_path, config in breadcrumb_pages.items():
     page_path = ROOT / relative_path
@@ -284,7 +333,7 @@ for relative_path, config in breadcrumb_pages.items():
         '<nav class="wrap breadcrumbs" aria-label="Breadcrumb">',
         '<a href="/">Home</a>',
         f'<a href="{config["middle_href"]}">{config["middle_label"]}</a>',
-        f'<li aria-current="page">{config["label"]}</li>',
+        f'<li aria-current="page">{config.get("label_html", config["label"])}</li>',
     )
     for required in required_breadcrumb_markup:
         if required not in page_html:
@@ -314,8 +363,10 @@ for relative_path, config in breadcrumb_pages.items():
         except json.JSONDecodeError as exc:
             fail(f"Invalid JSON-LD in {relative_path}: {exc}")
             continue
+        if jsonld_data.get("@type") == "BreadcrumbList":
+            breadcrumb = jsonld_data
         graph = jsonld_data.get("@graph", [])
-        if isinstance(graph, list):
+        if not breadcrumb and isinstance(graph, list):
             breadcrumb = next(
                 (item for item in graph if item.get("@type") == "BreadcrumbList"),
                 None,
