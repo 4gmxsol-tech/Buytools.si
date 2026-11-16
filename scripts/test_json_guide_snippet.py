@@ -49,13 +49,45 @@ class JsonGuideSnippetTests(unittest.TestCase):
         article = next(node for node in graph if node.get("@type") == "Article")
         self.assertEqual(article["headline"], visible_h1)
 
-    def test_article_modified_date_matches_sitemap(self):
-        self.assertIn('"dateModified":"2026-11-14"', HTML)
-        self.assertIn("Last updated: November 14, 2026", HTML)
+    def test_article_modified_date_matches_visible_date_and_sitemap(self):
+        schema_match = re.search(r'<script type="application/ld\+json">\s*(.*?)\s*</script>', HTML, re.DOTALL)
+        self.assertIsNotNone(schema_match)
+        graph = json.loads(schema_match.group(1))["@graph"]
+        article = next(node for node in graph if node.get("@type") == "Article")
+        date_modified = article["dateModified"]
+
+        visible_date_match = re.search(r"Last updated: ([A-Za-z]+ \d{1,2}, \d{4})", HTML)
+        self.assertIsNotNone(visible_date_match)
+        from datetime import datetime
+        visible_date = datetime.strptime(visible_date_match.group(1), "%B %d, %Y").date().isoformat()
+        self.assertEqual(visible_date, date_modified)
+
         pattern = r'<loc>https://buytools\.si/guides/format-json-online/</loc><lastmod>([^<]+)</lastmod>'
         match = re.search(pattern, SITEMAP)
         self.assertIsNotNone(match)
-        self.assertEqual(match.group(1), "2026-11-14")
+        self.assertEqual(match.group(1), date_modified)
+
+    def test_visible_breadcrumb_matches_structured_data(self):
+        nav_match = re.search(r'<nav class="wrap breadcrumbs" aria-label="Breadcrumb">(.*?)</nav>', HTML, re.DOTALL)
+        self.assertIsNotNone(nav_match)
+        nav = nav_match.group(1)
+        self.assertIn('<a href="/">Home</a>', nav)
+        self.assertIn('<a href="/guides/">Guides</a>', nav)
+        self.assertIn('<li aria-current="page">Format and Validate JSON</li>', nav)
+
+        schema_match = re.search(r'<script type="application/ld\+json">\s*(.*?)\s*</script>', HTML, re.DOTALL)
+        self.assertIsNotNone(schema_match)
+        graph = json.loads(schema_match.group(1))["@graph"]
+        breadcrumb = next(node for node in graph if node.get("@type") == "BreadcrumbList")
+        actual_items = [
+            (item.get("position"), item.get("name"), item.get("item"))
+            for item in breadcrumb["itemListElement"]
+        ]
+        self.assertEqual(actual_items, [
+            (1, "Home", "https://buytools.si/"),
+            (2, "Guides", "https://buytools.si/guides/"),
+            (3, "Format and Validate JSON", "https://buytools.si/guides/format-json-online/"),
+        ])
 
     def test_canonical_and_tool_cta_are_preserved(self):
         self.assertIn('href="https://buytools.si/guides/format-json-online/"', HTML)
