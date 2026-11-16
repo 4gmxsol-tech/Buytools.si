@@ -261,7 +261,7 @@ else:
         if required_breadcrumb_markup not in json_tool_html:
             fail("JSON Formatter visible breadcrumb is incomplete: " + required_breadcrumb_markup)
     jsonld_match = re.search(
-        r'<script type="application/ld\\+json">\\s*(.*?)\\s*</script>',
+        r'<script type="application/ld\+json">\s*(.*?)\s*</script>',
         json_tool_html,
         re.DOTALL,
     )
