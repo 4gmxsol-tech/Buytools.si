@@ -13,7 +13,7 @@ BuyTools.si is a responsive collection of free browser-based utilities for image
 - PDF merge and page extraction, CSV ↔ JSON conversion, CSV table viewer/sorter with search and filtered export, regex tester, Markdown preview, text comparison and URL slug generator
 - Color contrast checker, HTML entity encoder, JSON-to-TypeScript starter generator, lorem ipsum generator, random number generator, and date difference calculator
 - Dedicated SEO landing pages for PDF merge/split, CSV/JSON conversion and CSV viewing, regex testing, Markdown preview, color contrast, UUIDs, JSON-to-TypeScript, percentage, timestamps and date differences
-- Dedicated landing pages for all 22 tools and three practical SEO guides
+- 40 interactive tool cards, 26 dedicated tool landing pages, and 9 practical SEO guides
 - About, privacy, terms and third-party license-notice pages
 - XML sitemap, robots.txt, custom 404 page, favicon, and GitHub Pages deployment workflow
 - Automated quality checks for metadata, exact canonicals, sitemap coverage, internal links, tool renderer mappings and inline JavaScript syntax
