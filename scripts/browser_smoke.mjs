@@ -715,6 +715,163 @@ try {
   assert.match(await page.locator("#result").innerText(), /0 words · 0 characters \(excluding whitespace\) · 0 characters including spaces and line breaks · 0 sentences/);
   await page.locator("#closeWork").click();
 
+  // Text and utility tools: visible labels, keyboard accessibility, and deterministic behavior.
+  await page.locator('[data-tool="case-converter"]').click();
+  await auditAccessibility("Case Converter");
+  assert.equal(await page.getByLabel("Text to convert").count(), 1, "Case Converter input must have a programmatic label");
+  await page.locator("#text").fill("buytools si\nfast & safe");
+  await page.locator('[data-case="title"]').click();
+  assert.equal(await page.locator("#text").inputValue(), "Buytools Si\nFast & Safe");
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="remove-spaces"]').click();
+  await auditAccessibility("Clean Text");
+  assert.equal(await page.getByLabel("Text to clean").count(), 1, "Clean Text input must have a programmatic label");
+  await page.locator("#text").fill("  alpha   beta \n gamma\t\t delta  ");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#text").inputValue(), "alpha beta\ngamma delta");
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="base64"]').click();
+  await auditAccessibility("Base64 Encoder");
+  assert.equal(await page.getByLabel("Text or Base64 input").count(), 1);
+  await page.locator("#text").fill("BuyTools 123");
+  await page.locator('[data-b64="encode"]').click();
+  assert.equal(await page.locator("#text").inputValue(), "QnV5VG9vbHMgMTIz");
+  await page.locator('[data-b64="decode"]').click();
+  assert.equal(await page.locator("#text").inputValue(), "BuyTools 123");
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="url-codec"]').click();
+  await auditAccessibility("URL Encoder and Decoder");
+  assert.equal(await page.getByLabel("Text or URL component").count(), 1);
+  await page.locator("#text").fill("hello world/?");
+  await page.locator('[data-url="encode"]').click();
+  assert.equal(await page.locator("#text").inputValue(), "hello%20world%2F%3F");
+  await page.locator('[data-url="decode"]').click();
+  assert.equal(await page.locator("#text").inputValue(), "hello world/?");
+  await page.locator("#text").fill("%E0%A4%A");
+  await page.locator('[data-url="decode"]').click();
+  assert.match(await page.locator("#result").innerText(), /Could not decode this input/);
+  assert.equal(await page.locator("#text").inputValue(), "%E0%A4%A", "Invalid URL decoding must preserve the user's input");
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="unit-converter"]').click();
+  await auditAccessibility("Unit Converter");
+  await page.locator("#uvalue").fill("2");
+  await page.locator("#ufrom").selectOption("meter");
+  await page.locator("#uto").selectOption("centimeter");
+  assert.equal(await page.locator("#result").innerText(), "2 meter = 200 centimeter");
+  await page.locator("#ucategory").selectOption("temperature");
+  await page.locator("#ufrom").selectOption("Celsius");
+  await page.locator("#uto").selectOption("Fahrenheit");
+  await page.locator("#uvalue").fill("0");
+  assert.equal(await page.locator("#result").innerText(), "0 Celsius = 32 Fahrenheit");
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="color-picker"]').click();
+  await auditAccessibility("Color Converter");
+  await page.locator("#color").evaluate((input) => {
+    input.value = "#ff0000";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.locator("#run").click();
+  const redColorValues = await page.locator("#result").innerText();
+  assert.match(redColorValues, /HEX: #FF0000/);
+  assert.match(redColorValues, /RGB: 255, 0, 0/);
+  assert.match(redColorValues, /HSL: 0, 100%, 50%/);
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="regex"]').click();
+  await auditAccessibility("Regex Tester");
+  await page.locator("#pattern").fill("\\bcat\\b");
+  await page.locator("#flags").fill("gi");
+  await page.locator("#text").fill("cat scatter CAT");
+  await page.locator("#run").click();
+  const regexMatches = await page.locator("#result").innerText();
+  assert.match(regexMatches, /1\. "cat" at character 0/);
+  assert.match(regexMatches, /2\. "CAT" at character 12/);
+  await page.locator("#pattern").fill("[");
+  await page.locator("#run").click();
+  assert.match(await page.locator("#result").innerText(), /Regex error:/);
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="text-diff"]').click();
+  await auditAccessibility("Text Compare");
+  await page.evaluate(() => { delete window.__buytoolsDiffXss; });
+  await page.locator("#leftText").fill("safe\nold");
+  await page.locator("#rightText").fill('safe\n<img src=x onerror="window.__buytoolsDiffXss=1">');
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#result img").count(), 0, "Text Compare must render pasted HTML as inert text");
+  assert.equal(await page.evaluate(() => window.__buytoolsDiffXss), undefined);
+  assert.match(await page.locator("#result").innerText(), /<img src=x onerror=/);
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="slug"]').click();
+  await auditAccessibility("URL Slug Generator");
+  assert.equal(await page.getByLabel("Page title or phrase").count(), 1);
+  await page.locator("#text").fill("Café Tools: Fast & Easy");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#text").inputValue(), "cafe-tools-fast-easy");
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="uuid"]').click();
+  await auditAccessibility("UUID Generator");
+  assert.equal(await page.getByLabel("Generated UUIDs").count(), 1);
+  await page.locator("#uuidCount").fill("2");
+  await page.locator("#run").click();
+  const generatedUuids = (await page.locator("#text").inputValue()).split("\n");
+  assert.equal(generatedUuids.length, 2);
+  for (const uuid of generatedUuids) assert.match(uuid, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="hash"]').click();
+  await auditAccessibility("Text Hash Generator");
+  assert.equal(await page.getByLabel("Text to hash").count(), 1);
+  await page.locator("#text").fill("abc");
+  await page.locator("#run").click();
+  await page.waitForFunction(() => document.querySelector("#result")?.textContent === "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+  assert.equal(await page.locator("#result").innerText(), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="random"]').click();
+  await auditAccessibility("Random Number Generator");
+  assert.equal(await page.getByLabel("Generated random numbers").count(), 1);
+  await page.locator("#randMin").fill("4");
+  await page.locator("#randMax").fill("4");
+  await page.locator("#randCount").fill("3");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#text").inputValue(), "4\n4\n4");
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="lorem"]').click();
+  await auditAccessibility("Lorem Ipsum Generator");
+  assert.equal(await page.getByLabel("Generated placeholder text").count(), 1);
+  await page.locator("#loremType").selectOption("words");
+  await page.locator("#loremAmount").fill("4");
+  await page.locator("#run").click();
+  assert.equal(await page.locator("#text").inputValue(), "lorem ipsum dolor sit");
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="html-entities"]').click();
+  await auditAccessibility("HTML Entity Encoder");
+  assert.equal(await page.getByLabel("HTML text or entities").count(), 1);
+  const htmlEntitySource = '<script>alert("x")</script>';
+  await page.locator("#text").fill(htmlEntitySource);
+  await page.locator('[data-entity="encode"]').click();
+  assert.equal(await page.locator("#text").inputValue(), "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;");
+  await page.locator('[data-entity="decode"]').click();
+  assert.equal(await page.locator("#text").inputValue(), htmlEntitySource);
+  await page.locator("#closeWork").click();
+
+  await page.locator('[data-tool="password"]').click();
+  await auditAccessibility("Password Generator");
+  assert.equal(await page.getByLabel("Generated password").count(), 1);
+  await page.locator("#plen").fill("16");
+  await page.locator("#run").click();
+  assert.equal((await page.locator("#text").inputValue()).length, 16);
+  await page.locator("#closeWork").click();
+
   // Line tools: results must contain real line breaks, not literal backslash sequences.
   await page.locator('[data-tool="duplicate-lines"]').click();
   await page.locator("#text").fill("beta\nalpha\nbeta");
