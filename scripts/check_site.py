@@ -809,6 +809,40 @@ else:
         or "No ads.txt seller record is currently present" not in readme_text
     ):
         fail("README must accurately disclose the existing consent-gated Adsterra integration and the absence of a verified ads.txt seller record.")
+
+    # Keep the documented inventory synchronized with the actual homepage catalogue and sitemap.
+    catalogue_match = re.search(r"const tools\s*=\s*\[(.*?)\n\];", home, flags=re.DOTALL)
+    catalogue_count = (
+        len(re.findall(r"\{id:'([^']+)'", catalogue_match.group(1)))
+        if catalogue_match else 0
+    )
+    tool_landing_page_count = sum(
+        1 for url in sitemap_urls
+        if urlparse(url).path.startswith("/tools/")
+        and len(urlparse(url).path.strip("/").split("/")) == 2
+    )
+    guide_landing_page_count = sum(
+        1 for url in sitemap_urls
+        if urlparse(url).path.startswith("/guides/")
+        and len(urlparse(url).path.strip("/").split("/")) == 2
+    )
+    inventory_match = re.search(
+        r"(?m)^- (\d+) interactive tool cards, (\d+) dedicated tool landing pages, and (\d+) practical SEO guides$",
+        readme_text,
+    )
+    if not inventory_match:
+        fail("README must state the interactive tool-card, dedicated tool-page and guide counts.")
+    else:
+        documented_counts = tuple(int(value) for value in inventory_match.groups())
+        actual_counts = (catalogue_count, tool_landing_page_count, guide_landing_page_count)
+        if not catalogue_count or documented_counts != actual_counts:
+            fail(
+                "README inventory counts "
+                + repr(documented_counts)
+                + " do not match homepage/sitemap counts "
+                + repr(actual_counts)
+                + "."
+            )
 if "buytools-theme" not in privacy_text:
     fail("Browser theme storage key is not disclosed in the privacy policy.")
 
