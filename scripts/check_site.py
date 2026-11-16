@@ -660,6 +660,23 @@ single_canvas_allocation = single_process_branch.find("c=document.createElement(
 if single_pixel_guard < 0 or single_canvas_allocation < 0 or single_pixel_guard > single_canvas_allocation:
     fail("Single-image resize pixel budget must be enforced before canvas allocation.")
 
+# Large single-image canvas workflows must warn before decoding files above the disclosed byte threshold.
+if "MAX_SINGLE_IMAGE_WARNING_BYTES=25*1024*1024" not in home:
+    fail("Single-image processing must define the documented 25 MiB pre-decode warning threshold.")
+single_warning_guard = single_process_branch.find("f.size>MAX_SINGLE_IMAGE_WARNING_BYTES")
+single_bitmap_decode = single_process_branch.find("const im=await createImageBitmap(f)", single_warning_guard)
+if single_warning_guard < 0 or single_bitmap_decode < 0 or single_warning_guard > single_bitmap_decode:
+    fail("Large single-image confirmation must run before createImageBitmap decodes the source.")
+for page_name, page_text in ((
+    "Image converter", (ROOT / "tools/image-converter/index.html").read_text(encoding="utf-8")),
+    ("Image compressor", (ROOT / "tools/image-compressor/index.html").read_text(encoding="utf-8")),
+    ("Image resizer", image_resizer_page),
+):
+    if "25 MiB" not in page_text or "not a hard limit" not in page_text or "large pixel dimensions" not in page_text:
+        fail(f"{page_name} must disclose the pre-decode 25 MiB warning and its limits.")
+if "25 MiB" not in privacy_page or "smaller compressed file can still have very large pixel dimensions" not in privacy_page:
+    fail("Privacy policy must disclose the single-image pre-decode warning and clarify that file size is only a rough signal.")
+
 batch_warning = batch_process_branch.find("25 MiB batch-image warning threshold")
 batch_import = batch_process_branch.find("await import('https://esm.sh/jszip@3.10.2')")
 if min(batch_guard, batch_warning, batch_import) < 0 or not (batch_guard < batch_warning < batch_import):

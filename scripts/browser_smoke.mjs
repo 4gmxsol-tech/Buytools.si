@@ -1453,6 +1453,38 @@ try {
   await page.evaluate(() => window.__buytoolsRestoreCanvasFailure());
   assert.equal(singleBitmapCloseCount, 1, "Single-image canvas failure must close its ImageBitmap");
 
+  // A large single-image file must prompt before the canvas-processing bitmap decode; cancelling must avoid createImageBitmap.
+  await page.evaluate(() => {
+    const originalSizeDescriptor = Object.getOwnPropertyDescriptor(Blob.prototype, "size");
+    const originalCreateImageBitmap = window.createImageBitmap;
+    const originalConfirm = window.confirm;
+    window.__buytoolsRestoreLargeSingleImageWarning = () => {
+      if (originalSizeDescriptor) Object.defineProperty(Blob.prototype, "size", originalSizeDescriptor);
+      else delete Blob.prototype.size;
+      window.createImageBitmap = originalCreateImageBitmap;
+      window.confirm = originalConfirm;
+    };
+    Object.defineProperty(Blob.prototype, "size", {
+      configurable: true,
+      get() { return 26 * 1024 * 1024; }
+    });
+    window.__buytoolsLargeSingleImageDecodeCalls = 0;
+    window.__buytoolsLargeSingleImageConfirmCalls = 0;
+    window.createImageBitmap = async () => {
+      window.__buytoolsLargeSingleImageDecodeCalls += 1;
+      throw new Error("Image decoding should not start after confirmation is declined");
+    };
+    window.confirm = () => {
+      window.__buytoolsLargeSingleImageConfirmCalls += 1;
+      return false;
+    };
+  });
+  await page.locator("#run").click();
+  await page.getByText(/Image processing cancelled/i).waitFor();
+  assert.equal(await page.evaluate(() => window.__buytoolsLargeSingleImageConfirmCalls), 1, "Large single-image processing must request confirmation");
+  assert.equal(await page.evaluate(() => window.__buytoolsLargeSingleImageDecodeCalls), 0, "Declining the large-image warning must stop before the processing bitmap decode");
+  await page.evaluate(() => window.__buytoolsRestoreLargeSingleImageWarning());
+
   await page.locator("#closeWork").click();
   await page.waitForFunction(url => window.__buytoolsObjectUrlAudit.revoked.includes(url), compressedResultUrl);
   await page.locator('[data-tool="image-resize"]').click();
