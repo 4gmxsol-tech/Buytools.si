@@ -347,6 +347,37 @@ try {
   assert.equal(crossTabRequestsA.length + crossTabRequestsB.length, 2, "Clearing preferences must reopen prompts without requesting ads");
   await crossTabContext.close();
 
+  // Treat browser-local favorites/recent entries as untrusted input. Only known tool IDs may become shortcut buttons.
+  const tamperedStorageContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await tamperedStorageContext.addInitScript(() => {
+    window.__shortcutPayloadExecuted = false;
+    localStorage.setItem("buytools-favorites", JSON.stringify([
+      "json",
+      "<img src=x onerror=window.__shortcutPayloadExecuted=true>",
+      "javascript:window.__shortcutPayloadExecuted=true",
+      "__proto__",
+      { id: "csv-viewer" }
+    ]));
+    localStorage.setItem("buytools-recent", JSON.stringify([
+      "csv-viewer",
+      "<svg onload=window.__shortcutPayloadExecuted=true>",
+      "constructor",
+      null
+    ]));
+  });
+  const tamperedStoragePage = await tamperedStorageContext.newPage();
+  const tamperedStorageErrors = [];
+  tamperedStoragePage.on("pageerror", error => tamperedStorageErrors.push(error.message));
+  await tamperedStoragePage.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
+  const shortcutGrid = tamperedStoragePage.locator("#shortcutGrid");
+  assert.equal(await shortcutGrid.locator("[data-shortcut]").count(), 2, "Only recognized tool IDs from tampered storage may render shortcuts");
+  assert.equal(await shortcutGrid.locator('[data-shortcut="json"]').count(), 1, "A valid favorite should remain available");
+  assert.equal(await shortcutGrid.locator('[data-shortcut="csv-viewer"]').count(), 1, "A valid recent tool should remain available once");
+  assert.equal(await shortcutGrid.locator("img, svg, script, iframe").count(), 0, "Stored HTML payloads must never become shortcut markup");
+  assert.equal(await tamperedStoragePage.evaluate(() => window.__shortcutPayloadExecuted), false, "Stored event-handler and javascript payloads must remain inert");
+  assert.deepEqual(tamperedStorageErrors, [], "Tampered localStorage entries must not create uncaught page errors");
+  await tamperedStorageContext.close();
+
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
   assert.equal(thirdPartyRequests.length, 0, "Initial page load must not contact third-party hosts before a tool is used");
 
