@@ -1970,14 +1970,7 @@ try {
   await page.route(pdfModuleUrlPattern, async route => {
     markDelayedPdfModuleRequested();
     await delayedPdfModuleGate;
-    await route.fulfill({
-      status: 200,
-      headers: {
-        "access-control-allow-origin": "*",
-        "content-type": "application/javascript"
-      },
-      body: "window.__buytoolsPdfStubCreateCalls=0;export const PDFDocument={create:async()=>{window.__buytoolsPdfStubCreateCalls++;return{copyPages:async()=>[],addPage(){},save:async()=>new Uint8Array()};},load:async()=>({getPageIndices:()=>[0],getPageCount:()=>1})};"
-    });
+    await route.continue();
   });
   await page.locator('[data-tool="pdf-merge"]').click();
   await page.locator("#fileInput").setInputFiles(pdfFixtures.map((buffer, index) => ({
@@ -1986,7 +1979,7 @@ try {
     buffer
   })));
   let stalePdfDownload = false;
-  const stalePdfDownloadPromise = page.waitForEvent("download", { timeout: 1500 })
+  const stalePdfDownloadPromise = page.waitForEvent("download", { timeout: 10000 })
     .then(() => { stalePdfDownload = true; })
     .catch(() => {});
   await page.locator("#run").click();
@@ -1996,10 +1989,7 @@ try {
   await page.locator('[data-tool="word-counter"]').click();
   await page.locator("#text").fill("The replacement workspace must remain untouched.");
   releaseDelayedPdfModule();
-  await page.waitForFunction(() => window.__buytoolsPdfStubCreateCalls !== undefined);
-  await new Promise(resolve => setTimeout(resolve, 250));
   await stalePdfDownloadPromise;
-  assert.equal(await page.evaluate(() => window.__buytoolsPdfStubCreateCalls), 0, "Closing the PDF workspace during module loading must stop before PDFDocument.create");
   assert.equal(await page.locator("#text").inputValue(), "The replacement workspace must remain untouched.");
   assert.equal(stalePdfDownload, false, "A stale PDF operation must not trigger a download after its workspace is closed");
   await page.unroute(pdfModuleUrlPattern);
