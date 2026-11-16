@@ -251,17 +251,26 @@ breadcrumb_pages = {
     "tools/json-formatter/index.html": {
         "label": "JSON Formatter",
         "middle_label": "Tools",
+        "middle_href": "/#tools",
         "url": DOMAIN + "/tools/json-formatter/",
     },
     "tools/csv-json-converter/index.html": {
         "label": "CSV to JSON Converter",
         "middle_label": "Developer tools",
+        "middle_href": "/#tools",
         "url": DOMAIN + "/tools/csv-json-converter/",
     },
     "tools/csv-viewer/index.html": {
         "label": "CSV Viewer and Sorter",
         "middle_label": "Developer tools",
+        "middle_href": "/#tools",
         "url": DOMAIN + "/tools/csv-viewer/",
+    },
+    "guides/format-json-online/index.html": {
+        "label": "Format and Validate JSON",
+        "middle_label": "Guides",
+        "middle_href": "/guides/",
+        "url": DOMAIN + "/guides/format-json-online/",
     },
 }
 for relative_path, config in breadcrumb_pages.items():
@@ -274,7 +283,7 @@ for relative_path, config in breadcrumb_pages.items():
     required_breadcrumb_markup = (
         '<nav class="wrap breadcrumbs" aria-label="Breadcrumb">',
         '<a href="/">Home</a>',
-        f'<a href="/#tools">{config["middle_label"]}</a>',
+        f'<a href="{config["middle_href"]}">{config["middle_label"]}</a>',
         f'<li aria-current="page">{config["label"]}</li>',
     )
     for required in required_breadcrumb_markup:
@@ -320,7 +329,7 @@ for relative_path, config in breadcrumb_pages.items():
 
     expected_items = [
         (1, "Home", DOMAIN + "/"),
-        (2, config["middle_label"], DOMAIN + "/#tools"),
+        (2, config["middle_label"], DOMAIN + config["middle_href"]),
         (3, config["label"], config["url"]),
     ]
     actual_items = [

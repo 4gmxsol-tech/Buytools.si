@@ -424,20 +424,22 @@ try {
   assert.equal(thirdPartyRequests.length, 0, "Following the homepage license link must remain first-party only");
   await page.goto("http://127.0.0.1:8000/", { waitUntil: "load" });
 
-  // Tool-page breadcrumbs must be visible, keyboard reachable and usable on a narrow viewport.
+  // Tool and guide breadcrumbs must be visible, keyboard reachable and usable on a narrow viewport.
+  await page.setViewportSize({ width: 390, height: 844 });
   for (const breadcrumbCase of [
-    { path: "/tools/csv-json-converter/", currentLabel: "CSV to JSON Converter" },
-    { path: "/tools/csv-viewer/", currentLabel: "CSV Viewer and Sorter" }
+    { path: "/tools/csv-json-converter/", currentLabel: "CSV to JSON Converter", middleLabel: "Developer tools", middleHref: "/#tools" },
+    { path: "/tools/csv-viewer/", currentLabel: "CSV Viewer and Sorter", middleLabel: "Developer tools", middleHref: "/#tools" },
+    { path: "/guides/format-json-online/", currentLabel: "Format and Validate JSON", middleLabel: "Guides", middleHref: "/guides/" }
   ]) {
     await page.goto("http://127.0.0.1:8000" + breadcrumbCase.path, { waitUntil: "load" });
     const breadcrumb = page.getByRole("navigation", { name: "Breadcrumb" });
-    assert.equal(await breadcrumb.count(), 1, "Each CSV landing page must expose one named breadcrumb navigation");
+    assert.equal(await breadcrumb.count(), 1, "Each landing page must expose one named breadcrumb navigation");
     assert.ok(await breadcrumb.isVisible(), "Breadcrumb navigation must be visible");
     assert.equal(await breadcrumb.locator("li").count(), 3, "Breadcrumb must contain Home, category and current page");
     const breadcrumbLinks = breadcrumb.getByRole("link");
-    assert.deepEqual(await breadcrumbLinks.allTextContents(), ["Home", "Developer tools"]);
+    assert.deepEqual(await breadcrumbLinks.allTextContents(), ["Home", breadcrumbCase.middleLabel]);
     assert.equal(await breadcrumbLinks.nth(0).getAttribute("href"), "/");
-    assert.equal(await breadcrumbLinks.nth(1).getAttribute("href"), "/#tools");
+    assert.equal(await breadcrumbLinks.nth(1).getAttribute("href"), breadcrumbCase.middleHref);
     assert.equal(
       await breadcrumb.locator('li[aria-current="page"]').innerText(),
       breadcrumbCase.currentLabel,
@@ -447,7 +449,7 @@ try {
     await page.keyboard.press("Tab");
     assert.equal(
       await page.evaluate(() => document.activeElement?.textContent?.trim()),
-      "Developer tools",
+      breadcrumbCase.middleLabel,
       "Breadcrumb links must be reachable in keyboard order"
     );
     assert.equal(
