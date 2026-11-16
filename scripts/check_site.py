@@ -286,9 +286,12 @@ for extra in sorted(seen_urls - expected_sitemap):
 all_parsers = {}
 for file in html_files:
     rel = file.relative_to(ROOT).as_posix()
+    raw_html = file.read_text(encoding="utf-8")
+    if r'>\n<script type="application/ld+json">' in raw_html:
+        fail(f"Literal escaped newline before JSON-LD script: {rel}")
     parser = PageParser()
     try:
-        parser.feed(file.read_text(encoding="utf-8"))
+        parser.feed(raw_html)
         parser.close()
     except (OSError, UnicodeError, Exception) as exc:
         fail(f"Cannot parse {rel}: {exc}")
