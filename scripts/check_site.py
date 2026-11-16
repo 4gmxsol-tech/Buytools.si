@@ -282,15 +282,15 @@ for relative_path, config in breadcrumb_pages.items():
             fail(f"Visible breadcrumb is incomplete in {relative_path}: {required}")
 
     nav_match = re.search(
-        r'<nav\\b[^>]*aria-label=["\\']Breadcrumb["\\'][^>]*>(.*?)</nav>',
+        r'<nav\b[^>]*aria-label=["\\']Breadcrumb["\\'][^>]*>(.*?)</nav>',
         page_html,
         re.DOTALL | re.IGNORECASE,
     )
-    if not nav_match or len(re.findall(r"<li\\b", nav_match.group(1), re.IGNORECASE)) != 3:
+    if not nav_match or len(re.findall(r"<li\b", nav_match.group(1), re.IGNORECASE)) != 3:
         fail(f"Visible breadcrumb must contain exactly three ordered items in {relative_path}")
 
     jsonld_matches = re.findall(
-        r'<script type="application/ld\\+json">\\s*(.*?)\\s*</script>',
+        r'<script type="application/ld\+json">\s*(.*?)\s*</script>',
         page_html,
         re.DOTALL,
     )
