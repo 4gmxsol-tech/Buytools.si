@@ -1960,6 +1960,48 @@ try {
   assert.match(splitWarningMessage, /25 MiB large-file warning threshold/i);
   assert.equal(thirdPartyRequests.filter(url => url.href.startsWith("https://esm.sh/pdf-lib@1.17.1")).length, pdfLibraryRequestsBeforeWarning, "Cancelling a large PDF split must happen before the PDF CDN is loaded");
 
+  // Closing the PDF workspace while its library import is pending must prevent stale work and downloads.
+  let releaseDelayedPdfModule;
+  let markDelayedPdfModuleRequested;
+  const delayedPdfModuleRequested = new Promise(resolve => { markDelayedPdfModuleRequested = resolve; });
+  const delayedPdfModuleGate = new Promise(resolve => { releaseDelayedPdfModule = resolve; });
+  const pdfModuleUrl = "https://esm.sh/pdf-lib@1.17.1";
+  await page.route(pdfModuleUrl, async route => {
+    markDelayedPdfModuleRequested();
+    await delayedPdfModuleGate;
+    await route.fulfill({
+      status: 200,
+      headers: {
+        "access-control-allow-origin": "*",
+        "content-type": "application/javascript"
+      },
+      body: "window.__buytoolsPdfStubCreateCalls=0;export const PDFDocument={create:async()=>{window.__buytoolsPdfStubCreateCalls++;return{copyPages:async()=>[],addPage(){},save:async()=>new Uint8Array()};},load:async()=>({getPageIndices:()=>[0],getPageCount:()=>1})};"
+    });
+  });
+  await page.locator('[data-tool="pdf-merge"]').click();
+  await page.locator("#fileInput").setInputFiles(pdfFixtures.map((buffer, index) => ({
+    name: `stale-fixture-${index + 1}.pdf`,
+    mimeType: "application/pdf",
+    buffer
+  })));
+  let stalePdfDownload = false;
+  const stalePdfDownloadPromise = page.waitForEvent("download", { timeout: 1500 })
+    .then(() => { stalePdfDownload = true; })
+    .catch(() => {});
+  await page.locator("#run").click();
+  await delayedPdfModuleRequested;
+  await page.locator("#closeWork").click();
+  await page.locator('[data-tool="word-counter"]').click();
+  await page.locator("#text").fill("The replacement workspace must remain untouched.");
+  releaseDelayedPdfModule();
+  await page.waitForFunction(() => window.__buytoolsPdfStubCreateCalls !== undefined);
+  await new Promise(resolve => setTimeout(resolve, 250));
+  await stalePdfDownloadPromise;
+  assert.equal(await page.evaluate(() => window.__buytoolsPdfStubCreateCalls), 0, "Closing the PDF workspace during module loading must stop before PDFDocument.create");
+  assert.equal(await page.locator("#text").inputValue(), "The replacement workspace must remain untouched.");
+  assert.equal(stalePdfDownload, false, "A stale PDF operation must not trigger a download after its workspace is closed");
+  await page.unroute(pdfModuleUrl);
+
   // Merge three PDFs and verify the downloaded document structurally.
   await page.locator("#closeWork").click();
   await page.locator('[data-tool="pdf-merge"]').click();
