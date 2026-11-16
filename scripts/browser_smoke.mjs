@@ -1301,9 +1301,16 @@ try {
   ]) {
     await page.locator("#format").selectOption(conversionCase.format);
     const externalRequestsBeforeConversion = thirdPartyRequests.length;
+    await page.locator("#run").click();
+    const convertedLink = page.locator("#result a[download]");
+    await convertedLink.waitFor();
+    assert.equal(
+      await convertedLink.getAttribute("download"),
+      "buytools-converted." + conversionCase.extension
+    );
     const [convertedDownload] = await Promise.all([
       page.waitForEvent("download"),
-      page.locator("#run").click()
+      convertedLink.click()
     ]);
     assert.equal(convertedDownload.suggestedFilename(), "buytools-converted." + conversionCase.extension);
     const convertedBytes = await readDownloadBuffer(convertedDownload);
