@@ -150,6 +150,27 @@ details{padding:13px 0;border-top:1px solid var(--line)}summary{cursor:pointer;f
 </section>
 <section class="content-card"><h2>Explore more developer tools</h2><p>Try the <a href="/tools/csv-json-converter/">CSV to JSON converter</a>, <a href="/tools/json-to-typescript/">JSON to TypeScript</a>, <a href="/tools/regex-tester/">Regex tester</a> and <a href="/tools/markdown-preview/">Markdown preview</a>.</p></section>
 <section class="content-card"><h2>Learn how to format and validate JSON</h2><p>New to JSON formatting? Follow the <a href="/guides/format-json-online/">JSON formatting and syntax guide</a> for valid examples, common parsing errors, line-and-column diagnostics, and the difference between formatted and minified JSON.</p></section>
+
+<section class="tool-guide" aria-label="JSON workflow guide">
+<h2>Working with JSON in real projects</h2>
+<p>JSON is the plain-text format most web services use to exchange data, and sooner or later almost everyone who works with APIs, configuration files or datasets has to read some. The problem is that real-world JSON often arrives as one long unbroken line, or with a small typo that stops the whole file from working. This formatter takes that text, checks whether it is valid JSON, and rewrites it with readable indentation, all in your browser. Pasted text and opened files are processed locally and are not uploaded to a BuyTools.si processing endpoint.</p>
+<p>The most common use is debugging an API response. You paste the response the server sent, format it, and suddenly the structure is visible: nested objects, arrays and the field that holds the wrong value. Developers use the same workflow for configuration and translation files. Minify strips out the extra whitespace so a valid document is as compact as possible.</p>
+<p><strong>How to use this formatter</strong></p>
+<ol>
+<li>Paste JSON into the input editor, or open a local UTF-8 .json file up to 5 MiB.</li>
+<li>Choose Format to rewrite it with readable indentation, or Validate to check the syntax without changing anything.</li>
+<li>Read the error report if validation fails. It names the problem category and, when your browser provides one, the line and column to inspect.</li>
+<li>Choose Minify when you need the smallest version of valid JSON, then copy the output or download it as a .json file.</li>
+</ol>
+<p><strong>Fixing the errors you will actually meet</strong></p>
+<p>Most invalid JSON fails for a handful of reasons. Property names and string values must use double quotes, never single quotes. Items in objects and arrays must be separated by commas, and there must be no comma after the last item. Comments, the word undefined, functions and other JavaScript-only syntax are not allowed in JSON, even though they look reasonable if you write JavaScript. Every opening brace and bracket needs its matching closer. When Validate points at a line and column, look just before that position first.</p>
+<p><strong>Things worth knowing</strong></p>
+<p>Formatting only changes whitespace and indentation; your data stays exactly the same. If a document repeats a property name, JSON keeps the last value. Valid JSON only proves the syntax is correct, not that the fields and values match what your application expects.</p>
+<details><summary>What happens if my JSON has a duplicate property name?</summary><p>JSON parsing keeps the last value for a repeated name and drops the earlier ones.</p></details>
+<details><summary>Can I check JSONL or newline-delimited JSON here?</summary><p>Not as a single document. This tool validates one complete JSON value at a time, so a file with one JSON object per line will fail validation. Check each line separately instead.</p></details>
+<details><summary>Does formatting work without an internet connection?</summary><p>Once the page has loaded, formatting, validation and minification run entirely in your browser. The page makes no network requests while it formats your text.</p></details>
+</section>
+
 </main>
 <footer class="wrap site-footer"><a href="/">Home</a><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/licenses/">Licenses</a><p>© 2026 BuyTools.si · Free tools for everyday work.</p></footer>
 <script>
