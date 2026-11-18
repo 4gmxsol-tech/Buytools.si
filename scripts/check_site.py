@@ -12,7 +12,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_advertising_consent_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_browser_tool_click_coverage, missing_image_lossless_workflow_disclosures, missing_image_reduction_workflow_steps, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, missing_article_date_modified_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins, missing_csv_troubleshooting_guidance, faq_schema_mismatches
+from site_validation import fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_browser_tool_click_coverage, missing_image_lossless_workflow_disclosures, missing_image_reduction_workflow_steps, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, missing_article_date_modified_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins, missing_csv_troubleshooting_guidance, faq_schema_mismatches
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "https://buytools.si"
@@ -745,54 +745,6 @@ if "Open comma-, semicolon- or tab-delimited CSV files" not in csv_viewer_page o
     fail("CSV Viewer metadata must describe supported field separators and local file selection accurately.")
 
 privacy_text = (ROOT / "privacy/index.html").read_text(encoding="utf-8")
-missing_advertising_disclosure = missing_advertising_consent_disclosure(privacy_text)
-if missing_advertising_disclosure:
-    fail("Privacy policy must accurately disclose consent-gated Adsterra advertising, rejection behavior, analytics status and hosting logs: " + ", ".join(missing_advertising_disclosure))
-
-ad_engine_path = ROOT / "assets" / "buytools-ads.js"
-if not ad_engine_path.is_file():
-    fail("Consent-aware advertising engine is missing: assets/buytools-ads.js")
-else:
-    ad_engine = ad_engine_path.read_text(encoding="utf-8")
-    required_ad_engine_markers = (
-        'var CONSENT_KEY = "buytools-ad-consent-v1";',
-        'var consentReadFailed = false;',
-        'function readConsent()',
-        'window.localStorage.getItem(CONSENT_KEY)',
-        'catch (error) { consentReadFailed = true; return null; }',
-        'function saveConsent(value)',
-        'window.localStorage.setItem(CONSENT_KEY, value); return true;',
-        'catch (error) { return false; }',
-        'function closeConsentPanel()',
-        'function showCrossTabNotice()',
-        'function handleConsentStorage(event)',
-        'event.key !== CONSENT_KEY && event.key !== null',
-        'if (!event.storageArea || event.storageArea !== window.localStorage) return;',
-        'if (nextValue === "accepted")',
-        'if (hadAdSlot) showCrossTabNotice();',
-        'if (nextValue !== "rejected") showConsent(false);',
-        'window.addEventListener("storage", handleConsentStorage);',
-        'if (!force && consent === "accepted") { mountAds(); return; }',
-        'if (!force && consent === "rejected") return;',
-        'function showConsentNotice(adWasAlreadyRequested)',
-        'if (!saveConsent("accepted"))',
-        'var saved = saveConsent("rejected");',
-        'if (!saved || consentReadFailed) showConsentNotice(hadAdSlot);',
-        'function addPreferencesControl()',
-        'showConsent(true)',
-        'if (saved && hadAdSlot) window.location.reload();',
-        'var openPreferences = /(?:^|[?&])ad-preferences=1(?:&|$)/.test(window.location.search);',
-        '"aria-expanded": "false"',
-        'Your rejection applies to this page, but your browser could not confirm that it saved the preference.',
-        'Advertising will remain disabled for this visit.',
-        'src: "https://bicea.org/21/" + NATIVE_ID',
-        'src: "https://bicea.org/22/" + key',
-        'accept.addEventListener("click"',
-        'reject.addEventListener("click"',
-    )
-    for marker in required_ad_engine_markers:
-        if marker not in ad_engine:
-            fail("Consent-aware advertising engine is missing required behavior: " + marker)
 for public_page in html_files:
     public_html = public_page.read_text(encoding="utf-8")
     tracking_markers = known_analytics_or_ad_markers(public_html)
@@ -841,12 +793,8 @@ else:
         or "sends its input to a third-party QR service" in readme_text
     ):
         fail("README must accurately describe local QR encoding and must not claim the QR payload is sent to a third-party service.")
-    if (
-        "consent-gated Adsterra integration" not in readme_text
-        or "ad-delivery code is requested only after a visitor explicitly accepts" not in readme_text
-        or "No ads.txt seller record is currently present" not in readme_text
-    ):
-        fail("README must accurately disclose the existing consent-gated Adsterra integration and the absence of a verified ads.txt seller record.")
+    if "adsterra" in readme_text.lower() or "bicea.org" in readme_text.lower():
+        fail("README must not advertise or document a removed advertising provider.")
 
     # Keep the documented inventory synchronized with the actual homepage catalogue and sitemap.
     catalogue_match = re.search(r"const tools\s*=\s*\[(.*?)\n\];", home, flags=re.DOTALL)

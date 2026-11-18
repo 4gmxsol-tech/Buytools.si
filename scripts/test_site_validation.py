@@ -2,7 +2,7 @@
 import unittest
 from pathlib import Path
 
-from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_advertising_consent_disclosure, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_browser_tool_click_coverage, missing_image_lossless_workflow_disclosures, missing_image_reduction_workflow_steps, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, missing_article_date_modified_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins, missing_csv_troubleshooting_guidance, faq_schema_mismatches)
+from site_validation import (fragment_target_exists, has_shared_favicon, known_analytics_or_ad_markers, missing_image_compressor_disclosures, missing_csv_export_safety_disclosures, missing_json_file_workflow_disclosures, missing_batch_image_resizer_disclosures, homepage_tool_count_mismatch, missing_browser_tool_click_coverage, missing_image_lossless_workflow_disclosures, missing_image_reduction_workflow_steps, missing_json_schema_scope_disclosures, missing_json_scope_metadata_disclosures, missing_homepage_json_syntax_disclosure, missing_license_footer_link, missing_direct_browser_package_notices, missing_runtime_dependency_notices, missing_upstream_lock_evidence, missing_confirmed_bundled_license_notices, has_head_license_declaration, missing_sitemap_lastmod_sync, missing_article_date_modified_sync, noncanonical_internal_index_links, missing_pages_workflow_least_privilege, missing_immutable_action_pins, missing_csv_troubleshooting_guidance, faq_schema_mismatches)
 
 
 class BrowserToolClickCoverageTests(unittest.TestCase):
@@ -107,53 +107,7 @@ class FragmentTargetExistsTests(unittest.TestCase):
 
 
 
-class AdvertisingConsentDisclosureTests(unittest.TestCase):
-    COMPLETE = (
-        "<p>BuyTools.si displays advertising provided by Adsterra on eligible content and tool pages. "
-        "The advertising technology is not loaded unless a visitor chooses “Accept advertising” in the site preference prompt. "
-        "Visitors can choose “Reject” and continue using the tools; when rejected, the advertising scripts are not loaded. "
-        "The preference is stored in browser local storage under <code>buytools-ad-consent-v1</code>. "
-        "If accepted, the site loads ad delivery code from bicea.org. "
-        "The site does not currently run a separate site-analytics platform. "
-        "The hosting provider may still process technical request data as described above. "
-        "If browser storage blocks reading or saving the preference, a previously saved choice, if any, may still apply after navigation or reload; "
-        "a rejection that cannot be saved still keeps advertising disabled for the current page.</p>"
-    )
-
-    def test_complete_consent_gated_advertising_disclosure_is_accepted(self):
-        self.assertEqual(missing_advertising_consent_disclosure(self.COMPLETE), [])
-
-    def test_missing_rejection_behavior_is_reported(self):
-        html = self.COMPLETE.replace(
-            "when rejected, the advertising scripts are not loaded. ",
-            "",
-        )
-        self.assertEqual(
-            missing_advertising_consent_disclosure(html),
-            ["when rejected, the advertising scripts are not loaded"],
-        )
-
-    def test_missing_storage_failure_disclosure_is_reported(self):
-        html = self.COMPLETE.replace(
-            "a rejection that cannot be saved still keeps advertising disabled for the current page.</p>",
-            "</p>",
-        )
-        self.assertIn(
-            "a rejection that cannot be saved still keeps advertising disabled for the current page",
-            missing_advertising_consent_disclosure(html),
-        )
-
-    def test_legacy_no_advertising_statement_is_not_accepted(self):
-        legacy = (
-            "<p>No third-party advertising or site-analytics scripts, pixels, or ad tags are "
-            "currently loaded by BuyTools.si. The hosting provider may process technical information. "
-            "Update this policy before activation.</p>"
-        )
-        self.assertIn(
-            "buytools.si displays advertising provided by adsterra on eligible content and tool pages",
-            missing_advertising_consent_disclosure(legacy),
-        )
-
+class TrackingMarkerTests(unittest.TestCase):
     def test_known_analytics_tags_are_detected(self):
         html = '<script src="https://www.googletagmanager.com/gtag/js"></script><script>gtag("config","G-TEST")</script>'
         self.assertEqual(
@@ -1121,13 +1075,6 @@ class CsvViewerContentQualityTests(unittest.TestCase):
         )
 
 
-
-class AdvertisingPreferencesLinkTests(unittest.TestCase):
-    def test_privacy_policy_links_to_reopen_advertising_preferences(self):
-        root = Path(__file__).resolve().parents[1]
-        privacy_page = (root / "privacy" / "index.html").read_text(encoding="utf-8")
-        self.assertIn('href="/?ad-preferences=1"', privacy_page)
-        self.assertIn('>Advertising preferences</a>', privacy_page)
 
 
 if __name__ == "__main__":
