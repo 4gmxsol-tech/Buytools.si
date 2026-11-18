@@ -47,7 +47,7 @@ node scripts/browser_smoke.mjs
 After each production deployment, the Pages workflow fetches every URL in `sitemap.xml` and verifies HTTP 200, a page title and the expected canonical URL.
 
 ## Monetization
-BuyTools.si has a consent-gated Adsterra integration: the first-party preference engine is present on eligible pages, but ad-delivery code is requested only after a visitor explicitly accepts. Rejecting keeps the ad slot unmounted. No ads.txt seller record is currently present; do not invent or publish seller identifiers. Read [MONETIZATION.md](MONETIZATION.md) before changing placements or provider settings, and use only an authoritative seller record supplied by the approved provider.
+BuyTools.si currently runs no advertising network, third-party ad scripts, Smartlinks, Popunders, affiliate redirects or advertising trackers. The site prioritizes useful tools, privacy and organic discovery. Any future monetization change requires a separate review of the provider, actual creatives, privacy impact and visitor experience before deployment.
 
 ## Privacy
 Many image and text tools are designed to process data in the browser. QR content is encoded locally in the browser using qrcode-generator loaded on demand from jsDelivr. The library request does not include the QR payload, and the QR payload is not sent to a QR-generation service. Background removal loads a third-party library and model assets. See the [Privacy Policy](https://buytools.si/privacy/) for the exact providers and data-handling details.
