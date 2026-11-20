@@ -1,0 +1,98 @@
+/* ============================================================
+   BuyTools.si — Responsive & visual polish layer (Nov 2026)
+   One shared layer loaded LAST on every page (after each page's
+   inline styles) so phone, tablet/iPad, laptop and large
+   screens all stay consistent. Design tokens match the site:
+   dark panels, green accent (#a5f36b / --accent), purple focus.
+   ============================================================ */
+
+/* --- Global safety: nothing may push the page sideways --- */
+html, body { overflow-x: clip; }
+img, video, iframe, canvas, svg, table, pre { max-width: 100%; }
+img, video { height: auto; }
+pre { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+::selection { background: var(--accent, #a5f36b); color: #10150d; }
+
+/* --- Accessible focus + comfortable touch targets --- */
+a, button, input, select, textarea, summary, [tabindex] { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--purple, #b7a1ff); outline-offset: 2px; border-radius: 4px; }
+.nav a, .navlinks a, .links a, .footerlinks a, .breadcrumbs a {
+  min-height: 44px; display: inline-flex; align-items: center;
+}
+.btn, .cta, .primary, .searchbox button, .filepick, .file-picker {
+  min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
+}
+.filter { min-height: 44px; display: inline-flex; align-items: center; }
+.shortcut-chip { min-height: 44px; }
+.close { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
+.pill, .theme-toggle { min-height: 44px; }
+.favorite-toggle { width: 44px; height: 44px; font-size: 20px; }
+.card .go { min-height: 32px; display: inline-flex; align-items: center; }
+summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+
+/* --- Forms: 16px inputs stop iOS auto-zoom; full-width on small screens --- */
+input, select, textarea { font-size: 16px; }
+.controls > *, .toolbar > * { min-width: 0; }
+
+/* --- Grid children may shrink; wide content scrolls in place --- */
+.grid > *, .features > *, .editor-grid > *, .controls, .result, .tool-output { min-width: 0; }
+.result, .tool-output { overflow-wrap: anywhere; }
+table { border-collapse: collapse; }
+th, td { padding: 9px 12px; border-bottom: 1px solid var(--line, #2a3043); text-align: left; }
+
+/* --- Visual richness: depth on cards and panels, gentle motion --- */
+.card { box-shadow: 0 6px 20px rgba(0, 0, 0, .10); }
+.card:focus-within { border-color: var(--accent, #a5f36b); }
+.feature, .panel, .content { box-shadow: 0 6px 20px rgba(0, 0, 0, .08); }
+.cta, .btn-primary { box-shadow: 0 8px 22px rgba(165, 243, 107, .16); transition: transform .18s ease, filter .18s ease, box-shadow .18s ease; }
+.cta:hover, .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.drop { transition: border-color .2s ease, background .2s ease; }
+
+/* --- Tablet / iPad (561–1100px): two sensible columns, airier features --- */
+@media (max-width: 1100px) {
+  .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .feature:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 900px) {
+  .editor-grid { grid-template-columns: 1fr; }
+}
+
+/* --- Tables on small screens: scroll internally, never widen the page --- */
+@media (max-width: 760px) {
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; font-size: 14px; }
+  th, td { white-space: nowrap; }
+}
+
+/* --- Phones (<=560px): restated explicitly so this layer's tablet
+       rules can never override the phone layout (cascade order). --- */
+@media (max-width: 680px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .features { grid-template-columns: 1fr; }
+  .feature:last-child { grid-column: auto; }
+  .hero { flex-direction: column; }
+}
+@media (max-width: 560px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero .cta { display: flex; width: 100%; text-align: center; }
+  .searchbox input { font-size: 16px; }
+  .searchbox button { min-height: 44px; }
+  .drop { padding: 22px 12px; }
+  .workspace { padding: 16px; }
+  .controls label { width: 100%; }
+  .controls input[type="text"], .controls input[type="number"], .controls select { max-width: 100%; }
+  .float-note { font-size: 11px; padding: 9px 11px; }
+}
+@media (max-width: 420px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* --- Large screens (>=1440px): let the directory page breathe --- */
+@media (min-width: 1440px) {
+  .wrap:has(.hero-visual) { width: min(1280px, calc(100% - 48px)); }
+  .grid { gap: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta, .btn-primary, .card, .drop { transition: none !important; }
+  .cta:hover, .btn-primary:hover { transform: none; }
+}
